@@ -1,0 +1,134 @@
+specification {
+  element person {
+        style {
+            shape person
+            color green
+        }
+  }
+  element system
+  element container
+}
+
+model {
+  user = person "Пользователь" "Пользователь сайта: просматривает карты, загружает карты"
+  interactive_map_platform = system "Interactive Maps" "Веб-сайт для загрузки и просмотра интерактивных карт" {
+    frontend = container "Frontend" {
+      description "
+        React приложение
+        Использует Leaflet для отображения карт
+      "
+      technology "React, Leaflet, JavaScript"
+      style {
+        icon tech:react
+        shape browser
+      }
+    }
+
+    api_gateway = container "API Gateway" {
+      description "
+        Единая точка входа для API
+        Проксирует запросы на User Service и Map Service
+      "
+      technology "Python, FastAPI"
+    }
+
+    user_service = container "User Service" {
+      description "
+        Сервис пользователей:
+        регистрация, логин, управление пользователями
+      "
+      technology "Python, FastAPI"
+    }
+
+    user_db = container "Users Database" {
+      description "
+        База данных пользователей
+        Хранит всю информацию о пользователях
+      "
+      technology "PostgreSQL"
+      style {
+        shape cylinder
+      }
+    }
+
+    map_service = container "Map Service" {
+      description "
+        Сервис карт:
+        каталог карт
+        загрузка ZIP с тайлами
+        управление локациями на карте
+        постановка задач на обработку PNG → тайлы
+      "
+      technology "Python, FastAPI"
+    }
+
+    map_db = container "Maps Database" {
+      description "
+        База данных карт
+        Хранит всю информацию о картах и прогрессе обработки
+      "
+      technology "PostgreSQL"
+      style {
+        shape cylinder
+      }
+    }
+
+    tiles_nginx = container "NGINX (Static tiles server)" {
+      description "
+         Раздача тайлов
+      "
+      technology "NGINX"
+      style {
+        icon tech:nginx
+        shape cylinder
+      }
+    }
+
+    redis = container "Redis (Task Queue + Progress)" {
+      description "
+        Очередь задач для обработки тайлов
+        Хранение статуса прогресса обработки
+      "
+      technology "Redis"
+      style {
+        shape cylinder
+        icon tech:redis
+      }
+    }
+
+    tile_processing_service = container "Tile Processing Service" {
+      description "
+        Отдельный сервис-воркер:
+        асинхронно обрабатывает PNG → Pyramid Tiles
+        пишет прогресс в Redis
+      "
+      technology "Python, RQ, rio-tiler, PIL"
+    }
+
+    user -> frontend "Использует в браузере (работает с картами)" "HTTPS"
+
+    frontend -> api_gateway "Отправляет запросы" "REST/JSON"
+    frontend -> tiles_nginx "Запрашивает тайлы" "HTTP/PNG"
+
+    api_gateway -> user_service "Обрабатывает регистрацию и аутентификацию" "REST/JSON"
+    api_gateway -> map_service "Работа с картами и локациями" "REST/JSON"
+
+    user_service -> user_db "Читает/пишет информацию о пользователях" "SQL"
+    map_service -> map_db "Читает/пишет информацию о картах" "SQL"
+
+    map_service -> redis "Публикует задачи на обработку PNG → Tiles" "RQ Job"
+    tile_processing_service -> redis "Получает задачи, пишет прогресс" "RQ Job + Progress"
+    tile_processing_service -> tiles_nginx "Сохраняет Pyramid Tiles" "Filesystem (PNG)"
+    tile_processing_service -> map_db "Обновляет информацию о тайлах" "SQL"
+  }
+}
+
+views {
+  view index {
+    include *
+  }
+
+  view of interactive_map_platform {
+    include *
+  }
+}

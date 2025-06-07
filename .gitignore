@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.sqlite3
+.env
+.env.*
+instance/
+.DS_Store
+
+# VSCode
+.vscode/
+
+# Node / React
+node_modules/
+dist/
+build/
+.env
+.env.local
+.env.development
+.env.production
+
+# Docker
+*.log
+*.pid
+*.sock
+shared_uploads/
+tiles/

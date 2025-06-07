@@ -1,0 +1,17 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@700&family=Merriweather&display=swap&subset=cyrillic');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+body {
+  @apply text-[#3a2f1b] font-serif;
+  background-color: #f2f0e6;
+  background-image: url('https://www.transparenttextures.com/patterns/paper-fibers.png');
+  background-repeat: repeat;
+}
+
+h1, h2, h3, h4 {
+  @apply font-display text-textDark;
+}
