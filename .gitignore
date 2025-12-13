@@ -1,29 +1,70 @@
-# Python
+# Byte-compiled / optimized / DLL files
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
-*.sqlite3
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+
+# Environments
 .env
 .env.*
-instance/
-.DS_Store
-
-# VSCode
-.vscode/
-
-# Node / React
-node_modules/
-dist/
-build/
-.env
-.env.local
-.env.development
-.env.production
+*.env
 
 # Docker
 *.log
 *.pid
 *.sock
+# Docker named volumes (shared folders)
 shared_uploads/
 tiles/
+
+# VS Code
+.vscode/
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# PyCharm
+.idea/
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# React build output
+frontend/build/
+frontend/dist/
+
+# Local test artifacts
+*.sqlite3
+*.db
+*.tgz
+*.zip
+
+# Other
+*.swp
