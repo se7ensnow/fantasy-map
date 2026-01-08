@@ -34,6 +34,7 @@ class MapCreateRequest(BaseModel):
 class MapUpdateRequest(BaseModel):
     title: Optional[str] = None
     description: Optional[str] = None
+    visibility: Optional[str] = None
 
 class MapResponse(BaseModel):
     id: UUID
@@ -48,6 +49,16 @@ class MapResponse(BaseModel):
     max_zoom: int
     created_at: datetime
     updated_at: datetime
+    visibility: Optional[str] = None
+    share_id: Optional[str] = None
+    share_url: Optional[str] = None
+
+    class ConfigDict:
+        from_attributes = True
+
+class ShareResponse(BaseModel):
+    share_id: str
+    share_url: str
 
     class ConfigDict:
         from_attributes = True

@@ -7,8 +7,8 @@ from redis import Redis
 from rq import Queue
 
 from map_service_app.crud import (create_map, update_map, delete_map, get_map_by_id, get_maps_by_owner,
-                                  update_map_tiles_info, is_map_owned_by_user, get_all_maps)
-from map_service_app.schemas import MapCreate, MapUpdate, MapResponse, ListMapResponse, TilesInfo
+                                  is_map_owned_by_user, get_all_maps, get_map_by_share_id)
+from map_service_app.schemas import MapCreate, MapUpdate, MapResponse, ListMapResponse
 from map_service_app.database import get_db
 from map_service_app.config import REDIS_URL, SOURCE_IMAGES_PATH, TILES_BASE_PATH, TILE_SERVICE_TASK
 
@@ -48,11 +48,27 @@ async def get_owned_maps_endpoint(
     return ListMapResponse(total=total, items=maps_dict)
 
 @router.get("/{map_id}", response_model=MapResponse)
-async def get_map_endpoint(map_id: UUID, db: Session = Depends(get_db)):
+async def get_map_endpoint(map_id: UUID, user_id: str | None = Header(None, alias="X-User-Id"), db: Session = Depends(get_db)):
     map_obj = get_map_by_id(db, map_id)
     if not map_obj:
         raise HTTPException(status_code=404, detail="Map not found")
-    return map_obj
+
+    is_owner = False
+
+    if user_id:
+        user_id = UUID(user_id)
+        if is_map_owned_by_user(db, user_id, map_id):
+            is_owner = True
+
+    resp = map_obj.__dict__
+    if not is_owner:
+        resp.pop("share_id")
+    else:
+        sid = resp.get("share_id")
+        if sid:
+            resp["share_url"] = f"/maps/share/{sid}"
+
+    return resp
 
 @router.put("/{map_id}", response_model=MapResponse)
 async def update_map_endpoint(map_id: UUID,
@@ -66,7 +82,12 @@ async def update_map_endpoint(map_id: UUID,
     map_obj = update_map(db, map_id, data)
     if not map_obj:
         raise HTTPException(status_code=404, detail="Map not found")
-    return map_obj
+
+    resp = map_obj.__dict__
+    sid = resp.get("share_id")
+    if sid:
+        resp["share_url"] = f"/maps/share/{sid}"
+    return resp
 
 @router.delete("/{map_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_map_endpoint(map_id: UUID,
@@ -85,6 +106,16 @@ async def delete_map_endpoint(map_id: UUID,
         shutil.rmtree(tiles_dir)
 
     return
+
+@router.get("/share/{share_id}", response_model=MapResponse)
+def get_map_by_share_id_endpoint(share_id: str, db: Session = Depends(get_db)):
+    map_obj = get_map_by_share_id(db, share_id)
+    if not map_obj:
+        raise HTTPException(status_code=404, detail="Shared map not found")
+
+    resp = map_obj.__dict__
+    resp.pop("share_id", None)
+    return resp
 
 @router.post("/{map_id}/upload-image")
 async def upload_image_endpoint(map_id: UUID,
@@ -116,12 +147,3 @@ async def upload_image_endpoint(map_id: UUID,
     q.enqueue(TILE_SERVICE_TASK, map_id)
 
     return {"status": "image uploaded", "task": "tile generation started"}
-
-@router.post("/{map_id}/tiles_info", status_code=status.HTTP_202_ACCEPTED)
-async def tiles_info_endpoint(map_id: UUID, info: TilesInfo, db: Session = Depends(get_db)):
-    updated = update_map_tiles_info(db, map_id, info)
-
-    if not updated:
-        raise HTTPException(status_code=404, detail="Map not found")
-
-    return

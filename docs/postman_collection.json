@@ -118,18 +118,22 @@
           }
         },
         {
-          "name": "List My Maps",
+          "name": "List My Maps (owned)",
           "request": {
             "method": "GET",
             "header": [
               { "key": "Authorization", "value": "Bearer {{access_token}}" }
             ],
             "url": {
-              "raw": "http://localhost:8000/maps/",
+              "raw": "http://localhost:8000/maps/owned?page=1&size=10",
               "protocol": "http",
               "host": ["localhost"],
               "port": "8000",
-              "path": ["maps"]
+              "path": ["maps", "owned"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "size", "value": "10" }
+              ]
             }
           }
         },
@@ -150,7 +154,7 @@
           }
         },
         {
-          "name": "Update Map",
+          "name": "Update Map (general)",
           "request": {
             "method": "PUT",
             "header": [
@@ -171,6 +175,50 @@
           }
         },
         {
+          "name": "Change Visibility to Link (generate share)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "http://localhost:8000/maps/{{map_id}}",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8000",
+              "path": ["maps", "{{map_id}}"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"visibility\": \"link\"\n}"
+            },
+            "description": "Set visibility to 'link' — backend will generate share_id if absent and return share_url in owner's response."
+          }
+        },
+        {
+          "name": "Change Visibility to Public/Private",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "http://localhost:8000/maps/{{map_id}}",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8000",
+              "path": ["maps", "{{map_id}}"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"visibility\": \"public\"\n}"
+            },
+            "description": "Set visibility to 'public' or 'private' — backend will remove share_id when switching away from 'link'."
+          }
+        },
+        {
           "name": "Delete Map",
           "request": {
             "method": "DELETE",
@@ -187,29 +235,43 @@
           }
         },
         {
-          "name": "Upload Tiles",
+          "name": "Upload Image (start tiles)",
           "request": {
             "method": "POST",
             "header": [
               { "key": "Authorization", "value": "Bearer {{access_token}}" }
             ],
             "url": {
-              "raw": "http://localhost:8000/maps/{{map_id}}/upload-tiles",
+              "raw": "http://localhost:8000/maps/{{map_id}}/upload-image",
               "protocol": "http",
               "host": ["localhost"],
               "port": "8000",
-              "path": ["maps", "{{map_id}}", "upload-tiles"]
+              "path": ["maps", "{{map_id}}", "upload-image"]
             },
             "body": {
               "mode": "formdata",
               "formdata": [
                 {
-                  "key": "tiles",
+                  "key": "file",
                   "type": "file",
                   "src": ""
                 }
               ]
             }
+          }
+        },
+        {
+          "name": "Get Map by Share Link (anonymous)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "http://localhost:8000/maps/share/{{share_id}}",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8000",
+              "path": ["maps", "share", "{{share_id}}"]
+            },
+            "description": "Openable by anonymous users — returns public view of the map (no owner-only fields)."
           }
         }
       ]

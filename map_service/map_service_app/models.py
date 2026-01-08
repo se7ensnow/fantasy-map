@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, DateTime, Float, ForeignKey, JSON, Integer
+from sqlalchemy import Column, String, DateTime, Float, ForeignKey, JSON, Integer, Boolean
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import declarative_base, relationship
 from datetime import datetime
@@ -11,6 +11,8 @@ class Map(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True, index=True)
     owner_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    visibility = Column(String, nullable=False, index=True)
+    share_id = Column(String, nullable=True, unique=True, index=True)
     owner_username = Column(String, nullable=False)
     title = Column(String, nullable=False)
     description = Column(String, nullable=True)
