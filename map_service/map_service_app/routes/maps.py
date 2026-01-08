@@ -1,13 +1,14 @@
 import os
 import shutil
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, status, Header, Query
+from typing import Optional
 from sqlalchemy.orm import Session
 from uuid import UUID
 from redis import Redis
 from rq import Queue
 
 from map_service_app.crud import (create_map, update_map, delete_map, get_map_by_id, get_maps_by_owner,
-                                  update_map_tiles_info, is_map_owned_by_user, get_all_maps)
+                                  update_map_tiles_info, is_map_owned_by_user, get_all_maps, search_maps_by_title)
 from map_service_app.schemas import MapCreate, MapUpdate, MapResponse, ListMapResponse, TilesInfo
 from map_service_app.database import get_db
 from map_service_app.config import REDIS_URL, SOURCE_IMAGES_PATH, TILES_BASE_PATH, TILE_SERVICE_TASK
@@ -26,9 +27,13 @@ async def create_map_endpoint(map_data: MapCreate,
 async def get_all_maps_endpoint(
         page: int = Query(1, alias="page", ge=1),
         size: int = Query(10, alias="size", ge=1, le=100),
+        q: Optional[str] = Query(None, alias="q"),
         db: Session = Depends(get_db)):
     offset = (page - 1) * size
-    maps, total = get_all_maps(db, offset=offset, limit=size)
+    if q:
+        maps, total = search_maps_by_title(db, q, offset=offset, limit=size)
+    else:
+        maps, total = get_all_maps(db, offset=offset, limit=size)
     if not maps:
         raise HTTPException(status_code=404, detail="Maps not found")
     maps_dict = [map_obj.__dict__ for map_obj in maps]

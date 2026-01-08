@@ -1,7 +1,7 @@
-from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, status, Query
+from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, status, Query, Header
 import httpx
 from uuid import UUID
-from typing import List
+from typing import List, Optional
 
 from api_gateway_app.config import USER_SERVICE_URL, MAP_SERVICE_URL
 from api_gateway_app.security import verify_token
@@ -80,12 +80,17 @@ async def get_owned_maps(
 @router.get("/all", response_model=ListMapResponse)
 async def get_all_maps(
         page: int = Query(1, alias="page", ge=1),
-        size: int = Query(10, alias="size", ge=1, le=100)):
+        size: int = Query(10, alias="size", ge=1, le=100),
+        q: Optional[str] = Query(None, alias="q")):
+    params = {"page": page, "size": size}
+    if q:
+        params["q"] = q
+
     async with httpx.AsyncClient() as client:
         try:
             response = await client.get(
                 f"{MAP_SERVICE_URL}/maps/all",
-                params={"page": page, "size": size},
+                params=params,
             )
         except httpx.RequestError:
             raise HTTPException(status_code=503, detail="Map Service unavailable")

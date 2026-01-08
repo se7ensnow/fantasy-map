@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 from uuid import UUID
 from typing import Optional, List
+from sqlalchemy import func, text
 
 from map_service_app.models import Map, Location
 from map_service_app.schemas import MapCreate, LocationCreate, MapUpdate, LocationUpdate, TilesInfo
@@ -68,6 +69,34 @@ def get_all_maps(db: Session, offset: int = 0, limit: int = 10):
     total = query.count()
     maps = query.offset(offset).limit(limit).all()
     return maps, total
+
+def search_maps_by_title(db: Session, q: str, offset: int = 0, limit: int = 10):
+    if len(q) < 3:
+        q_pattern = f"%{q.lower()}%"
+        query = db.query(Map).filter(func.lower(Map.title).like(q_pattern))
+        total = query.count()
+        maps = query.offset(offset).limit(limit).all()
+        return maps, total
+
+    try:
+        threshold = 0.15
+        query = (
+            db.query(Map)
+            .filter(text("similarity(title, :q) >= :th"))
+            .params(q=q, th=threshold)
+            .order_by(text("similarity(title, :q) DESC"))
+            .params(q=q)
+        )
+
+        total = query.count()
+        maps = query.offset(offset).limit(limit).all()
+        return maps, total
+    except Exception:
+        q_pattern = f"%{q.lower()}%"
+        query = db.query(Map).filter(func.lower(Map.title).like(q_pattern))
+        total = query.count()
+        maps = query.offset(offset).limit(limit).all()
+        return maps, total
 
 def create_location(db: Session, location_in: LocationCreate) -> Location:
     location = Location(

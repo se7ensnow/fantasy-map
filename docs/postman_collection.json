@@ -118,35 +118,58 @@
           }
         },
         {
-          "name": "List My Maps",
+          "name": "List My Maps (owned)",
           "request": {
             "method": "GET",
             "header": [
               { "key": "Authorization", "value": "Bearer {{access_token}}" }
             ],
             "url": {
-              "raw": "http://localhost:8000/maps/",
+              "raw": "http://localhost:8000/maps/owned?page=1&size=10",
               "protocol": "http",
               "host": ["localhost"],
               "port": "8000",
-              "path": ["maps"]
+              "path": ["maps", "owned"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "size", "value": "10" }
+              ]
             }
           }
         },
         {
-          "name": "Get Map by ID",
+          "name": "List Maps (search)",
           "request": {
             "method": "GET",
-            "header": [
-              { "key": "Authorization", "value": "Bearer {{access_token}}" }
-            ],
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8000/maps/all?q={{q}}&page=1&size=10",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8000",
+              "path": ["maps", "all"],
+              "query": [
+                { "key": "q", "value": "{{q}}" },
+                { "key": "page", "value": "1" },
+                { "key": "size", "value": "10" }
+              ]
+            },
+            "description": "Search maps by title using pg_trgm (Postgres). For short queries (len < 3) server falls back to ILIKE."
+          }
+        },
+        {
+          "name": "Get Map by ID (owner optional)",
+          "request": {
+            "method": "GET",
+            "header": [],
             "url": {
               "raw": "http://localhost:8000/maps/{{map_id}}",
               "protocol": "http",
               "host": ["localhost"],
               "port": "8000",
               "path": ["maps", "{{map_id}}"]
-            }
+            },
+            "description": "Gateway currently returns map by ID without requiring Authorization; owner-only fields are only included if gateway is configured to forward Authorization."
           }
         },
         {
@@ -187,29 +210,43 @@
           }
         },
         {
-          "name": "Upload Tiles",
+          "name": "Upload Image (start tiles)",
           "request": {
             "method": "POST",
             "header": [
               { "key": "Authorization", "value": "Bearer {{access_token}}" }
             ],
             "url": {
-              "raw": "http://localhost:8000/maps/{{map_id}}/upload-tiles",
+              "raw": "http://localhost:8000/maps/{{map_id}}/upload-image",
               "protocol": "http",
               "host": ["localhost"],
               "port": "8000",
-              "path": ["maps", "{{map_id}}", "upload-tiles"]
+              "path": ["maps", "{{map_id}}", "upload-image"]
             },
             "body": {
               "mode": "formdata",
               "formdata": [
                 {
-                  "key": "tiles",
+                  "key": "file",
                   "type": "file",
                   "src": ""
                 }
               ]
             }
+          }
+        },
+        {
+          "name": "Get Map by Share Link (anonymous)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "http://localhost:8000/maps/share/{{share_id}}",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8000",
+              "path": ["maps", "share", "{{share_id}}"]
+            },
+            "description": "Openable by anonymous users — returns public view of the map (no owner-only fields)."
           }
         }
       ]
