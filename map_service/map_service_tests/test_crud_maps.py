@@ -7,6 +7,7 @@ owner_id = uuid4()
 map_request = MapCreate(
     title = "Test Map",
     description = "Test description",
+    tags = ["Test Tag", "Map Tag"],
     owner_username = "testuser"
 )
 
@@ -16,6 +17,11 @@ def test_create_map(db):
     assert db_map.owner_username == "testuser"
     assert db_map.title == "Test Map"
     assert db_map.description == "Test description"
+
+    assert len(db_map.tags) == 2
+    assert {tag.slug for tag in db_map.tags} == {"test-tag", "map-tag"}
+    assert {tag.name for tag in db_map.tags} == {"Test Tag", "Map Tag"}
+
     assert db_map.tiles_path == ""
 
 def test_update_map(db):
@@ -23,12 +29,16 @@ def test_update_map(db):
 
     update_in = MapUpdate(
         title = "Updated Title",
-        description = "Updated Description"
+        description = "Updated Description",
+        tags = ["Updated Tag", "Map Tag"],
     )
     updated_map = update_map(db, db_map.id, update_in)
 
     assert updated_map.title == "Updated Title"
     assert updated_map.description == "Updated Description"
+    assert len(updated_map.tags) == 2
+    assert {tag.slug for tag in updated_map.tags} == {"updated-tag", "map-tag"}
+    assert {tag.name for tag in updated_map.tags} == {"Updated Tag", "Map Tag"}
 
 def test_update_map_tiles_info(db):
     db_map = create_map(db, owner_id, map_request)

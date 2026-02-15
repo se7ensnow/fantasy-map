@@ -30,10 +30,16 @@ class UserResponse(BaseModel):
 class MapCreateRequest(BaseModel):
     title: str
     description: Optional[str] = None
+    tags: List[str] = []
 
 class MapUpdateRequest(BaseModel):
     title: Optional[str] = None
     description: Optional[str] = None
+    tags: Optional[List[str]] = None
+
+class TagResponse(BaseModel):
+    slug: str
+    name: str
 
 class MapResponse(BaseModel):
     id: UUID
@@ -41,6 +47,7 @@ class MapResponse(BaseModel):
     owner_username: str
     title: str
     description: Optional[str] = None
+    tags: List[TagResponse] = []
     source_path: str
     tiles_path: str
     width: int
@@ -87,3 +94,8 @@ class LocationResponse(BaseModel):
 
     class ConfigDict:
         from_attributes = True
+
+class TagStatResponse(BaseModel):
+    slug: str
+    name: str
+    count: int
