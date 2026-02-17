@@ -106,7 +106,7 @@ def list_maps_catalog(
         if tags_mode == "all":
             query = query.group_by(Map.id).having(func.count(func.distinct(Tag.slug)) == n)
         else:
-            query = query.distinct()
+            query = query.group_by(Map.id)
 
     q = (q or "").strip()
     if q:

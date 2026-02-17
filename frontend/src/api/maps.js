@@ -24,23 +24,24 @@ export async function getMyMaps(page = 1, size = 10) {
     }
 }
 
-export async function getAllMaps(page = 1, size = 10) {
-    try {
-        const response = await axios.get(`${API_URL}/maps/all`, {
-            params: { page, size }
-        });
+export async function getAllMaps(page = 1, size = 10, { q, tags, tagsMode } = {}) {
+  try {
+    const params = { page, size };
+    if (q && q.trim()) params.q = q.trim();
+    if (tags && tags.trim()) params.tags = tags.trim();
+    if (tagsMode) params.tags_mode = tagsMode;
 
-        return response.data;
-    
-    } catch (error) {
-        if (error.response) {
-            throw new Error(error.response.data?.detail || "Failed to load maps");
-        } else if (error.request) {
-            throw new Error("No response received from server");
-        } else {
-            throw new Error("Error fetching maps: " + error.message);
-        }
+    const response = await axios.get(`${API_URL}/maps/all`, { params });
+    return response.data;
+  } catch (error) {
+    if (error.response) {
+      throw new Error(error.response.data?.detail || "Failed to load maps");
+    } else if (error.request) {
+      throw new Error("No response received from server");
+    } else {
+      throw new Error("Error fetching maps: " + error.message);
     }
+  }
 }
 
 export async function getMapById(mapId) {
@@ -60,50 +61,65 @@ export async function getMapById(mapId) {
     }
 }
 
-export async function createMap(title, description) {
-    try {
-        const response = await axios.post(`${API_URL}/maps/create`, {
-            title,
-            description
-        }, {
-            headers: {
-                'Authorization': `${getTokenType()} ${getToken()}`
-            }
-        });
+export async function listTags(q = "", limit = 50) {
+  try {
+    const params = { limit };
+    if (q && q.trim()) params.q = q.trim();
 
-        return response.data;
-    } catch (error) {
-        if (error.response) {
-            throw new Error(error.response.data?.detail || "Failed to create map");
-        } else if (error.request) {
-            throw new Error("No response received from server");
-        } else {
-            throw new Error("Error creating map: " + error.message);
-        }
+    const response = await axios.get(`${API_URL}/maps/tags`, { params });
+    return response.data;
+  } catch (error) {
+    if (error.response) {
+      throw new Error(error.response.data?.detail || "Failed to load tags");
+    } else if (error.request) {
+      throw new Error("No response received from server");
+    } else {
+      throw new Error("Error fetching tags: " + error.message);
     }
+  }
 }
 
-export async function updateMap(mapId, title, description) {
-    try {
-        const response = await axios.put(`${API_URL}/maps/${mapId}`, {
-            title,
-            description
-        }, {
-            headers: {
-                'Authorization': `${getTokenType()} ${getToken()}`
-            }
-        });
+export async function createMap(title, description, tags = []) {
+  try {
+    const response = await axios.post(`${API_URL}/maps/create`, {
+      title,
+      description,
+      tags,
+    }, {
+      headers: { 'Authorization': `${getTokenType()} ${getToken()}` }
+    });
 
-        return response.data;
-    } catch (error) {
-        if (error.response) {
-            throw new Error(error.response.data?.detail || "Failed to update map");
-        } else if (error.request) {
-            throw new Error("No response received from server");
-        } else {
-            throw new Error("Error updating map: " + error.message);
-        }
+    return response.data;
+  } catch (error) {
+    if (error.response) {
+      throw new Error(error.response.data?.detail || "Failed to create map");
+    } else if (error.request) {
+      throw new Error("No response received from server");
+    } else {
+      throw new Error("Error creating map: " + error.message);
     }
+  }
+}
+
+export async function updateMap(mapId, title, description, tags) {
+  try {
+    const payload = { title, description };
+    if (tags !== undefined) payload.tags = tags;
+
+    const response = await axios.put(`${API_URL}/maps/${mapId}`, payload, {
+      headers: { 'Authorization': `${getTokenType()} ${getToken()}` }
+    });
+
+    return response.data;
+  } catch (error) {
+    if (error.response) {
+      throw new Error(error.response.data?.detail || "Failed to update map");
+    } else if (error.request) {
+      throw new Error("No response received from server");
+    } else {
+      throw new Error("Error updating map: " + error.message);
+    }
+  }
 }
 
 export async function deleteMap(mapId) {

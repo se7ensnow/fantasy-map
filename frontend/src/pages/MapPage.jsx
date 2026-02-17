@@ -4,6 +4,7 @@ import { getMapById } from "@/api/maps";
 import { getLocations } from "@/api/locations";
 import MapViewer from "../components/MapViewer";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "../components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 export default function MapPage() {
     const { map_id } = useParams();
@@ -37,6 +38,8 @@ export default function MapPage() {
         return <p className="p-4">Loading map...</p>;
     }
 
+    const tagNames = (map.tags || []).map(t => t?.name).filter(Boolean);
+
     return (
         <div className="space-y-8 p-8">
             <Card className="relative bg-amber-50/80 border border-amber-700/40 rounded-lg shadow-md">
@@ -45,6 +48,15 @@ export default function MapPage() {
                 </CardHeader>
                 <CardContent className="prose text-amber-800">
                     {map.description || "No description provided."}
+                    {tagNames.length > 0 && (
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        {tagNames.map((name) => (
+                          <Badge key={name}>
+                            {name}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
                 </CardContent>
                 <div className="absolute bottom-2 right-4 text-sm text-amber-700/80 italic">
                     Author: {map.owner_username || "Unknown"}
