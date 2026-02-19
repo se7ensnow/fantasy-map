@@ -48,16 +48,16 @@ export default function MapEditPage() {
         fetchData();
     }, [map_id]);
 
-    const handleMapSubmit = async (title, description) => {
+    const handleMapSubmit = async (title, description, tags) => {
         try {
             setLoading(true);
             if (map_id) {
-                await updateMap(map_id, title, description);
+                await updateMap(map_id, title, description, tags);
                 toast.success("Map updated successfully");
                 const updatedMap = await getMapById(map_id);
                 setMap(updatedMap);
             } else {
-                const newMap = await createMap(title, description);
+                const newMap = await createMap(title, description, tags);
                 toast.success("Map created successfully");
                 navigate(`/maps/${newMap.id}/edit`);
             }
@@ -156,6 +156,7 @@ export default function MapEditPage() {
                 <MapForm
                     initialTitle={map.title}
                     initialDescription={map.description}
+                    initialTags={(map.tags || []).filter(Boolean)}
                     onSubmit={handleMapSubmit}
                     loading={loading}
                 />

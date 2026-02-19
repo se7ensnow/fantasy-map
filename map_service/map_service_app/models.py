@@ -1,10 +1,18 @@
-from sqlalchemy import Column, String, DateTime, Float, ForeignKey, JSON, Integer
+from sqlalchemy import Column, String, DateTime, Float, ForeignKey, JSON, Integer, Table, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import declarative_base, relationship
 from datetime import datetime
 import uuid
 
 Base = declarative_base()
+
+map_tags = Table(
+    "map_tags",
+    Base.metadata,
+    Column("map_id", UUID(as_uuid=True), ForeignKey("maps.id", ondelete="CASCADE"), primary_key=True),
+    Column("tag_id", UUID(as_uuid=True), ForeignKey("tags.id", ondelete="CASCADE"), primary_key=True),
+    UniqueConstraint("map_id", "tag_id", name="uq_map_tags_map_id_tag_id"),
+)
 
 class Map(Base):
     __tablename__ = 'maps'
@@ -23,6 +31,7 @@ class Map(Base):
     updated_at = Column(DateTime(timezone=True), nullable=False, default=datetime.now(), onupdate=datetime.now())
 
     locations = relationship("Location", back_populates="map", cascade="all, delete-orphan")
+    tags = relationship("Tag", secondary=map_tags, lazy="selectin", back_populates="maps")
 
 class Location(Base):
     __tablename__ = 'locations'
@@ -39,3 +48,13 @@ class Location(Base):
     updated_at = Column(DateTime(timezone=True), nullable=False, default=datetime.now(), onupdate=datetime.now())
 
     map = relationship("Map", back_populates="locations")
+
+class Tag(Base):
+    __tablename__ = 'tags'
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True, index=True)
+    name = Column(String, nullable=False, unique=True, index=True)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=datetime.now())
+
+    maps = relationship("Map", secondary=map_tags, back_populates="tags")
+

@@ -1,5 +1,5 @@
 from datetime import datetime
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, ConfigDict
 from uuid import UUID
 from typing import Optional, Dict, Any, List
 
@@ -10,8 +10,7 @@ class RegisterRequest(BaseModel):
     email: EmailStr
     password: str
 
-    class ConfigDict:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class TokenResponse(BaseModel):
     access_token: str
@@ -30,10 +29,12 @@ class UserResponse(BaseModel):
 class MapCreateRequest(BaseModel):
     title: str
     description: Optional[str] = None
+    tags: List[str] = []
 
 class MapUpdateRequest(BaseModel):
     title: Optional[str] = None
     description: Optional[str] = None
+    tags: Optional[List[str]] = None
 
 class MapResponse(BaseModel):
     id: UUID
@@ -41,6 +42,7 @@ class MapResponse(BaseModel):
     owner_username: str
     title: str
     description: Optional[str] = None
+    tags: List[str] = []
     source_path: str
     tiles_path: str
     width: int
@@ -49,8 +51,7 @@ class MapResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    class ConfigDict:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class ListMapResponse(BaseModel):
     items: List[MapResponse]
@@ -85,5 +86,8 @@ class LocationResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    class ConfigDict:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
+
+class TagStatResponse(BaseModel):
+    name: str
+    count: int

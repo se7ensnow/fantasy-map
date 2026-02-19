@@ -9,8 +9,8 @@ export default {
     extend: {
       fontFamily: {
         serif: ['Merriweather', 'serif'],
-        display: ['Cormorant Garamond', 'serif'],
-		fantasy: ['"Cinzel Decorative"', 'serif'],
+        display: ['"Cormorant Garamond"', 'serif'],
+        tag: ['Cinzel', 'serif'],
       },
       colors: {
         parchment: '#faf3e0',

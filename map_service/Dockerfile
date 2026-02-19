@@ -12,4 +12,4 @@ COPY . .
 
 EXPOSE 8000
 
-CMD ["uvicorn", "map_service_app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "map_service_app.main:app", "--host", "0.0.0.0", "--port", "8000", "--log-level", "info"]

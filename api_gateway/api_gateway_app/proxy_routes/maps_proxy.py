@@ -1,13 +1,14 @@
 from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, status, Query
 import httpx
 from uuid import UUID
-from typing import List
+from typing import List, Optional
 
 from api_gateway_app.config import USER_SERVICE_URL, MAP_SERVICE_URL
 from api_gateway_app.security import verify_token
-from api_gateway_app.schemas import MapCreateRequest, MapUpdateRequest, MapResponse, ListMapResponse
+from api_gateway_app.schemas import MapCreateRequest, MapUpdateRequest, MapResponse, ListMapResponse, TagStatResponse
 
 router = APIRouter()
+
 
 @router.post("/create", response_model=MapResponse)
 async def create_map(map_data: MapCreateRequest, user_id: UUID = Depends(verify_token)):
@@ -47,6 +48,7 @@ async def create_map(map_data: MapCreateRequest, user_id: UUID = Depends(verify_
 
     return response.json()
 
+
 @router.get("/owned", response_model=ListMapResponse)
 async def get_owned_maps(
         page: int = Query(1, alias="page", ge=1),
@@ -77,29 +79,60 @@ async def get_owned_maps(
 
     return response.json()
 
+
 @router.get("/all", response_model=ListMapResponse)
 async def get_all_maps(
         page: int = Query(1, alias="page", ge=1),
-        size: int = Query(10, alias="size", ge=1, le=100)):
+        size: int = Query(10, alias="size", ge=1, le=100),
+        q: Optional[str] = Query(None, alias="q"),
+        tags: Optional[str] = Query(None, alias="tags"),
+        tags_mode: str = Query("any", alias="tags_mode")):
+    params: dict[str, object] = {"page": page, "size": size}
+
+    if q:
+        params["q"] = q
+    if tags:
+        params["tags"] = tags
+    if tags_mode:
+        params["tags_mode"] = tags_mode
+
     async with httpx.AsyncClient() as client:
         try:
             response = await client.get(
                 f"{MAP_SERVICE_URL}/maps/all",
-                params={"page": page, "size": size},
+                params=params,
             )
         except httpx.RequestError:
             raise HTTPException(status_code=503, detail="Map Service unavailable")
-
-    if response.status_code == 404:
-        return ListMapResponse(
-            items=[],
-            total=0
-        )
 
     if response.status_code != 200:
         raise HTTPException(status_code=response.status_code, detail=response.text)
 
     return response.json()
+
+
+@router.get("/tags", response_model=List[TagStatResponse])
+async def list_tags(
+        q: Optional[str] = Query(None, alias="q"),
+        limit: int = Query(50, alias="limit", ge=1, le=200)):
+    params: dict[str, object] = {"limit": limit}
+    if q:
+        params["q"] = q
+
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.get(
+                f"{MAP_SERVICE_URL}/maps/tags",
+                params=params
+            )
+        except httpx.RequestError:
+            raise HTTPException(status_code=503, detail="Map Service unavailable")
+
+    if response.status_code != 200:
+        raise HTTPException(status_code=response.status_code, detail=response.text)
+
+    return response.json()
+
 
 @router.get("/{map_id}", response_model=MapResponse)
 async def get_map(map_id: UUID):
@@ -115,6 +148,7 @@ async def get_map(map_id: UUID):
         raise HTTPException(status_code=response.status_code, detail=response.text)
 
     return response.json()
+
 
 @router.put("/{map_id}", response_model=MapResponse)
 async def update_map(map_id: UUID, map_data: MapUpdateRequest, user_id: UUID = Depends(verify_token)):
@@ -139,6 +173,7 @@ async def update_map(map_id: UUID, map_data: MapUpdateRequest, user_id: UUID = D
 
     return response.json()
 
+
 @router.delete("/{map_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_map(map_id: UUID, user_id: UUID = Depends(verify_token)):
     headers = {
@@ -158,6 +193,7 @@ async def delete_map(map_id: UUID, user_id: UUID = Depends(verify_token)):
         raise HTTPException(status_code=response.status_code, detail=response.text)
 
     return
+
 
 @router.post("/{map_id}/upload-image")
 async def upload_image(map_id: UUID, file: UploadFile = File(...), user_id: UUID = Depends(verify_token)):

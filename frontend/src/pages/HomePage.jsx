@@ -1,21 +1,66 @@
 import { useEffect, useState } from 'react';
-import { getAllMaps } from '../api/maps';
+import { getAllMaps, listTags } from '../api/maps';
 import { useNavigate } from 'react-router-dom';
 import MapList from '../components/MapList';
+import CatalogFilters from "@/components/CatalogFilters";
 import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Badge } from "@/components/ui/badge";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 
 export default function HomePage() {
     const navigate = useNavigate();
     const [mapsData, setMapsData] = useState({ items: [], total: 0 });
     const [page, setPage] = useState(1);
+    const [query, setQuery] = useState("");
     const size = 10;
     const [error, setError] = useState("");
+    const [availableTags, setAvailableTags] = useState([]);
+    const [selectedTags, setSelectedTags] = useState([]);
+    const [tagsMode, setTagsMode] = useState("any");
+    const [tagQuery, setTagQuery] = useState("");
+
+    const debouncedQuery = useDebouncedValue(query, 300);
+
+    const handleClear = () => {
+      setQuery("");
+      setTagQuery("");
+      setSelectedTags([]);
+      setPage(1);
+    };
+
+    const toggleTag = (name) => {
+      setSelectedTags((prev) =>
+        prev.includes(name) ? prev.filter((t) => t !== name) : [...prev, name]
+      );
+    };
+
+    const handleTagClick = (tag) => {
+      toggleTag(tag);
+      setPage(1);
+    };
+    
+    useEffect(() => {
+      async function fetchTags() {
+        try {
+          const tags = await listTags("", 20);
+          setAvailableTags(tags);
+        } catch (err) {
+          console.error("Failed to load tags", err);
+        }
+      }
+
+      fetchTags();
+    }, []);
 
     useEffect(() => {
         async function fetchMaps() {
             try {
-                const mapsData = await getAllMaps(page, size);
+                const mapsData = await getAllMaps(page, size, {
+                  q: debouncedQuery,
+                  tags: selectedTags.join(","),
+                  tagsMode: tagsMode,
+                });
                 setMapsData(mapsData);
             } catch (err) {
                 setError(err.message || "Failed to load maps");
@@ -24,7 +69,11 @@ export default function HomePage() {
         }
 
         fetchMaps();
-    }, [page]);
+    }, [page, debouncedQuery, selectedTags, tagsMode]);
+
+    useEffect(() => {
+      setPage(1);
+    }, [query, selectedTags, tagsMode]);
 
     const totalPages = Math.ceil(mapsData.total / size);
 
@@ -35,6 +84,7 @@ export default function HomePage() {
     const handleCreateMap = () => {
         navigate('/maps/new');
     };
+    
 
     if (error) {
         return <p className="text-red-500">{error}</p>;
@@ -59,10 +109,26 @@ export default function HomePage() {
                     <CardTitle>Maps Catalog</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <MapList 
-                        maps={mapsData.items}
-                        onOpen={handleOpenMap}
+                    <CatalogFilters
+                      query={query}
+                      onQueryChange={setQuery}
+                      availableTags={availableTags}
+                      selectedTags={selectedTags}
+                      onToggleTag={toggleTag}
+                      tagsMode={tagsMode}
+                      onTagsModeChange={setTagsMode}
+                      tagQuery={tagQuery}
+                      onTagQueryChange={setTagQuery}
+                      onClear={handleClear}
                     />
+                    <div className="mt-4">
+                        <MapList 
+                            maps={mapsData.items} 
+                            onOpen={handleOpenMap} 
+                            onTagClick={handleTagClick} 
+                            activeTags={selectedTags}
+                        />
+                    </div>
                 </CardContent>
             </Card>
 
