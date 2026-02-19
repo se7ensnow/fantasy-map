@@ -6,10 +6,13 @@ from sqlalchemy.exc import IntegrityError
 
 import re
 
+from map_service_app.config import MAX_TAGS_PER_MAP, MAX_TAG_LEN
 from map_service_app.models import Map, Location, Tag
 from map_service_app.schemas import MapCreate, LocationCreate, MapUpdate, LocationUpdate, TilesInfo
 
-_slug_re = re.compile(r"[^0-9a-zA-Zа-яА-ЯёЁ\- ]+")
+
+_strip_re = re.compile(r"[^0-9a-zA-Zа-яА-ЯёЁ\- ]+")
+_spaces_re = re.compile(r"\s+")
 
 
 def create_map(db: Session, owner_id: UUID, map_in: MapCreate) -> Map:
@@ -65,9 +68,22 @@ def update_map(db: Session, map_id: UUID, map_in: MapUpdate) -> Optional[Map]:
         db_map.title = map_in.title
     if map_in.description is not None:
         db_map.description = map_in.description
+
+    removed_tags: List[Tag] = []
     if map_in.tags is not None:
+        old_tags = list(db_map.tags)
+
         set_map_tags(db, db_map, map_in.tags)
+
+        new_ids = {t.id for t in db_map.tags}
+        removed_tags = [t for t in old_tags if t.id not in new_ids]
+
     db.commit()
+
+    if removed_tags:
+        cleanup_unused_tags(db, removed_tags)
+        db.commit()
+
     db.refresh(db_map)
     return db_map
 
@@ -76,7 +92,13 @@ def delete_map(db: Session, map_id: UUID) -> bool:
     db_map = get_map_by_id(db, map_id)
     if db_map is None:
         return False
+
+    old_tags = list(db_map.tags)
+
     db.delete(db_map)
+    db.commit()
+
+    cleanup_unused_tags(db, old_tags)
     db.commit()
     return True
 
@@ -91,22 +113,22 @@ def get_maps_by_owner(db: Session, owner_id: UUID, offset: int = 0, limit: int =
 def list_maps_catalog(
         db: Session,
         q: Optional[str],
-        tag_slugs: List[str],
+        tags: List[str],
         tags_mode: str,
         offset: int = 0,
         limit: int = 10,
 ):
     query = db.query(Map).options(selectinload(Map.tags))
-    if tag_slugs:
-        uniq = list(set(tag_slugs))
-        n = len(uniq)
+    if tags:
+        names = prepare_tags(tags)
+        if names:
+            n = len(set(names))
+            query = query.join(Map.tags).filter(Tag.name.in_(names))
 
-        query = query.join(Map.tags).filter(Tag.slug.in_(uniq))
-
-        if tags_mode == "all":
-            query = query.group_by(Map.id).having(func.count(func.distinct(Tag.slug)) == n)
-        else:
-            query = query.group_by(Map.id)
+            if tags_mode == "all":
+                query = query.group_by(Map.id).having(func.count(func.distinct(Tag.name)) == n)
+            else:
+                query = query.group_by(Map.id)
 
     q = (q or "").strip()
     if q:
@@ -195,47 +217,53 @@ def is_location_owned_by_user(db: Session, user_id: UUID, location_id: UUID) -> 
     return db.query(Location).filter(Map.id == location.map_id, Map.owner_id == user_id).first() is not None
 
 
-def normalize_tag(raw: str) -> tuple[str, str] | None:
+def normalize_tag(raw: str) -> str | None:
     if raw is None:
         return None
+
     name = raw.strip()
+    name = _strip_re.sub("", name)
+    name = _spaces_re.sub(" ", name).strip()
+
     if not name:
         return None
 
-    name = re.sub(r"\s+", " ", name)
+    name = name.lower()
 
-    slug = name.lower().replace("ё", "е")
-    slug = _slug_re.sub("", slug)
-    slug = re.sub(r"\s+", "-", slug)
-    slug = re.sub(r"-{2,}", "-", slug)
-    slug = slug.strip("-")
+    if len(name) > MAX_TAG_LEN:
+        raise ValueError(f"Tag '{raw}' is too long (max {MAX_TAG_LEN} chars)")
 
-    if not slug:
-        return None
-    if len(slug) > 50:
-        slug = slug[:50].strip("-")
-
-    return slug, name
+    return name
 
 
-def get_or_create_tags(db: Session, tag_names: List[str]) -> List[Tag]:
-    items: dict[str, str] = {}
-    for raw in tag_names or []:
+def prepare_tags(tags: List[str]) -> List[str]:
+    prepared: List[str] = []
+    seen: set[str] = set()
+
+    for raw in tags or []:
         norm = normalize_tag(raw)
         if not norm:
             continue
-        slug, name = norm
-        items.setdefault(slug, name)
+        if norm in seen:
+            continue
+        seen.add(norm)
+        prepared.append(norm)
 
-    if not items:
+    if len(prepared) > MAX_TAGS_PER_MAP:
+        raise ValueError(f"Too many tags (max {MAX_TAGS_PER_MAP})")
+
+    return prepared
+
+
+def get_or_create_tags(db: Session, tags: List[str]) -> List[Tag]:
+    names = prepare_tags(tags)
+    if not names:
         return []
 
-    slugs = list(items.keys())
+    existing = db.query(Tag).filter(Tag.name.in_(names)).all()
+    by_name = {t.name: t for t in existing}
 
-    existing = db.query(Tag).filter(Tag.slug.in_(slugs)).all()
-    by_slug = {t.slug: t for t in existing}
-
-    to_create = [Tag(slug=s, name=items[s]) for s in slugs if s not in by_slug]
+    to_create = [Tag(name=n) for n in names if n not in by_name]
 
     if to_create:
         with db.begin_nested():
@@ -245,10 +273,10 @@ def get_or_create_tags(db: Session, tag_names: List[str]) -> List[Tag]:
             except IntegrityError:
                 pass
 
-        existing = db.query(Tag).filter(Tag.slug.in_(slugs)).all()
-        by_slug = {t.slug: t for t in existing}
+        existing = db.query(Tag).filter(Tag.name.in_(names)).all()
+        by_name = {t.name: t for t in existing}
 
-    return [by_slug[s] for s in slugs if s in by_slug]
+    return [by_name[n] for n in names if n in by_name]
 
 
 def set_map_tags(db: Session, map_obj: Map, tag_names: List[str]) -> None:
@@ -256,10 +284,28 @@ def set_map_tags(db: Session, map_obj: Map, tag_names: List[str]) -> None:
     map_obj.tags = tags
 
 
+def cleanup_unused_tags(db: Session, removed_tags: List[Tag]) -> None:
+    if not removed_tags:
+        return
+
+    removed_by_id = {t.id: t for t in removed_tags}
+
+    for tag_id in removed_by_id:
+        still_used = (
+            db.query(Map.id)
+            .join(Map.tags)
+            .filter(Tag.id == tag_id)
+            .limit(1)
+            .first()
+            is not None
+        )
+        if not still_used:
+            db.delete(removed_by_id[tag_id])
+
+
 def list_tags(db: Session, q: Optional[str] = None, limit: int = 50):
     query = (
         db.query(
-            Tag.slug.label("slug"),
             Tag.name.label("name"),
             func.count(Map.id).label("count"),
         )
@@ -269,8 +315,22 @@ def list_tags(db: Session, q: Optional[str] = None, limit: int = 50):
     )
 
     if q:
-        q2 = q.strip().lower()
-        query = query.filter(func.lower(Tag.name).like(f"%{q2}%") | func.lower(Tag.slug).like(f"%{q2}%"))
+        q_norm = normalize_tag(q)
+        if q_norm:
+            if len(q_norm) < 3:
+                query = query.filter(func.lower(Tag.name).like(f"%{q_norm}%"))
+                query = query.order_by(desc("count"), Tag.name.asc())
+            else:
+                th = 0.2
+                query = (
+                    query.filter(text("similarity(tags.name, :q) >= :th"))
+                    .params(q=q_norm, th=th)
+                    .order_by(text("similarity(tags.name, :q) DESC"), desc("count"), Tag.name.asc())
+                    .params(q=q_norm)
+                )
+        else:
+            query = query.order_by(desc("count"), Tag.name.asc())
+    else:
+        query = query.order_by(desc("count"), Tag.name.asc())
 
-    query = query.order_by(desc("count"), Tag.name.asc()).limit(limit)
-    return query.all()
+    return query.limit(limit).all()

@@ -53,8 +53,7 @@ class Tag(Base):
     __tablename__ = 'tags'
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True, index=True)
-    slug = Column(String, nullable=False, unique=True, index=True)
-    name = Column(String, nullable=False)
+    name = Column(String, nullable=False, unique=True, index=True)
     created_at = Column(DateTime(timezone=True), nullable=False, default=datetime.now())
 
     maps = relationship("Map", secondary=map_tags, back_populates="tags")

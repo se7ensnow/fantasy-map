@@ -29,7 +29,7 @@ async def test_create_map_ok(httpx_mock, mock_verify_token, async_client, test_u
             "id": test_map_id,
             "title": "Test Map",
             "description": "Test Description",
-            "tags": [{"slug": "magic", "name": "Magic"}],
+            "tags": ["magic"],
             "tiles_path": "",
             "owner_id": test_user_id,
             "owner_username": "testuser",
@@ -56,7 +56,7 @@ async def test_create_map_ok(httpx_mock, mock_verify_token, async_client, test_u
     data = response.json()
     assert data["id"] == test_map_id
     assert data["title"] == "Test Map"
-    assert data["tags"][0]["slug"] == "magic"
+    assert data["tags"][0] == "magic"
 
 
 @pytest.mark.asyncio
@@ -167,7 +167,7 @@ async def test_update_map_ok(httpx_mock, mock_verify_token, async_client, test_u
             "id": test_map_id,
             "title": "Updated Map",
             "description": "Updated Description",
-            "tags": [{"slug": "updated-tag", "name": "Updated Tag"}],
+            "tags": ["updated tag"],
             "tiles_path": "",
             "owner_id": test_user_id,
             "owner_username": "testuser",
@@ -194,7 +194,7 @@ async def test_update_map_ok(httpx_mock, mock_verify_token, async_client, test_u
     data = response.json()
     assert data["id"] == test_map_id
     assert data["title"] == "Updated Map"
-    assert data["tags"][0]["slug"] == "updated-tag"
+    assert data["tags"][0] == "updated tag"
 
 
 @pytest.mark.asyncio
@@ -331,7 +331,7 @@ async def test_get_all_maps_with_filters_ok(httpx_mock, async_client, test_user_
                 "id": test_map_id,
                 "title": "Wizard Tower",
                 "description": "Test",
-                "tags": [{"slug": "magic", "name": "Magic"}, {"slug": "rpg", "name": "RPG"}],
+                "tags": ["magic", "rpg"],
                 "tiles_path": "",
                 "owner_id": test_user_id,
                 "owner_username": "testuser",
@@ -354,7 +354,7 @@ async def test_get_all_maps_with_filters_ok(httpx_mock, async_client, test_user_
     data = response.json()
     assert data["total"] == 1
     assert data["items"][0]["title"] == "Wizard Tower"
-    assert data["items"][0]["tags"][0]["slug"] == "magic"
+    assert data["items"][0]["tags"][0] == "magic"
 
 
 @pytest.mark.asyncio
@@ -363,13 +363,13 @@ async def test_list_tags_ok(httpx_mock, async_client):
         method="GET",
         url=f"{MAP_SERVICE_URL}/maps/tags?limit=50",
         json=[
-            {"slug": "rpg", "name": "RPG", "count": 2},
-            {"slug": "magic", "name": "Magic", "count": 1},
+            {"name": "rpg", "count": 2},
+            {"name": "magic", "count": 1},
         ]
     )
 
     response = await async_client.get("/maps/tags?limit=50")
     assert response.status_code == 200
     data = response.json()
-    assert data[0]["slug"] == "rpg"
+    assert data[0]["name"] == "rpg"
     assert data[0]["count"] == 2

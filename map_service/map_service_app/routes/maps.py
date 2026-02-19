@@ -21,7 +21,10 @@ async def create_map_endpoint(map_data: MapCreate,
                               user_id: str = Header(..., alias="X-User-Id"),
                               db: Session = Depends(get_db)):
     user_id = UUID(user_id)
-    map_obj = create_map(db, user_id, map_data)
+    try:
+        map_obj = create_map(db, user_id, map_data)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     return map_obj
 
 
@@ -35,20 +38,25 @@ async def get_all_maps_endpoint(
         db: Session = Depends(get_db)):
     offset = (page - 1) * size
 
-    tag_slugs: list[str] = []
+    tag_names: list[str] = []
     if tags:
-        tag_slugs = [tag.strip() for tag in tags.split(",") if tag.strip()]
+        tag_names = [tag.strip() for tag in tags.split(",") if tag.strip()]
 
     if tags_mode not in ("any", "all"):
         raise HTTPException(status_code=400, detail="Invalid tags_mode. Must be 'any' or 'all'.")
 
-    maps, total = list_maps_catalog(
-        db,
-        q=q,
-        tag_slugs=tag_slugs,
-        tags_mode=tags_mode,
-        offset=offset,
-        limit=size)
+    try:
+        maps, total = list_maps_catalog(
+            db,
+            q=q,
+            tags=tag_names,
+            tags_mode=tags_mode,
+            offset=offset,
+            limit=size
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
     return ListMapResponse(total=total, items=maps)
 
 
@@ -60,16 +68,17 @@ async def get_owned_maps_endpoint(
         db: Session = Depends(get_db)):
     offset = (page - 1) * size
     maps, total = get_maps_by_owner(db, owner_id, offset=offset, limit=size)
-    # maps_dict = [map_obj.__dict__ for map_obj in maps]
     return ListMapResponse(total=total, items=maps)
 
 
 @router.get("/tags", response_model=list[TagStatResponse])
-async def list_tags_endpoint(q: Optional[str] = Query(None, alias="q"),
-                             limit: int = Query(50, alias="limit", ge=1, le=200),
-                             db: Session = Depends(get_db)):
-    tags = list_tags(db, q=q, limit=limit)
-    return [TagStatResponse(slug=slug, name=name, count=int(count)) for slug, name, count in tags]
+async def list_tags_endpoint(
+    q: Optional[str] = Query(None, alias="q"),
+    limit: int = Query(50, alias="limit", ge=1, le=200),
+    db: Session = Depends(get_db),
+):
+    rows = list_tags(db, q=q, limit=limit)
+    return [TagStatResponse(name=name, count=int(count)) for name, count in rows]
 
 
 @router.get("/{map_id}", response_model=MapResponse)
@@ -89,9 +98,12 @@ async def update_map_endpoint(map_id: UUID,
     if not is_map_owned_by_user(db, user_id, map_id):
         raise HTTPException(status_code=403, detail="You do not own this map")
 
-    map_obj = update_map(db, map_id, data)
-    if not map_obj:
-        raise HTTPException(status_code=404, detail="Map not found")
+    try:
+        map_obj = update_map(db, map_id, data)
+        if not map_obj:
+            raise HTTPException(status_code=404, detail="Map not found")
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     return map_obj
 
 

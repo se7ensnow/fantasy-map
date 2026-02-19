@@ -17,8 +17,6 @@ app = FastAPI(
 
 @app.on_event("startup")
 def on_startup() -> None:
-    print(">>> map-service startup called", flush=True)
-
     with engine.begin() as conn:
         conn.execute(text("CREATE EXTENSION IF NOT EXISTS pg_trgm"))
 
@@ -28,6 +26,12 @@ def on_startup() -> None:
             CREATE INDEX IF NOT EXISTS ix_maps_title_trgm 
             ON maps
             USING GIN (title gin_trgm_ops)
+        """))
+
+        conn.execute(text("""
+            CREATE INDEX IF NOT EXISTS ix_tags_name_trgm 
+            ON tags
+            USING GIN (name gin_trgm_ops)
         """))
 
         sim = conn.execute(text("SELECT similarity('wizard tower','wziard towr')")).scalar_one()
