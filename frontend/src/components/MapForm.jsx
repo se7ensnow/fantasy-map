@@ -3,15 +3,24 @@ import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import TagsInput from "@/components/TagsInput";
 
-export default function MapForm({ initialTitle = "", initialDescription = "", onSubmit, loading }) {
+export default function MapForm({
+  initialTitle = "",
+  initialDescription = "",
+  initialTags = [],
+  tagSuggestions = [],
+  onSubmit,
+  loading
+}) {
     const [title, setTitle] = useState(initialTitle);
     const [description, setDescription] = useState(initialDescription);
+    const [tags, setTags] = useState(() => initialTags || []);
     const [error, setError] = useState("");
 
     useEffect(() => {
-        setTitle(initialTitle);
-        setDescription(initialDescription);
+      setTitle(initialTitle ?? "");
+      setDescription(initialDescription ?? "");
     }, [initialTitle, initialDescription]);
 
     const handleSubmit = (e) => {
@@ -21,7 +30,7 @@ export default function MapForm({ initialTitle = "", initialDescription = "", on
             return;
         }
         setError("");
-        onSubmit(title, description);
+        onSubmit(title, description, tags);
     };
 
     return (
@@ -47,6 +56,20 @@ export default function MapForm({ initialTitle = "", initialDescription = "", on
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
                         />
+                    </div>
+                    <div>
+                        <label className="block mb-1 font-medium text-amber-900">
+                            Tags:
+                        </label>
+                        <TagsInput
+                            value={tags}
+                            onChange={setTags}
+                            suggestions={tagSuggestions}
+                            placeholder="Add tags (Enter / comma)…"
+                        />
+                        <p className="text-xs text-amber-800/70 mt-1">
+                            Press Enter or comma to add a tag.
+                        </p>
                     </div>
                     {error && <p className="text-red-500">{error}</p>}
                     <Button type="submit" disabled={loading}>
