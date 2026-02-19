@@ -1,17 +1,25 @@
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@700&family=Merriweather&display=swap&subset=cyrillic');
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600&family=Cormorant+Garamond:wght@600;700&family=Merriweather:wght@400;700&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --bg: #f2f0e6;
+  --text: #3a2f1b;
+  --card: rgba(252,247,233,0.9);
+  --border: rgba(180, 83, 9, 0.35);
+  --accent: #5b7a5b;
+}
 
 body {
-  @apply text-[#3a2f1b] font-serif;
-  background-color: #f2f0e6;
+  @apply font-serif;
+  color: var(--text);
+  background-color: var(--bg);
   background-image: url('https://www.transparenttextures.com/patterns/paper-fibers.png');
   background-repeat: repeat;
 }
 
 h1, h2, h3, h4 {
-  @apply font-display text-textDark;
+  @apply font-display;
 }

@@ -156,7 +156,7 @@ export default function MapEditPage() {
                 <MapForm
                     initialTitle={map.title}
                     initialDescription={map.description}
-                    initialTags={(map.tags || []).map(t => t?.name).filter(Boolean)}
+                    initialTags={(map.tags || []).filter(Boolean)}
                     onSubmit={handleMapSubmit}
                     loading={loading}
                 />

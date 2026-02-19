@@ -18,19 +18,26 @@ export default function HomePage() {
     const [availableTags, setAvailableTags] = useState([]);
     const [selectedTags, setSelectedTags] = useState([]);
     const [tagsMode, setTagsMode] = useState("any");
+    const [tagQuery, setTagQuery] = useState("");
 
     const debouncedQuery = useDebouncedValue(query, 300);
 
     const handleClear = () => {
       setQuery("");
+      setTagQuery("");
       setSelectedTags([]);
       setPage(1);
     };
 
-    const toggleTag = (slug) => {
+    const toggleTag = (name) => {
       setSelectedTags((prev) =>
-        prev.includes(slug) ? prev.filter((t) => t !== slug) : [...prev, slug]
+        prev.includes(name) ? prev.filter((t) => t !== name) : [...prev, name]
       );
+    };
+
+    const handleTagClick = (tag) => {
+      toggleTag(tag);
+      setPage(1);
     };
     
     useEffect(() => {
@@ -77,6 +84,7 @@ export default function HomePage() {
     const handleCreateMap = () => {
         navigate('/maps/new');
     };
+    
 
     if (error) {
         return <p className="text-red-500">{error}</p>;
@@ -102,17 +110,24 @@ export default function HomePage() {
                 </CardHeader>
                 <CardContent>
                     <CatalogFilters
-                        query={query}
-                        onQueryChange={setQuery}
-                        availableTags={availableTags}
-                        selectedTags={selectedTags}
-                        onToggleTag={toggleTag}
-                        tagsMode={tagsMode}
-                        onTagsModeChange={setTagsMode}
-                        onClear={handleClear}
+                      query={query}
+                      onQueryChange={setQuery}
+                      availableTags={availableTags}
+                      selectedTags={selectedTags}
+                      onToggleTag={toggleTag}
+                      tagsMode={tagsMode}
+                      onTagsModeChange={setTagsMode}
+                      tagQuery={tagQuery}
+                      onTagQueryChange={setTagQuery}
+                      onClear={handleClear}
                     />
                     <div className="mt-4">
-                        <MapList maps={mapsData.items} onOpen={handleOpenMap} />
+                        <MapList 
+                            maps={mapsData.items} 
+                            onOpen={handleOpenMap} 
+                            onTagClick={handleTagClick} 
+                            activeTags={selectedTags}
+                        />
                     </div>
                 </CardContent>
             </Card>

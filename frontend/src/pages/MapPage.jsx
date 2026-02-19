@@ -38,7 +38,7 @@ export default function MapPage() {
         return <p className="p-4">Loading map...</p>;
     }
 
-    const tagNames = (map.tags || []).map(t => t?.name).filter(Boolean);
+    const tagNames = (map.tags || []).filter(Boolean);
 
     return (
         <div className="space-y-8 p-8">
@@ -48,6 +48,7 @@ export default function MapPage() {
                 </CardHeader>
                 <CardContent className="prose text-amber-800">
                     {map.description || "No description provided."}
+                    
                     {tagNames.length > 0 && (
                       <div className="mt-4 flex flex-wrap gap-2">
                         {tagNames.map((name) => (
