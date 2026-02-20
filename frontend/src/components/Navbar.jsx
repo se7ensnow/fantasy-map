@@ -15,7 +15,7 @@ export default function Navbar() {
         <nav className="fixed top-0 left-0 w-full z-50 bg-[rgba(252,247,233,0.9)] border-b border-amber-700 shadow-md">
             <div className="flex justify-between items-center px-6 py-3">
                 <div className="flex items-center space-x-6">
-                    <Link to="/" className="flex items-center space-x-3 hover:brightness-220 hover:drop-shadow-[0_0_8px_rgba(255,215,100,0.8)] transition duration-300">
+                    <Link to="/" className="flex items-center space-x-3 hover:opacity-80 transition duration-200">
                         <img src={logo} alt="Fantasy Maps Logo" className="h-14 w-auto" />
                     </Link>
 

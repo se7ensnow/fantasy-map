@@ -6,7 +6,7 @@ from sqlalchemy.exc import IntegrityError
 
 import re
 
-from map_service_app.config import MAX_TAGS_PER_MAP, MAX_TAG_LEN
+from map_service_app.config import MAX_TAGS_PER_MAP, MAX_TAG_LEN, SHARE_ID_TRIES
 from map_service_app.models import Map, Location, Tag
 from map_service_app.schemas import MapCreate, LocationCreate, MapUpdate, LocationUpdate, TilesInfo
 from map_service_app.utils import generate_share_id
@@ -23,13 +23,17 @@ def create_map(db: Session, owner_id: UUID, map_in: MapCreate) -> Map:
         owner_username=map_in.owner_username,
         title=map_in.title,
         description=map_in.description,
-        visibility='private',
+        visibility=map_in.visibility,
         source_path='',
         tiles_path='',
         width=0,
         height=0,
         max_zoom=0,
     )
+
+    if map_in.visibility == 'link':
+        create_share(db, db_map)
+
     db.add(db_map)
     db.flush()
 
@@ -64,37 +68,19 @@ def update_map_tiles_info(db: Session, map_id: UUID, tiles_info: TilesInfo) -> O
     return db_map
 
 
-# --- Share helpers and operations ---
-def create_share(db: Session, map_id: UUID) -> Optional[str]:
-    db_map = db.query(Map).filter(Map.id == map_id).first()
-    if not db_map:
-        return None
-    if db_map.share_id:
-        return str(db_map.share_id)
+def create_share(db: Session, map_obj: Map) -> str:
+    if map_obj.share_id:
+        return str(map_obj.share_id)
 
-    for _ in range(10):
+    for _ in range(SHARE_ID_TRIES):
         candidate = generate_share_id()
         exists = db.query(Map).filter(Map.share_id == candidate).first()
         if not exists:
-            db_map.share_id = candidate
-            db.add(db_map)
-            db.commit()
-            db.refresh(db_map)
+            map_obj.share_id = candidate
             return candidate
-    raise RuntimeError("Не удалось сгенерировать уникальный share_id")
+    raise RuntimeError("Failed to generate unique share ID after multiple attempts")
 
 
-def revoke_share(db: Session, map_id: UUID) -> bool:
-    db_map = db.query(Map).filter(Map.id == map_id).first()
-    if not db_map:
-        return False
-    db_map.share_id = None
-    db.add(db_map)
-    db.commit()
-    return True
-
-
-# --- Map update / CRUD operations ---
 def update_map(db: Session, map_id: UUID, map_in: MapUpdate) -> Optional[Map]:
     db_map = get_map_by_id(db, map_id)
     if db_map is None:
@@ -104,17 +90,12 @@ def update_map(db: Session, map_id: UUID, map_in: MapUpdate) -> Optional[Map]:
     if map_in.description is not None:
         db_map.description = map_in.description
     if map_in.visibility is not None:
-        new_vis = map_in.visibility
-        if new_vis == 'link':
-            if not db_map.share_id:
-                create_share(db, map_id)
-                db_map = get_map_by_id(db, map_id)
-            db_map.visibility = 'link'
+        if map_in.visibility == 'link':
+            create_share(db, db_map)
         else:
             if db_map.share_id:
                 db_map.share_id = None
-            db_map.visibility = new_vis
-
+        db_map.visibility = map_in.visibility
 
     removed_tags: List[Tag] = []
     if map_in.tags is not None:
@@ -201,7 +182,6 @@ def list_maps_catalog(
     return items, total
 
 
-
 def create_location(db: Session, location_in: LocationCreate) -> Location:
     location = Location(
         map_id=location_in.map_id,
@@ -267,8 +247,8 @@ def is_location_owned_by_user(db: Session, user_id: UUID, location_id: UUID) -> 
     return db.query(Location).filter(Map.id == location.map_id, Map.owner_id == user_id).first() is not None
 
 
-def get_map_by_share_id(db: Session, share_id: str) -> Optional[object]:
-    db_map = db.query(Map).filter(Map.share_id == share_id).first()
+def get_map_by_share_id(db: Session, share_id: str) -> Optional[Map]:
+    db_map = db.query(Map).options(selectinload(Map.tags)).filter(Map.share_id == share_id).first()
     if not db_map:
         return None
     if db_map.visibility != "link":

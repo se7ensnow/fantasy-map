@@ -8,8 +8,9 @@ from redis import Redis
 from rq import Queue
 
 from map_service_app.crud import (create_map, update_map, delete_map, get_map_by_id, get_maps_by_owner,
-                                  is_map_owned_by_user, list_maps_catalog, list_tags, get_map_by_share_id)
-from map_service_app.schemas import MapCreate, MapUpdate, MapResponse, ListMapResponse, TagStatResponse
+                                  is_map_owned_by_user, list_maps_catalog, list_tags, get_map_by_share_id,
+                                  update_map_tiles_info)
+from map_service_app.schemas import MapCreate, MapUpdate, MapResponse, ListMapResponse, TagStatResponse, TilesInfo
 from map_service_app.database import get_db
 from map_service_app.config import REDIS_URL, SOURCE_IMAGES_PATH, TILES_BASE_PATH, TILE_SERVICE_TASK
 
@@ -23,7 +24,7 @@ async def create_map_endpoint(map_data: MapCreate,
     user_id = UUID(user_id)
     try:
         map_obj = create_map(db, user_id, map_data)
-    except ValueError as e:
+    except (ValueError, RuntimeError) as e:
         raise HTTPException(status_code=400, detail=str(e))
     return map_obj
 
@@ -79,6 +80,14 @@ async def list_tags_endpoint(
 ):
     rows = list_tags(db, q=q, limit=limit)
     return [TagStatResponse(name=name, count=int(count)) for name, count in rows]
+
+
+@router.get("/share/{share_id}", response_model=MapResponse)
+def get_map_by_share_id_endpoint(share_id: str, db: Session = Depends(get_db)):
+    map_obj = get_map_by_share_id(db, share_id)
+    if not map_obj:
+        raise HTTPException(status_code=404, detail="Shared map not found")
+    return map_obj
 
 
 @router.get("/{map_id}", response_model=MapResponse)
@@ -147,15 +156,6 @@ async def delete_map_endpoint(map_id: UUID,
 
     return
 
-@router.get("/share/{share_id}", response_model=MapResponse)
-def get_map_by_share_id_endpoint(share_id: str, db: Session = Depends(get_db)):
-    map_obj = get_map_by_share_id(db, share_id)
-    if not map_obj:
-        raise HTTPException(status_code=404, detail="Shared map not found")
-
-    resp = map_obj.__dict__
-    resp.pop("share_id", None)
-    return resp
 
 @router.post("/{map_id}/upload-image")
 async def upload_image_endpoint(map_id: UUID,

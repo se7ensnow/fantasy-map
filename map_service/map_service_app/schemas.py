@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict, field_validator
+from pydantic import BaseModel, ConfigDict, field_validator, Field
 from uuid import UUID
 from datetime import datetime
 from typing import Optional, List, Dict, Any
@@ -11,6 +11,7 @@ class MapCreate(BaseModel):
     description: Optional[str] = None
     owner_username: str
     tags: List[str] = []
+    visibility: str = "private"
 
 
 class MapUpdate(BaseModel):
@@ -31,11 +32,13 @@ class MapResponse(BaseModel):
     width: int
     height: int
     max_zoom: int
+    visibility: str
+    share_id: Optional[str] = None
+    share_url: Optional[str] = Field(
+        default_factory=lambda data: f"/maps/share/{data['share_id']}" if data["share_id"] else None
+    )
     created_at: datetime
     updated_at: datetime
-    visibility: Optional[str] = None
-    share_id: Optional[str] = None
-    share_url: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
 

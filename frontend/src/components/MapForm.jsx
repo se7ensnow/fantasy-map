@@ -9,7 +9,6 @@ export default function MapForm({
   initialTitle = "",
   initialDescription = "",
   initialTags = [],
-  tagSuggestions = [],
   onSubmit,
   loading
 }) {
@@ -64,7 +63,6 @@ export default function MapForm({
                         <TagsInput
                             value={tags}
                             onChange={setTags}
-                            suggestions={tagSuggestions}
                             placeholder="Add tags (Enter / comma)…"
                         />
                         <p className="text-xs text-amber-800/70 mt-1">
