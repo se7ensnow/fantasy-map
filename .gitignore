@@ -48,7 +48,7 @@ ehthumbs.db
 Desktop.ini
 
 # PyCharm
-/.idea
+.idea/
 
 # Node
 node_modules/
@@ -68,4 +68,3 @@ frontend/dist/
 
 # Other
 *.swp
-
