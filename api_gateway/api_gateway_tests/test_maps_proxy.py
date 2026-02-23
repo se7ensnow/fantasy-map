@@ -1,535 +1,528 @@
 import pytest
 
-from api_gateway_app.config import MAP_SERVICE_URL, USER_SERVICE_URL
+def auth_header(token="test-token"):
+    return {"Authorization": f"Bearer {token}"}
 
 
 @pytest.mark.asyncio
-async def test_create_map_ok(httpx_mock, mock_verify_token, async_client, test_user_id, test_map_id):
+async def test_create_map_ok(httpx_mock, async_client, user_base_url, map_base_url, test_user_id, test_map_id):
     httpx_mock.add_response(
         method="POST",
-        url=f"{USER_SERVICE_URL}/auth/verify-token",
-        json={"user_id": test_user_id}
+        url=f"{user_base_url}/auth/verify-token",
+        status_code=200,
+        json={"user_id": test_user_id},
     )
 
     httpx_mock.add_response(
         method="GET",
-        url=f"{USER_SERVICE_URL}/users/me",
+        url=f"{user_base_url}/users/me",
+        status_code=200,
         json={
             "id": test_user_id,
             "username": "testuser",
             "email": "test@example.com",
-            "created_at": "2000-01-01"
-        }
+            "created_at": "2000-01-01",
+        },
     )
 
     httpx_mock.add_response(
-        method='POST',
-        url=f"{MAP_SERVICE_URL}/maps/create",
+        method="POST",
+        url=f"{map_base_url}/maps/create",
+        status_code=200,
         json={
             "id": test_map_id,
+            "owner_id": test_user_id,
+            "owner_username": "testuser",
             "title": "Test Map",
             "description": "Test Description",
             "tags": ["magic"],
-            "tiles_path": "",
-            "owner_id": test_user_id,
-            "owner_username": "testuser",
+            "visibility": "private",
             "source_path": "",
+            "tiles_path": "",
             "width": 0,
             "height": 0,
             "max_zoom": 0,
             "created_at": "2000-01-01",
-            "updated_at": "2000-01-01"
-        }
-    )
-
-    response = await async_client.post(
-        "/maps/create",
-        json={
-            "title": "Test Map",
-            "description": "Test Description",
-            "tags": ["Magic"],
+            "updated_at": "2000-01-01",
+            "share_id": None,
         },
-        headers={"Authorization": f"Bearer test-token"}
     )
 
-    assert response.status_code == 200
-    data = response.json()
+    resp = await async_client.post(
+        "/maps/create",
+        json={"title": "Test Map", "description": "Test Description", "tags": ["Magic"], "visibility": "private"},
+        headers=auth_header(),
+    )
+
+    assert resp.status_code == 200
+    data = resp.json()
     assert data["id"] == test_map_id
     assert data["title"] == "Test Map"
-    assert data["tags"][0] == "magic"
+    assert data["tags"] == ["magic"]
 
 
 @pytest.mark.asyncio
-async def test_get_maps_ok(httpx_mock, mock_verify_token, async_client, test_user_id, test_map_id):
+async def test_owned_maps_ok(httpx_mock, async_client, user_base_url, map_base_url, test_user_id, test_map_id):
     httpx_mock.add_response(
         method="POST",
-        url=f"{USER_SERVICE_URL}/auth/verify-token",
-        json={"user_id": test_user_id}
+        url=f"{user_base_url}/auth/verify-token",
+        status_code=200,
+        json={"user_id": test_user_id},
     )
 
-    httpx_mock.add_response(
-        method='GET',
-        url=f"{MAP_SERVICE_URL}/maps/owned?page=1&size=10",
-        json={
-            "items": [{
-                "id": test_map_id,
-                "title": "Test Map",
-                "description": "Test Description",
-                "tags": [],
-                "tiles_path": "",
-                "owner_id": test_user_id,
-                "owner_username": "testuser",
-                "source_path": "",
-                "width": 0,
-                "height": 0,
-                "max_zoom": 0,
-                "created_at": "2000-01-01",
-                "updated_at": "2000-01-01"
-            }],
-            "total": 1
-        }
-    )
-
-    response = await async_client.get(
-        "/maps/owned?page=1&size=10",
-        headers={"Authorization": f"Bearer test-token"}
-    )
-
-    assert response.status_code == 200
-    data = response.json()
-    assert len(data["items"]) == 1
-    assert data["items"][0]["id"] == test_map_id
-    assert data["total"] == 1
-
-
-@pytest.mark.asyncio
-async def test_get_map_ok(httpx_mock, mock_verify_token, async_client, test_user_id, test_map_id):
-    httpx_mock.add_response(
-        method="POST",
-        url=f"{USER_SERVICE_URL}/auth/verify-token",
-        json={"user_id": test_user_id}
-    )
-
-    httpx_mock.add_response(
-        method='GET',
-        url=f"{MAP_SERVICE_URL}/maps/{test_map_id}",
-        json={
-            "id": test_map_id,
-            "title": "Test Map",
-            "description": "Test Description",
-            "tags": [],
-            "tiles_path": "",
-            "owner_id": test_user_id,
-            "owner_username": "testuser",
-            "source_path": "",
-            "width": 0,
-            "height": 0,
-            "max_zoom": 0,
-            "created_at": "2000-01-01",
-            "updated_at": "2000-01-01"
-        }
-    )
-
-    response = await async_client.get(
-        f"/maps/{test_map_id}",
-        headers={"Authorization": f"Bearer test-token"}
-    )
-
-    assert response.status_code == 200
-    data = response.json()
-    assert data["id"] == test_map_id
-
-
-@pytest.mark.asyncio
-async def test_get_map_not_found(httpx_mock, mock_verify_token, async_client, test_user_id, test_map_id):
-    httpx_mock.add_response(
-        method="POST",
-        url=f"{USER_SERVICE_URL}/auth/verify-token",
-        json={"user_id": test_user_id}
-    )
-
-    httpx_mock.add_response(
-        method='GET',
-        url=f"{MAP_SERVICE_URL}/maps/{test_map_id}",
-        status_code=404,
-        json={"detail": "Map not found"}
-    )
-
-    response = await async_client.get(
-        f"/maps/{test_map_id}",
-        headers={"Authorization": f"Bearer test-token"}
-    )
-
-    assert response.status_code == 404
-    assert "detail" in response.json()
-
-
-@pytest.mark.asyncio
-async def test_update_map_ok(httpx_mock, mock_verify_token, async_client, test_user_id, test_map_id):
-    httpx_mock.add_response(
-        method="POST",
-        url=f"{USER_SERVICE_URL}/auth/verify-token",
-        json={"user_id": test_user_id}
-    )
-
-    httpx_mock.add_response(
-        method='PUT',
-        url=f"{MAP_SERVICE_URL}/maps/{test_map_id}",
-        json={
-            "id": test_map_id,
-            "title": "Updated Map",
-            "description": "Updated Description",
-            "tags": ["updated tag"],
-            "tiles_path": "",
-            "owner_id": test_user_id,
-            "owner_username": "testuser",
-            "source_path": "",
-            "width": 0,
-            "height": 0,
-            "max_zoom": 0,
-            "created_at": "2000-01-01",
-            "updated_at": "2000-01-01"
-        }
-    )
-
-    response = await async_client.put(
-        f"/maps/{test_map_id}",
-        json={
-            "title": "Updated Map",
-            "description": "Updated Description",
-            "tags": ["Updated Tag"],
-        },
-        headers={"Authorization": f"Bearer test-token"}
-    )
-
-    assert response.status_code == 200
-    data = response.json()
-    assert data["id"] == test_map_id
-    assert data["title"] == "Updated Map"
-    assert data["tags"][0] == "updated tag"
-
-
-@pytest.mark.asyncio
-async def test_update_map_forbidden(httpx_mock, mock_verify_token, async_client, test_user_id, test_map_id):
-    httpx_mock.add_response(
-        method="POST",
-        url=f"{USER_SERVICE_URL}/auth/verify-token",
-        json={"user_id": test_user_id}
-    )
-
-    httpx_mock.add_response(
-        method='PUT',
-        url=f"{MAP_SERVICE_URL}/maps/{test_map_id}",
-        status_code=403,
-        json={"detail": "You do not own this map"}
-    )
-
-    response = await async_client.put(
-        f"/maps/{test_map_id}",
-        json={
-            "title": "Updated Map",
-            "description": "Updated Description"
-        },
-        headers={"Authorization": f"Bearer test-token"}
-    )
-
-    assert response.status_code == 403
-    assert "detail" in response.json()
-
-
-@pytest.mark.asyncio
-async def test_upload_image_ok(httpx_mock, mock_verify_token, async_client, test_user_id, test_map_id):
-    httpx_mock.add_response(
-        method="POST",
-        url=f"{USER_SERVICE_URL}/auth/verify-token",
-        json={"user_id": test_user_id}
-    )
-
-    httpx_mock.add_response(
-        method='POST',
-        url=f"{MAP_SERVICE_URL}/maps/{test_map_id}/upload-image",
-        json={"status": "image uploaded", "task": "tile generation started"}
-    )
-
-    response = await async_client.post(
-        f"/maps/{test_map_id}/upload-image",
-        files={"file": ("file.png", b"dummy content", "application/png")},
-        headers={"Authorization": f"Bearer test-token"}
-    )
-
-    assert response.status_code == 200
-    assert response.json()["status"] == "image uploaded"
-    assert response.json()["task"] == "tile generation started"
-
-
-@pytest.mark.asyncio
-async def test_upload_image_forbidden(httpx_mock, mock_verify_token, async_client, test_user_id, test_map_id):
-    httpx_mock.add_response(
-        method="POST",
-        url=f"{USER_SERVICE_URL}/auth/verify-token",
-        json={"user_id": test_user_id}
-    )
-
-    httpx_mock.add_response(
-        method='POST',
-        url=f"{MAP_SERVICE_URL}/maps/{test_map_id}/upload-image",
-        status_code=403,
-        json={"detail": "You do not own this map"}
-    )
-
-    response = await async_client.post(
-        f"/maps/{test_map_id}/upload-image",
-        files={"file": ("file.png", b"dummy content", "application/png")},
-        headers={"Authorization": f"Bearer test-token"}
-    )
-
-    assert response.status_code == 403
-    assert "detail" in response.json()
-
-
-@pytest.mark.asyncio
-async def test_delete_map_ok(httpx_mock, mock_verify_token, async_client, test_user_id, test_map_id):
-    httpx_mock.add_response(
-        method="POST",
-        url=f"{USER_SERVICE_URL}/auth/verify-token",
-        json={"user_id": test_user_id}
-    )
-
-    httpx_mock.add_response(
-        method='DELETE',
-        url=f"{MAP_SERVICE_URL}/maps/{test_map_id}",
-        status_code=204
-    )
-
-    response = await async_client.delete(
-        f"/maps/{test_map_id}",
-        headers={"Authorization": f"Bearer test-token"}
-    )
-
-    assert response.status_code == 204
-
-
-@pytest.mark.asyncio
-async def test_delete_map_forbidden(httpx_mock, mock_verify_token, async_client, test_user_id, test_map_id):
-    httpx_mock.add_response(
-        method="POST",
-        url=f"{USER_SERVICE_URL}/auth/verify-token",
-        json={"user_id": test_user_id}
-    )
-
-    httpx_mock.add_response(
-        method='DELETE',
-        url=f"{MAP_SERVICE_URL}/maps/{test_map_id}",
-        status_code=403,
-        json={"detail": "You do not own this map"}
-    )
-
-    response = await async_client.delete(
-        f"/maps/{test_map_id}",
-        headers={"Authorization": f"Bearer test-token"}
-    )
-
-    assert response.status_code == 403
-    assert "detail" in response.json()
-
-
-@pytest.mark.asyncio
-async def test_get_all_maps_with_filters_ok(httpx_mock, async_client, test_user_id, test_map_id):
     httpx_mock.add_response(
         method="GET",
-        url=f"{MAP_SERVICE_URL}/maps/all?page=1&size=10&q=tower&tags=magic,rpg&tags_mode=all",
+        url=f"{map_base_url}/maps/owned?page=1&size=10",
+        status_code=200,
         json={
-            "items": [{
-                "id": test_map_id,
-                "title": "Wizard Tower",
-                "description": "Test",
-                "tags": ["magic", "rpg"],
-                "tiles_path": "",
-                "owner_id": test_user_id,
-                "owner_username": "testuser",
-                "source_path": "",
-                "width": 0,
-                "height": 0,
-                "max_zoom": 0,
-                "created_at": "2000-01-01",
-                "updated_at": "2000-01-01"
-            }],
-            "total": 1
-        }
+            "items": [
+                {
+                    "id": test_map_id,
+                    "owner_username": "testuser",
+                    "title": "My Map",
+                    "tags": ["magic"],
+                    "visibility": "private",
+                    "updated_at": "2000-01-01",
+                }
+            ],
+            "total": 1,
+        },
     )
 
-    response = await async_client.get(
-        "/maps/all?page=1&size=10&q=tower&tags=magic,rpg&tags_mode=all"
+    resp = await async_client.get("/maps/owned?page=1&size=10", headers=auth_header())
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["total"] == 1
+    assert data["items"][0]["id"] == test_map_id
+
+
+@pytest.mark.asyncio
+async def test_all_maps_ok(httpx_mock, async_client, map_base_url, test_map_id):
+    httpx_mock.add_response(
+        method="GET",
+        url=f"{map_base_url}/maps/all?page=1&size=10&q=tower&tags=magic,rpg&tags_mode=all",
+        status_code=200,
+        json={
+            "items": [
+                {
+                    "id": test_map_id,
+                    "owner_username": "u1",
+                    "title": "Wizard Tower",
+                    "tags": ["magic", "rpg"],
+                    "visibility": "public",
+                    "updated_at": "2000-01-01",
+                }
+            ],
+            "total": 1,
+        },
     )
 
-    assert response.status_code == 200
-    data = response.json()
+    resp = await async_client.get("/maps/all?page=1&size=10&q=tower&tags=magic,rpg&tags_mode=all")
+    assert resp.status_code == 200
+    data = resp.json()
     assert data["total"] == 1
     assert data["items"][0]["title"] == "Wizard Tower"
-    assert data["items"][0]["tags"][0] == "magic"
 
 
 @pytest.mark.asyncio
-async def test_list_tags_ok(httpx_mock, async_client):
+async def test_get_map_ok(httpx_mock, async_client, map_base_url, test_map_id, test_user_id):
     httpx_mock.add_response(
         method="GET",
-        url=f"{MAP_SERVICE_URL}/maps/tags?limit=50",
-        json=[
-            {"name": "rpg", "count": 2},
-            {"name": "magic", "count": 1},
-        ]
-    )
-
-    response = await async_client.get("/maps/tags?limit=50")
-    assert response.status_code == 200
-    data = response.json()
-    assert data[0]["name"] == "rpg"
-    assert data[0]["count"] == 2
-
-
-
-@pytest.mark.asyncio
-async def test_update_map_visibility_link_creates_share(httpx_mock, mock_verify_token, async_client, test_user_id, test_map_id):
-    httpx_mock.add_response(
-        method="POST",
-        url=f"{USER_SERVICE_URL}/auth/verify-token",
-        json={"user_id": test_user_id}
-    )
-
-    httpx_mock.add_response(
-        method='PUT',
-        url=f"{MAP_SERVICE_URL}/maps/{test_map_id}",
-        json={
-            "id": test_map_id,
-            "title": "Test Map",
-            "description": "Test Description",
-            "tiles_path": "",
-            "owner_id": test_user_id,
-            "owner_username": "testuser",
-            "source_path": "",
-            "width": 0,
-            "height": 0,
-            "max_zoom": 0,
-            "created_at": "2000-01-01",
-            "updated_at": "2000-01-01",
-            "visibility": "link",
-            "share_id": "share-abc",
-            "share_url": "/maps/share/share-abc",
-        }
-    )
-
-    response = await async_client.put(
-        f"/maps/{test_map_id}",
-        json={"visibility": "link"},
-        headers={"Authorization": f"Bearer test-token"}
-    )
-
-    assert response.status_code == 200
-    data = response.json()
-    assert data["visibility"] == "link"
-    assert data.get("share_id") == "share-abc"
-    assert data.get("share_url") == "/maps/share/share-abc"
-
-
-@pytest.mark.asyncio
-async def test_get_map_owner_sees_share(httpx_mock, mock_verify_token, async_client, test_user_id, test_map_id):
-    httpx_mock.add_response(
-        method="POST",
-        url=f"{USER_SERVICE_URL}/auth/verify-token",
-        json={"user_id": test_user_id}
-    )
-
-    httpx_mock.add_response(
-        method='GET',
-        url=f"{MAP_SERVICE_URL}/maps/{test_map_id}",
-        json={
-            "id": test_map_id,
-            "title": "Test Map",
-            "description": "Test Description",
-            "tiles_path": "",
-            "owner_id": test_user_id,
-            "owner_username": "testuser",
-            "source_path": "",
-            "width": 0,
-            "height": 0,
-            "max_zoom": 0,
-            "created_at": "2000-01-01",
-            "updated_at": "2000-01-01",
-            "visibility": "link",
-            "share_id": "share-abc",
-            "share_url": "/maps/share/share-abc",
-        }
-    )
-
-    response = await async_client.get(
-        f"/maps/{test_map_id}",
-        headers={"Authorization": f"Bearer test-token"}
-    )
-
-    assert response.status_code == 200
-    data = response.json()
-    assert data.get("share_id") == "share-abc"
-    assert data.get("share_url") == "/maps/share/share-abc"
-
-
-@pytest.mark.asyncio
-async def test_get_map_anon_hides_share(httpx_mock, async_client, test_map_id):
-
-    httpx_mock.add_response(
-        method='GET',
-        url=f"{MAP_SERVICE_URL}/maps/{test_map_id}",
-        json={
-            "id": test_map_id,
-            "title": "Test Map",
-            "description": "Test Description",
-            "tiles_path": "",
-            "owner_id": "11111111-1111-1111-1111-111111111111",
-            "owner_username": "testuser",
-            "source_path": "",
-            "width": 0,
-            "height": 0,
-            "max_zoom": 0,
-            "created_at": "2000-01-01",
-            "updated_at": "2000-01-01",
-        }
-    )
-
-    response = await async_client.get(f"/maps/{test_map_id}")
-    assert response.status_code == 200
-    data = response.json()
-    assert data.get("share_id") is None
-    assert data.get("share_url") is None
-
-
-@pytest.mark.asyncio
-async def test_get_map_by_share_id_proxied(httpx_mock, async_client):
-    share_id = "share-xyz"
-    now = "2000-01-01"
-    sample_map = {
-        "id": "22222222-2222-2222-2222-222222222222",
-        "owner_id": "11111111-1111-1111-1111-111111111111",
-        "owner_username": "tester",
-        "title": "Title",
-        "description": "Desc",
-        "source_path": "src",
-        "tiles_path": "tiles",
-        "width": 1000,
-        "height": 800,
-        "max_zoom": 5,
-        "created_at": now,
-        "updated_at": now,
-    }
-
-    httpx_mock.add_response(
-        method='GET',
-        url=f"{MAP_SERVICE_URL}/maps/share/{share_id}",
+        url=f"{map_base_url}/maps/{test_map_id}",
         status_code=200,
-        json=sample_map
+        json={
+            "id": test_map_id,
+            "owner_id": test_user_id,
+            "owner_username": "u1",
+            "title": "Public Map",
+            "description": None,
+            "tags": [],
+            "visibility": "public",
+            "source_path": "",
+            "tiles_path": "",
+            "width": 0,
+            "height": 0,
+            "max_zoom": 0,
+            "created_at": "2000-01-01",
+            "updated_at": "2000-01-01",
+            "share_id": None,
+        },
     )
 
-    response = await async_client.get(f"/maps/share/{share_id}")
-    assert response.status_code == 200
-    data = response.json()
-    assert data["id"] == sample_map["id"]
-    assert data.get("share_id") is None
+    resp = await async_client.get(f"/maps/{test_map_id}")
+    assert resp.status_code == 200
+    assert resp.json()["id"] == test_map_id
 
+
+@pytest.mark.asyncio
+async def test_update_map_ok(httpx_mock, async_client, user_base_url, map_base_url, test_user_id, test_map_id):
+    httpx_mock.add_response(
+        method="POST",
+        url=f"{user_base_url}/auth/verify-token",
+        status_code=200,
+        json={"user_id": test_user_id},
+    )
+
+    httpx_mock.add_response(
+        method="PUT",
+        url=f"{map_base_url}/maps/{test_map_id}",
+        status_code=200,
+        json={
+            "id": test_map_id,
+            "owner_id": test_user_id,
+            "owner_username": "u1",
+            "title": "Updated",
+            "description": "Updated Description",
+            "tags": ["updated"],
+            "visibility": "private",
+            "source_path": "",
+            "tiles_path": "",
+            "width": 0,
+            "height": 0,
+            "max_zoom": 0,
+            "created_at": "2000-01-01",
+            "updated_at": "2000-01-01",
+            "share_id": None,
+        },
+    )
+
+    resp = await async_client.put(
+        f"/maps/{test_map_id}",
+        json={"title": "Updated", "description": "Updated Description", "tags": ["Updated"], "visibility": "private"},
+        headers=auth_header(),
+    )
+    assert resp.status_code == 200
+    assert resp.json()["title"] == "Updated"
+
+
+@pytest.mark.asyncio
+async def test_delete_map_ok(httpx_mock, async_client, user_base_url, map_base_url, test_user_id, test_map_id):
+    httpx_mock.add_response(
+        method="POST",
+        url=f"{user_base_url}/auth/verify-token",
+        status_code=200,
+        json={"user_id": test_user_id},
+    )
+
+    httpx_mock.add_response(
+        method="DELETE",
+        url=f"{map_base_url}/maps/{test_map_id}",
+        status_code=204,
+    )
+
+    resp = await async_client.delete(f"/maps/{test_map_id}", headers=auth_header())
+    assert resp.status_code == 204
+
+
+@pytest.mark.asyncio
+async def test_upload_image_ok(httpx_mock, async_client, user_base_url, map_base_url, test_user_id, test_map_id):
+    httpx_mock.add_response(
+        method="POST",
+        url=f"{user_base_url}/auth/verify-token",
+        status_code=200,
+        json={"user_id": test_user_id},
+    )
+
+    httpx_mock.add_response(
+        method="POST",
+        url=f"{map_base_url}/maps/{test_map_id}/upload-image",
+        status_code=200,
+        json={"status": "image uploaded", "task": "tile generation started"},
+    )
+
+    resp = await async_client.post(
+        f"/maps/{test_map_id}/upload-image",
+        files={"file": ("file.png", b"content", "image/png")},
+        headers=auth_header(),
+    )
+    assert resp.status_code == 200
+    assert resp.json()["status"] == "image uploaded"
+
+
+@pytest.mark.asyncio
+async def test_list_tags_ok(httpx_mock, async_client, map_base_url):
+    httpx_mock.add_response(
+        method="GET",
+        url=f"{map_base_url}/maps/tags?limit=50",
+        status_code=200,
+        json=[{"name": "rpg", "count": 2}],
+    )
+
+    resp = await async_client.get("/maps/tags?limit=50")
+    assert resp.status_code == 200
+    assert resp.json()[0]["name"] == "rpg"
+
+
+@pytest.mark.asyncio
+async def test_get_map_by_share_id_ok(httpx_mock, async_client, map_base_url):
+    share_id = "share-xyz"
+    httpx_mock.add_response(
+        method="GET",
+        url=f"{map_base_url}/maps/share/{share_id}",
+        status_code=200,
+        json={
+            "id": "22222222-2222-2222-2222-222222222222",
+            "owner_id": "11111111-1111-1111-1111-111111111111",
+            "owner_username": "tester",
+            "title": "Title",
+            "description": "Desc",
+            "tags": [],
+            "visibility": "private",
+            "source_path": "src",
+            "tiles_path": "tiles",
+            "width": 1000,
+            "height": 800,
+            "max_zoom": 5,
+            "created_at": "2000-01-01",
+            "updated_at": "2000-01-01",
+            "share_id": "share-xyz",
+        },
+    )
+
+    resp = await async_client.get(f"/maps/share/{share_id}")
+    assert resp.status_code == 200
+    assert resp.json()["title"] == "Title"
+
+
+@pytest.mark.asyncio
+async def test_owned_maps_no_token_401(async_client):
+    resp = await async_client.get("/maps/owned?page=1&size=10")
+    assert resp.status_code == 401
+    body = resp.json()
+    assert "detail" in body
+
+
+@pytest.mark.asyncio
+async def test_owned_maps_invalid_token_401(httpx_mock, async_client, user_base_url):
+    httpx_mock.add_response(
+        method="POST",
+        url=f"{user_base_url}/auth/verify-token",
+        status_code=401,
+        json={"detail": "Invalid or expired token"},
+    )
+
+    resp = await async_client.get("/maps/owned?page=1&size=10", headers=auth_header("bad-token"))
+    assert resp.status_code == 401
+    assert "detail" in resp.json()
+
+
+@pytest.mark.asyncio
+async def test_owned_maps_user_service_down_503(httpx_mock, async_client, user_base_url):
+    httpx_mock.add_response(
+        method="POST",
+        url=f"{user_base_url}/auth/verify-token",
+        status_code=503,
+        json={"detail": "User service unavailable"},
+    )
+
+    resp = await async_client.get("/maps/owned?page=1&size=10", headers=auth_header())
+    assert resp.status_code == 503
+
+
+@pytest.mark.asyncio
+async def test_get_map_optional_auth_invalid_token_still_works(
+    httpx_mock, async_client, user_base_url, map_base_url, test_map_id, test_user_id
+):
+    httpx_mock.add_response(
+        method="POST",
+        url=f"{user_base_url}/auth/verify-token",
+        status_code=401,
+        json={"detail": "Invalid token"},
+    )
+
+    httpx_mock.add_response(
+        method="GET",
+        url=f"{map_base_url}/maps/{test_map_id}",
+        status_code=200,
+        json={
+            "id": test_map_id,
+            "owner_id": test_user_id,
+            "owner_username": "u1",
+            "title": "Public Map",
+            "description": None,
+            "tags": [],
+            "visibility": "public",
+            "source_path": "",
+            "tiles_path": "",
+            "width": 0,
+            "height": 0,
+            "max_zoom": 0,
+            "created_at": "2000-01-01",
+            "updated_at": "2000-01-01",
+            "share_id": None,
+        },
+    )
+
+    resp = await async_client.get(f"/maps/{test_map_id}", headers=auth_header("bad-token"))
+    assert resp.status_code == 200
+    assert resp.json()["id"] == test_map_id
+
+
+@pytest.mark.asyncio
+async def test_get_map_optional_auth_user_service_503_still_works(
+    httpx_mock, async_client, user_base_url, map_base_url, test_map_id, test_user_id
+):
+    httpx_mock.add_response(
+        method="POST",
+        url=f"{user_base_url}/auth/verify-token",
+        status_code=503,
+        json={"detail": "User service unavailable"},
+    )
+
+    httpx_mock.add_response(
+        method="GET",
+        url=f"{map_base_url}/maps/{test_map_id}",
+        status_code=200,
+        json={
+            "id": test_map_id,
+            "owner_id": test_user_id,
+            "owner_username": "u1",
+            "title": "Public Map",
+            "description": None,
+            "tags": [],
+            "visibility": "public",
+            "source_path": "",
+            "tiles_path": "",
+            "width": 0,
+            "height": 0,
+            "max_zoom": 0,
+            "created_at": "2000-01-01",
+            "updated_at": "2000-01-01",
+            "share_id": None,
+        },
+    )
+
+    resp = await async_client.get(f"/maps/{test_map_id}", headers=auth_header())
+    assert resp.status_code == 200
+
+
+@pytest.mark.asyncio
+async def test_get_map_not_found_propagates(httpx_mock, async_client, map_base_url, test_map_id):
+    httpx_mock.add_response(
+        method="GET",
+        url=f"{map_base_url}/maps/{test_map_id}",
+        status_code=404,
+        json={"detail": "Map not found"},
+    )
+
+    resp = await async_client.get(f"/maps/{test_map_id}")
+    assert resp.status_code == 404
+    assert "detail" in resp.json()
+
+
+@pytest.mark.asyncio
+async def test_update_map_forbidden_propagates(
+    httpx_mock, async_client, user_base_url, map_base_url, test_user_id, test_map_id
+):
+    httpx_mock.add_response(
+        method="POST",
+        url=f"{user_base_url}/auth/verify-token",
+        status_code=200,
+        json={"user_id": test_user_id},
+    )
+
+    httpx_mock.add_response(
+        method="PUT",
+        url=f"{map_base_url}/maps/{test_map_id}",
+        status_code=403,
+        json={"detail": "You do not own this map"},
+    )
+
+    resp = await async_client.put(
+        f"/maps/{test_map_id}",
+        json={"title": "X", "visibility": "private"},
+        headers=auth_header(),
+    )
+    assert resp.status_code == 403
+    assert "detail" in resp.json()
+
+
+@pytest.mark.asyncio
+async def test_delete_map_not_found_propagates(
+    httpx_mock, async_client, user_base_url, map_base_url, test_user_id, test_map_id
+):
+    httpx_mock.add_response(
+        method="POST",
+        url=f"{user_base_url}/auth/verify-token",
+        status_code=200,
+        json={"user_id": test_user_id},
+    )
+
+    httpx_mock.add_response(
+        method="DELETE",
+        url=f"{map_base_url}/maps/{test_map_id}",
+        status_code=404,
+        json={"detail": "Map not found"},
+    )
+
+    resp = await async_client.delete(f"/maps/{test_map_id}", headers=auth_header())
+    assert resp.status_code == 404
+    assert "detail" in resp.json()
+
+
+@pytest.mark.asyncio
+async def test_upload_image_forbidden_propagates(
+    httpx_mock, async_client, user_base_url, map_base_url, test_user_id, test_map_id
+):
+    httpx_mock.add_response(
+        method="POST",
+        url=f"{user_base_url}/auth/verify-token",
+        status_code=200,
+        json={"user_id": test_user_id},
+    )
+
+    httpx_mock.add_response(
+        method="POST",
+        url=f"{map_base_url}/maps/{test_map_id}/upload-image",
+        status_code=403,
+        json={"detail": "You do not own this map"},
+    )
+
+    resp = await async_client.post(
+        f"/maps/{test_map_id}/upload-image",
+        files={"file": ("file.png", b"content", "image/png")},
+        headers=auth_header(),
+    )
+    assert resp.status_code == 403
+    assert "detail" in resp.json()
+
+
+@pytest.mark.asyncio
+async def test_create_map_user_me_error_propagates(
+    httpx_mock, async_client, user_base_url, test_user_id
+):
+    httpx_mock.add_response(
+        method="POST",
+        url=f"{user_base_url}/auth/verify-token",
+        status_code=200,
+        json={"user_id": test_user_id},
+    )
+
+    httpx_mock.add_response(
+        method="GET",
+        url=f"{user_base_url}/users/me",
+        status_code=503,
+        json={"detail": "User service unavailable"},
+    )
+
+    resp = await async_client.post(
+        "/maps/create",
+        json={"title": "T", "visibility": "private"},
+        headers=auth_header(),
+    )
+    assert resp.status_code == 503
+
+
+@pytest.mark.asyncio
+async def test_get_map_by_share_id_404_custom_message(httpx_mock, async_client, map_base_url):
+    share_id = "missing"
+    httpx_mock.add_response(
+        method="GET",
+        url=f"{map_base_url}/maps/share/{share_id}",
+        status_code=404,
+        json={"detail": "Map not found"},
+    )
+
+    resp = await async_client.get(f"/maps/share/{share_id}")
+    assert resp.status_code == 404
+    assert resp.json()["detail"] == "Shared map not found or expired"

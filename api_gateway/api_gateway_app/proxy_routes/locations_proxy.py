@@ -6,13 +6,13 @@ from typing import List
 from starlette import status
 
 from api_gateway_app.config import MAP_SERVICE_URL
-from api_gateway_app.security import verify_token
+from api_gateway_app.security import require_user_id
 from api_gateway_app.schemas import LocationCreateRequest, LocationUpdateRequest, LocationResponse
 
 router = APIRouter()
 
 @router.post("/create", response_model=LocationResponse)
-async def create_location(location_data: LocationCreateRequest, user_id: UUID = Depends(verify_token)):
+async def create_location(location_data: LocationCreateRequest, user_id: UUID = require_user_id()):
     body = location_data.model_dump_json()
 
     headers = {
@@ -69,7 +69,7 @@ async def get_location(location_id: UUID):
     return response.json()
 
 @router.put("/{location_id}", response_model=LocationResponse)
-async def update_location(location_id: UUID, location_data: LocationUpdateRequest, user_id: UUID = Depends(verify_token)):
+async def update_location(location_id: UUID, location_data: LocationUpdateRequest, user_id: UUID = require_user_id()):
     body = location_data.model_dump_json()
 
     headers = {
@@ -92,7 +92,7 @@ async def update_location(location_id: UUID, location_data: LocationUpdateReques
     return response.json()
 
 @router.delete("/{location_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_location(location_id: UUID, user_id: UUID = Depends(verify_token)):
+async def delete_location(location_id: UUID, user_id: UUID = require_user_id()):
     headers = {
         "X-User-Id": str(user_id)
     }

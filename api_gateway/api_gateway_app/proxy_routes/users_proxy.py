@@ -4,12 +4,12 @@ from uuid import UUID
 
 from api_gateway_app.config import USER_SERVICE_URL
 from api_gateway_app.schemas import UserResponse
-from api_gateway_app.security import verify_token
+from api_gateway_app.security import require_user_id
 
 router = APIRouter()
 
 @router.get("/me", response_model=UserResponse)
-async def get_me(user_id: UUID = Depends(verify_token)):
+async def get_me(user_id: UUID = require_user_id()):
     headers = {
         "X-User-Id": str(user_id)
     }

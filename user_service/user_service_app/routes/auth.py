@@ -10,7 +10,7 @@ from user_service_app.security import create_access_token, verify_jwt_token
 router = APIRouter()
 
 @router.post("/register", response_model=UserOut)
-async def register_endpoint(user_in: UserCreate, db: Session = Depends(get_db)):
+def register_endpoint(user_in: UserCreate, db: Session = Depends(get_db)):
     if is_username_taken(db, user_in.username):
         raise HTTPException(status_code=400, detail="Username is already taken")
     if is_email_taken(db, str(user_in.email)):
@@ -19,7 +19,7 @@ async def register_endpoint(user_in: UserCreate, db: Session = Depends(get_db)):
     return user
 
 @router.post("/login", response_model=Token)
-async def login_endpoint(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+def login_endpoint(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     user = authenticate_user(db, form_data.username, form_data.password)
     if not user:
         raise HTTPException(status_code=400, detail="Incorrect username or password")
@@ -27,7 +27,7 @@ async def login_endpoint(form_data: OAuth2PasswordRequestForm = Depends(), db: S
     return Token(access_token=access_token, token_type="bearer")
 
 @router.post("/verify-token", response_model=TokenVerifyResponse)
-async def verify_token_endpoint(token_in: TokenVerifyRequest):
+def verify_token_endpoint(token_in: TokenVerifyRequest):
     user_id = verify_jwt_token(token_in.access_token)
     if not user_id:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid or expired token")

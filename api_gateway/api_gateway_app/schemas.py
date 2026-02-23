@@ -1,7 +1,8 @@
 from datetime import datetime
-from pydantic import BaseModel, EmailStr, ConfigDict
+from pydantic import BaseModel, EmailStr, ConfigDict, Field
 from uuid import UUID
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict, Any, List, Literal
+
 
 # ---------- AUTH ----------
 
@@ -12,9 +13,11 @@ class RegisterRequest(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str
+
 
 # ---------- USERS ----------
 
@@ -24,18 +27,39 @@ class UserResponse(BaseModel):
     email: EmailStr
     created_at: datetime
 
+
 # ---------- MAPS ----------
+
+Visibility = Literal["private", "public"]
+
 
 class MapCreateRequest(BaseModel):
     title: str
     description: Optional[str] = None
-    tags: List[str] = []
+    tags: List[str] = Field(default_factory=list)
+    visibility: Visibility
+
 
 class MapUpdateRequest(BaseModel):
     title: Optional[str] = None
     description: Optional[str] = None
     tags: Optional[List[str]] = None
-    visibility: Optional[str] = None
+    visibility: Optional[Visibility] = None
+
+
+class MapCardResponse(BaseModel):
+    id: UUID
+    owner_username: str
+    title: str
+    tags: List[str] = Field(default_factory=list)
+    visibility: Visibility
+    updated_at: datetime
+
+
+class ListMapCardResponse(BaseModel):
+    items: List[MapCardResponse]
+    total: int
+
 
 class MapResponse(BaseModel):
     id: UUID
@@ -43,7 +67,8 @@ class MapResponse(BaseModel):
     owner_username: str
     title: str
     description: Optional[str] = None
-    tags: List[str] = []
+    tags: List[str] = Field(default_factory=list)
+    visibility: Visibility
     source_path: str
     tiles_path: str
     width: int
@@ -51,21 +76,10 @@ class MapResponse(BaseModel):
     max_zoom: int
     created_at: datetime
     updated_at: datetime
-    visibility: Optional[str] = None
     share_id: Optional[str] = None
-    share_url: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
 
-class ShareResponse(BaseModel):
-    share_id: str
-    share_url: str
-
-    model_config = ConfigDict(from_attributes=True)
-
-class ListMapResponse(BaseModel):
-    items: List[MapResponse]
-    total: int
 
 class LocationCreateRequest(BaseModel):
     map_id: UUID
@@ -76,6 +90,7 @@ class LocationCreateRequest(BaseModel):
     y: float
     metadata_json: Optional[Dict[str, Any]] = None
 
+
 class LocationUpdateRequest(BaseModel):
     type: Optional[str] = None
     name: Optional[str] = None
@@ -83,6 +98,7 @@ class LocationUpdateRequest(BaseModel):
     x: Optional[float] = None
     y: Optional[float] = None
     metadata_json: Optional[Dict[str, Any]] = None
+
 
 class LocationResponse(BaseModel):
     id: UUID
@@ -98,6 +114,11 @@ class LocationResponse(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+
 class TagStatResponse(BaseModel):
     name: str
     count: int
+
+
+class ShareIdResponse(BaseModel):
+    share_id: Optional[str] = None

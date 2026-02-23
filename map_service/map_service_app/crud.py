@@ -31,9 +31,6 @@ def create_map(db: Session, owner_id: UUID, map_in: MapCreate) -> Map:
         max_zoom=0,
     )
 
-    if map_in.visibility == 'link':
-        create_share(db, db_map)
-
     db.add(db_map)
     db.flush()
 
@@ -68,19 +65,6 @@ def update_map_tiles_info(db: Session, map_id: UUID, tiles_info: TilesInfo) -> O
     return db_map
 
 
-def create_share(db: Session, map_obj: Map) -> str:
-    if map_obj.share_id:
-        return str(map_obj.share_id)
-
-    for _ in range(SHARE_ID_TRIES):
-        candidate = generate_share_id()
-        exists = db.query(Map).filter(Map.share_id == candidate).first()
-        if not exists:
-            map_obj.share_id = candidate
-            return candidate
-    raise RuntimeError("Failed to generate unique share ID after multiple attempts")
-
-
 def update_map(db: Session, map_id: UUID, map_in: MapUpdate) -> Optional[Map]:
     db_map = get_map_by_id(db, map_id)
     if db_map is None:
@@ -90,11 +74,6 @@ def update_map(db: Session, map_id: UUID, map_in: MapUpdate) -> Optional[Map]:
     if map_in.description is not None:
         db_map.description = map_in.description
     if map_in.visibility is not None:
-        if map_in.visibility == 'link':
-            create_share(db, db_map)
-        else:
-            if db_map.share_id:
-                db_map.share_id = None
         db_map.visibility = map_in.visibility
 
     removed_tags: List[Tag] = []
@@ -247,15 +226,6 @@ def is_location_owned_by_user(db: Session, user_id: UUID, location_id: UUID) -> 
     return db.query(Location).filter(Map.id == location.map_id, Map.owner_id == user_id).first() is not None
 
 
-def get_map_by_share_id(db: Session, share_id: str) -> Optional[Map]:
-    db_map = db.query(Map).options(selectinload(Map.tags)).filter(Map.share_id == share_id).first()
-    if not db_map:
-        return None
-    if db_map.visibility != "link":
-        return None
-    return db_map
-
-
 def normalize_tag(raw: str) -> str | None:
     if raw is None:
         return None
@@ -373,3 +343,45 @@ def list_tags(db: Session, q: Optional[str] = None, limit: int = 50):
         query = query.order_by(desc("count"), Tag.name.asc())
 
     return query.limit(limit).all()
+
+
+
+
+def create_share(db: Session, map_id: UUID) -> Optional[str]:
+    db_map = db.query(Map).filter(Map.id == map_id).first()
+    if not db_map:
+        return None
+
+    if db_map.share_id:
+        return str(db_map.share_id)
+
+    for _ in range(SHARE_ID_TRIES):
+        candidate = generate_share_id()
+        exists = db.query(Map).filter(Map.share_id == candidate).first()
+        if not exists:
+            db_map.share_id = candidate
+            db.commit()
+            db.refresh(db_map)
+            return candidate
+
+    raise RuntimeError("Failed to generate unique share ID after multiple attempts")
+
+
+def delete_share(db: Session, map_id: UUID) -> bool:
+    db_map = db.query(Map).filter(Map.id == map_id).first()
+    if not db_map:
+        return False
+
+    if db_map.share_id is None:
+        return True
+
+    db_map.share_id = None
+    db.commit()
+    return True
+
+
+def get_map_by_share_id(db: Session, share_id: str) -> Optional[Map]:
+    db_map = db.query(Map).options(selectinload(Map.tags)).filter(Map.share_id == share_id).first()
+    if not db_map:
+        return None
+    return db_map

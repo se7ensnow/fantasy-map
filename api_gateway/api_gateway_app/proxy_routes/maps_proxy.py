@@ -1,17 +1,18 @@
 from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, status, Query, Request
 import httpx
 from uuid import UUID
-from typing import Optional, Optional
+from typing import List, Optional
 
 from api_gateway_app.config import USER_SERVICE_URL, MAP_SERVICE_URL
-from api_gateway_app.security import verify_token, soft_verify_token
-from api_gateway_app.schemas import MapCreateRequest, MapUpdateRequest, MapResponse, ListMapResponse, TagStatResponse
+from api_gateway_app.security import require_user_id, optional_user_id
+from api_gateway_app.schemas import (MapCreateRequest, MapUpdateRequest, ListMapCardResponse, MapResponse,
+                                     TagStatResponse, ShareIdResponse)
 
 router = APIRouter()
 
 
 @router.post("/create", response_model=MapResponse)
-async def create_map(map_data: MapCreateRequest, user_id: UUID = Depends(verify_token)):
+async def create_map(map_data: MapCreateRequest, user_id: UUID = require_user_id()):
     headers = {
         "X-User-Id": str(user_id)
     }
@@ -49,11 +50,12 @@ async def create_map(map_data: MapCreateRequest, user_id: UUID = Depends(verify_
     return response.json()
 
 
-@router.get("/owned", response_model=ListMapResponse)
+@router.get("/owned", response_model=ListMapCardResponse)
 async def get_owned_maps(
         page: int = Query(1, alias="page", ge=1),
         size: int = Query(10, alias="size", ge=1, le=100),
-        user_id: UUID = Depends(verify_token)):
+        user_id: UUID = require_user_id()
+):
     headers = {
         "X-User-Id": str(user_id)
     }
@@ -69,7 +71,7 @@ async def get_owned_maps(
             raise HTTPException(status_code=503, detail="Map Service unavailable")
 
     if response.status_code == 404:
-        return ListMapResponse(
+        return ListMapCardResponse(
             items=[],
             total=0
         )
@@ -80,13 +82,14 @@ async def get_owned_maps(
     return response.json()
 
 
-@router.get("/all", response_model=ListMapResponse)
+@router.get("/all", response_model=ListMapCardResponse)
 async def get_all_maps(
         page: int = Query(1, alias="page", ge=1),
         size: int = Query(10, alias="size", ge=1, le=100),
         q: Optional[str] = Query(None, alias="q"),
         tags: Optional[str] = Query(None, alias="tags"),
-        tags_mode: str = Query("any", alias="tags_mode")):
+        tags_mode: str = Query("any", alias="tags_mode")
+):
     params: dict[str, object] = {"page": page, "size": size}
 
     if q:
@@ -114,7 +117,8 @@ async def get_all_maps(
 @router.get("/tags", response_model=List[TagStatResponse])
 async def list_tags(
         q: Optional[str] = Query(None, alias="q"),
-        limit: int = Query(50, alias="limit", ge=1, le=200)):
+        limit: int = Query(50, alias="limit", ge=1, le=200)
+):
     params: dict[str, object] = {"limit": limit}
     if q:
         params["q"] = q
@@ -134,8 +138,24 @@ async def list_tags(
     return response.json()
 
 
+@router.get("/share/{share_id}", response_model=MapResponse)
+async def get_map_by_share_id(share_id: str):
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.get(f"{MAP_SERVICE_URL}/maps/share/{share_id}")
+        except httpx.RequestError:
+            raise HTTPException(status_code=503, detail="Map Service unavailable")
+
+    if response.status_code != 200:
+        if response.status_code == 404:
+            raise HTTPException(status_code=404, detail="Shared map not found or expired")
+        raise HTTPException(status_code=response.status_code, detail=response.text)
+
+    return response.json()
+
+
 @router.get("/{map_id}", response_model=MapResponse)
-async def get_map(map_id: UUID, user_id: Optional[UUID] = Depends(soft_verify_token)):
+async def get_map(map_id: UUID, user_id: Optional[UUID] = optional_user_id()):
     headers = {}
     if user_id:
         headers["X-User-Id"] = str(user_id)
@@ -156,7 +176,7 @@ async def get_map(map_id: UUID, user_id: Optional[UUID] = Depends(soft_verify_to
 
 
 @router.put("/{map_id}", response_model=MapResponse)
-async def update_map(map_id: UUID, map_data: MapUpdateRequest, user_id: UUID = Depends(verify_token)):
+async def update_map(map_id: UUID, map_data: MapUpdateRequest, user_id: UUID = require_user_id()):
     body = map_data.model_dump_json()
 
     headers = {
@@ -180,7 +200,7 @@ async def update_map(map_id: UUID, map_data: MapUpdateRequest, user_id: UUID = D
 
 
 @router.delete("/{map_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_map(map_id: UUID, user_id: UUID = Depends(verify_token)):
+async def delete_map(map_id: UUID, user_id: UUID = require_user_id()):
     headers = {
         "X-User-Id": str(user_id)
     }
@@ -199,24 +219,9 @@ async def delete_map(map_id: UUID, user_id: UUID = Depends(verify_token)):
 
     return
 
-@router.get("/share/{share_id}", response_model=MapResponse)
-async def get_map_by_share_id(share_id: str):
-    async with httpx.AsyncClient() as client:
-        try:
-            response = await client.get(f"{MAP_SERVICE_URL}/maps/share/{share_id}")
-        except httpx.RequestError:
-            raise HTTPException(status_code=503, detail="Map Service unavailable")
-
-    if response.status_code != 200:
-        if response.status_code == 404:
-            raise HTTPException(status_code=404, detail="Shared map not found or expired")
-        raise HTTPException(status_code=response.status_code, detail=response.text)
-
-    return response.json()
-
 
 @router.post("/{map_id}/upload-image")
-async def upload_image(map_id: UUID, file: UploadFile = File(...), user_id: UUID = Depends(verify_token)):
+async def upload_image(map_id: UUID, file: UploadFile = File(...), user_id: UUID = require_user_id()):
     files = {"file": (file.filename, await file.read(), file.content_type)}
 
     headers = {
@@ -237,3 +242,60 @@ async def upload_image(map_id: UUID, file: UploadFile = File(...), user_id: UUID
         raise HTTPException(status_code=response.status_code, detail=response.text)
 
     return response.json()
+
+
+@router.post("/{map_id}/share", response_model=ShareIdResponse)
+async def create_share(map_id: UUID, user_id: UUID = require_user_id()):
+    headers = {"X-User-Id": str(user_id)}
+
+    async with httpx.AsyncClient() as client:
+        try:
+            resp = await client.post(
+                f"{MAP_SERVICE_URL}/maps/{map_id}/share",
+                headers=headers,
+            )
+        except httpx.RequestError:
+            raise HTTPException(status_code=503, detail="Map Service unavailable")
+
+    if resp.status_code != 200:
+        raise HTTPException(status_code=resp.status_code, detail=resp.text)
+
+    return resp.json()
+
+
+@router.get("/{map_id}/share", response_model=ShareIdResponse)
+async def get_share_id(map_id: UUID, user_id: UUID = require_user_id()):
+    headers = {"X-User-Id": str(user_id)}
+
+    async with httpx.AsyncClient() as client:
+        try:
+            resp = await client.get(
+                f"{MAP_SERVICE_URL}/maps/{map_id}/share",
+                headers=headers,
+            )
+        except httpx.RequestError:
+            raise HTTPException(status_code=503, detail="Map Service unavailable")
+
+    if resp.status_code != 200:
+        raise HTTPException(status_code=resp.status_code, detail=resp.text)
+
+    return resp.json()
+
+
+@router.delete("/{map_id}/share", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_share(map_id: UUID, user_id: UUID = require_user_id()):
+    headers = {"X-User-Id": str(user_id)}
+
+    async with httpx.AsyncClient() as client:
+        try:
+            resp = await client.delete(
+                f"{MAP_SERVICE_URL}/maps/{map_id}/share",
+                headers=headers,
+            )
+        except httpx.RequestError:
+            raise HTTPException(status_code=503, detail="Map Service unavailable")
+
+    if resp.status_code != 204:
+        raise HTTPException(status_code=resp.status_code, detail=resp.text)
+
+    return
