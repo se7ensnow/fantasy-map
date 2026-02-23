@@ -94,7 +94,7 @@ def get_map_by_share_id_endpoint(share_id: str, db: Session = Depends(get_db)):
 @router.get("/{map_id}", response_model=MapResponse)
 def get_map_endpoint(
         map_id: UUID,
-        user_id: str | None = Header(None, alias="X-User-Id"),
+        user_id: Optional[str] = Header(None, alias="X-User-Id"),
         db: Session = Depends(get_db)
 ):
     map_obj = get_map_by_id(db, map_id)
@@ -109,7 +109,8 @@ def get_map_endpoint(
             is_owner = True
 
     if map_obj.visibility != "public" and not is_owner:
-        raise HTTPException(status_code=404, detail="Map not found")
+        # raise HTTPException(status_code=404, detail="Map not found")
+        raise HTTPException(status_code=403, detail=f"{user_id} can't see this map")
 
     return map_obj
 

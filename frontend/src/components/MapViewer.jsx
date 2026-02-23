@@ -3,7 +3,7 @@ import { MapContainer, TileLayer, Marker } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import LocationDetails from "./LocationDetails";
 import { NGINX_URL } from "@/config";
-import CRS from "leaflet";
+import L from "leaflet";
 
 export default function MapViewer({ map, locations }) {
     const [selectedLocation, setSelectedLocation] = useState(null);
@@ -17,7 +17,7 @@ export default function MapViewer({ map, locations }) {
         <div className="flex h-[80vh] gap-4">
             <div className="flex-1 border rounded overflow-hidden">
                 <MapContainer
-                    crs={CRS.Simple}
+                    crs={L.CRS.Simple}
                     bounds={bounds}
                     maxBounds={bounds}
                     maxBoundsViscosity={1.0}

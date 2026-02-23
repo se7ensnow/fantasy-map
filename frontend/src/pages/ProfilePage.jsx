@@ -107,6 +107,7 @@ export default function ProfilePage() {
                 onDelete={handleDeleteMap}
                 onEdit={handleEditMap}
                 onOpen={handleOpenMap}
+                showShare={true}
             />
 
             <div className="flex justify-center items-center gap-4 mt-4">

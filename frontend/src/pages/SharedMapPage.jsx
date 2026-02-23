@@ -1,0 +1,76 @@
+import React, { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
+import { toast } from "sonner";
+
+import { getMapByShareId } from "@/api/maps";
+import { getLocations } from "@/api/locations";
+import MapViewer from "@/components/MapViewer";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+
+export default function SharedMapPage() {
+  const { share_id } = useParams();
+
+  const [map, setMap] = useState(null);
+  const [locations, setLocations] = useState([]);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function fetchData() {
+      try {
+        setError("");
+        const mapData = await getMapByShareId(share_id);
+        if (cancelled) return;
+        setMap(mapData);
+
+        const locationsData = await getLocations(mapData.id);
+        if (cancelled) return;
+        setLocations(locationsData);
+      } catch (e) {
+        const msg = e.message || "Failed to load shared map";
+        setError(msg);
+        toast.error(msg);
+      }
+    }
+
+    if (share_id) fetchData();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [share_id]);
+
+  if (error) {
+    return <p className="text-red-600 p-4">{error}</p>;
+  }
+
+  if (!map) {
+    return <p className="p-4">Loading map...</p>;
+  }
+
+  return (
+    <div className="space-y-8 p-8">
+      <Card className="relative bg-amber-50/80 border border-amber-700/40 rounded-lg shadow-md">
+        <CardHeader>
+          <CardTitle className="text-4xl font-bold text-amber-900">{map.title}</CardTitle>
+        </CardHeader>
+        <CardContent className="prose text-amber-800">
+          {map.description || "No description provided."}
+        </CardContent>
+        <div className="absolute bottom-2 right-4 text-sm text-amber-700/80 italic">
+          Author: {map.owner_username || "Unknown"}
+        </div>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Map</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <MapViewer map={map} locations={locations} />
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
