@@ -46,7 +46,9 @@ export async function getAllMaps(page = 1, size = 10, { q, tags, tagsMode } = {}
 
 export async function getMapById(mapId) {
     try {
-        const response = await axios.get(`${API_URL}/maps/${mapId}`);
+        const response = await axios.get(`${API_URL}/maps/${mapId}`, {
+          headers: { 'Authorization': `${getTokenType()} ${getToken()}` }
+        });
 
         return response.data;
     
@@ -59,6 +61,21 @@ export async function getMapById(mapId) {
             throw new Error("Error fetching map: " + error.message);
         }
     }
+}
+
+export async function getMapByShareId(shareId) {
+  try {
+    const response = await axios.get(`${API_URL}/maps/share/${shareId}`);
+    return response.data;
+  } catch (error) {
+    if (error.response) {
+      throw new Error(error.response.data?.detail || "Failed to load shared map");
+    } else if (error.request) {
+      throw new Error("No response received from server");
+    } else {
+      throw new Error("Error fetching shared map: " + error.message);
+    }
+  }
 }
 
 export async function listTags(q = "", limit = 50) {
@@ -79,12 +96,13 @@ export async function listTags(q = "", limit = 50) {
   }
 }
 
-export async function createMap(title, description, tags = []) {
+export async function createMap(title, description, tags = [], visibility = "private") {
   try {
     const response = await axios.post(`${API_URL}/maps/create`, {
       title,
       description,
       tags,
+      visibility,
     }, {
       headers: { 'Authorization': `${getTokenType()} ${getToken()}` }
     });
@@ -101,10 +119,11 @@ export async function createMap(title, description, tags = []) {
   }
 }
 
-export async function updateMap(mapId, title, description, tags) {
+export async function updateMap(mapId, title, description, tags, visibility) {
   try {
     const payload = { title, description };
     if (tags !== undefined) payload.tags = tags;
+    if (visibility !== undefined) payload.visibility = visibility;
 
     const response = await axios.put(`${API_URL}/maps/${mapId}`, payload, {
       headers: { 'Authorization': `${getTokenType()} ${getToken()}` }
@@ -166,4 +185,55 @@ export async function uploadImage(mapId, imageFile) {
             throw new Error("Error uploading image: " + error.message);
         }
     }
+}
+
+export async function createShareId(mapId) {
+  try {
+    const response = await axios.post(`${API_URL}/maps/${mapId}/share`, null, {
+      headers: { 'Authorization': `${getTokenType()} ${getToken()}` }
+    });
+    return response.data;
+  } catch (error) {
+    if (error.response) {
+      throw new Error(error.response.data?.detail || "Failed to create share link");
+    } else if (error.request) {
+      throw new Error("No response received from server");
+    } else {
+      throw new Error("Error creating share link: " + error.message);
+    }
+  }
+}
+
+export async function getShareId(mapId) {
+  try {
+    const response = await axios.get(`${API_URL}/maps/${mapId}/share`, {
+      headers: { 'Authorization': `${getTokenType()} ${getToken()}` }
+    });
+    return response.data;
+  } catch (error) {
+    if (error.response) {
+      throw new Error(error.response.data?.detail || "Failed to load share link");
+    } else if (error.request) {
+      throw new Error("No response received from server");
+    } else {
+      throw new Error("Error loading share link: " + error.message);
+    }
+  }
+}
+
+export async function deleteShareId(mapId) {
+  try {
+    const response = await axios.delete(`${API_URL}/maps/${mapId}/share`, {
+      headers: { 'Authorization': `${getTokenType()} ${getToken()}` }
+    });
+    return response.status === 204;
+  } catch (error) {
+    if (error.response) {
+      throw new Error(error.response.data?.detail || "Failed to disable share link");
+    } else if (error.request) {
+      throw new Error("No response received from server");
+    } else {
+      throw new Error("Error disabling share link: " + error.message);
+    }
+  }
 }

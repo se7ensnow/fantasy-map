@@ -173,7 +173,7 @@
           }
         },
         {
-          "name": "Update Map",
+          "name": "Update Map (general)",
           "request": {
             "method": "PUT",
             "header": [
@@ -191,6 +191,50 @@
               "mode": "raw",
               "raw": "{\n  \"title\": \"Updated Map\",\n  \"description\": \"Updated description\"\n}"
             }
+          }
+        },
+        {
+          "name": "Change Visibility to Link (generate share)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "http://localhost:8000/maps/{{map_id}}",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8000",
+              "path": ["maps", "{{map_id}}"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"visibility\": \"link\"\n}"
+            },
+            "description": "Set visibility to 'link' — backend will generate share_id if absent and return share_url in owner's response."
+          }
+        },
+        {
+          "name": "Change Visibility to Public/Private",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "http://localhost:8000/maps/{{map_id}}",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8000",
+              "path": ["maps", "{{map_id}}"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"visibility\": \"public\"\n}"
+            },
+            "description": "Set visibility to 'public' or 'private' — backend will remove share_id when switching away from 'link'."
           }
         },
         {

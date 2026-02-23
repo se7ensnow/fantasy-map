@@ -6,9 +6,11 @@ from sqlalchemy.exc import IntegrityError
 
 import re
 
-from map_service_app.config import MAX_TAGS_PER_MAP, MAX_TAG_LEN
+from map_service_app.config import MAX_TAGS_PER_MAP, MAX_TAG_LEN, SHARE_ID_TRIES
 from map_service_app.models import Map, Location, Tag
 from map_service_app.schemas import MapCreate, LocationCreate, MapUpdate, LocationUpdate, TilesInfo
+from map_service_app.utils import generate_share_id
+
 
 
 _strip_re = re.compile(r"[^0-9a-zA-Zа-яА-ЯёЁ\- ]+")
@@ -21,12 +23,14 @@ def create_map(db: Session, owner_id: UUID, map_in: MapCreate) -> Map:
         owner_username=map_in.owner_username,
         title=map_in.title,
         description=map_in.description,
+        visibility=map_in.visibility,
         source_path='',
         tiles_path='',
         width=0,
         height=0,
         max_zoom=0,
     )
+
     db.add(db_map)
     db.flush()
 
@@ -35,6 +39,7 @@ def create_map(db: Session, owner_id: UUID, map_in: MapCreate) -> Map:
 
     db.commit()
     db.refresh(db_map)
+
     return db_map
 
 
@@ -68,6 +73,8 @@ def update_map(db: Session, map_id: UUID, map_in: MapUpdate) -> Optional[Map]:
         db_map.title = map_in.title
     if map_in.description is not None:
         db_map.description = map_in.description
+    if map_in.visibility is not None:
+        db_map.visibility = map_in.visibility
 
     removed_tags: List[Tag] = []
     if map_in.tags is not None:
@@ -88,6 +95,7 @@ def update_map(db: Session, map_id: UUID, map_in: MapUpdate) -> Optional[Map]:
     return db_map
 
 
+
 def delete_map(db: Session, map_id: UUID) -> bool:
     db_map = get_map_by_id(db, map_id)
     if db_map is None:
@@ -101,6 +109,7 @@ def delete_map(db: Session, map_id: UUID) -> bool:
     cleanup_unused_tags(db, old_tags)
     db.commit()
     return True
+
 
 
 def get_maps_by_owner(db: Session, owner_id: UUID, offset: int = 0, limit: int = 10):
@@ -118,7 +127,7 @@ def list_maps_catalog(
         offset: int = 0,
         limit: int = 10,
 ):
-    query = db.query(Map).options(selectinload(Map.tags))
+    query = db.query(Map).options(selectinload(Map.tags)).filter(Map.visibility == 'public')
     if tags:
         names = prepare_tags(tags)
         if names:
@@ -160,7 +169,7 @@ def create_location(db: Session, location_in: LocationCreate) -> Location:
         description=location_in.description,
         x=location_in.x,
         y=location_in.y,
-        metadata_json=location_in.metadata_json
+        metadata_json=location_in.metadata_json,
     )
     db.add(location)
     db.commit()
@@ -334,3 +343,45 @@ def list_tags(db: Session, q: Optional[str] = None, limit: int = 50):
         query = query.order_by(desc("count"), Tag.name.asc())
 
     return query.limit(limit).all()
+
+
+
+
+def create_share(db: Session, map_id: UUID) -> Optional[str]:
+    db_map = db.query(Map).filter(Map.id == map_id).first()
+    if not db_map:
+        return None
+
+    if db_map.share_id:
+        return str(db_map.share_id)
+
+    for _ in range(SHARE_ID_TRIES):
+        candidate = generate_share_id()
+        exists = db.query(Map).filter(Map.share_id == candidate).first()
+        if not exists:
+            db_map.share_id = candidate
+            db.commit()
+            db.refresh(db_map)
+            return candidate
+
+    raise RuntimeError("Failed to generate unique share ID after multiple attempts")
+
+
+def delete_share(db: Session, map_id: UUID) -> bool:
+    db_map = db.query(Map).filter(Map.id == map_id).first()
+    if not db_map:
+        return False
+
+    if db_map.share_id is None:
+        return True
+
+    db_map.share_id = None
+    db.commit()
+    return True
+
+
+def get_map_by_share_id(db: Session, share_id: str) -> Optional[Map]:
+    db_map = db.query(Map).options(selectinload(Map.tags)).filter(Map.share_id == share_id).first()
+    if not db_map:
+        return None
+    return db_map

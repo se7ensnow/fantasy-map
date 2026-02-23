@@ -9,6 +9,7 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import MapPage from './pages/MapPage.jsx';
 import MapEditPage from './pages/MapEditPage.jsx';
+import SharedMapPage from "@/pages/SharedMapPage";
 
 function App() {
   return (
@@ -28,6 +29,7 @@ function App() {
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/maps/:map_id" element={<MapPage />} />
+            <Route path="/maps/share/:share_id" element={<SharedMapPage />} />
             <Route path="/maps/new" element={
               <RequireAuth>
                 <MapEditPage />

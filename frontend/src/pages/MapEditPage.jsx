@@ -33,7 +33,9 @@ export default function MapEditPage() {
                 } else {
                   setMap({
                     title: "",
-                    description: ""
+                    description: "",
+                    tags: [],
+                    visibility: "private",
                   });
                   setLocations([]);
                 }
@@ -48,16 +50,16 @@ export default function MapEditPage() {
         fetchData();
     }, [map_id]);
 
-    const handleMapSubmit = async (title, description, tags) => {
+    const handleMapSubmit = async (title, description, tags, visibility) => {
         try {
             setLoading(true);
             if (map_id) {
-                await updateMap(map_id, title, description, tags);
+                await updateMap(map_id, title, description, tags, visibility);
                 toast.success("Map updated successfully");
                 const updatedMap = await getMapById(map_id);
                 setMap(updatedMap);
             } else {
-                const newMap = await createMap(title, description, tags);
+                const newMap = await createMap(title, description, tags, visibility);
                 toast.success("Map created successfully");
                 navigate(`/maps/${newMap.id}/edit`);
             }
@@ -157,6 +159,7 @@ export default function MapEditPage() {
                     initialTitle={map.title}
                     initialDescription={map.description}
                     initialTags={(map.tags || []).filter(Boolean)}
+                    initialVisibility={map.visibility}
                     onSubmit={handleMapSubmit}
                     loading={loading}
                 />

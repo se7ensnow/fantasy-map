@@ -11,7 +11,7 @@ from map_service_app.database import get_db
 router = APIRouter()
 
 @router.post("/create", response_model=LocationResponse)
-async def create_location_endpoint(location_data: LocationCreate,
+def create_location_endpoint(location_data: LocationCreate,
                           user_id: str = Header(..., alias="X-User-Id"),
                           db: Session = Depends(get_db)):
     user_id = UUID(user_id)
@@ -21,19 +21,19 @@ async def create_location_endpoint(location_data: LocationCreate,
     return location
 
 @router.get("/", response_model=List[LocationResponse])
-async def list_locations_endpoint(map_id: UUID = Query(...), db: Session = Depends(get_db)):
+def list_locations_endpoint(map_id: UUID = Query(...), db: Session = Depends(get_db)):
     locations = get_locations_by_map_id(db=db, map_id=map_id)
     return locations
 
 @router.get("/{location_id}", response_model=LocationResponse)
-async def get_location_endpoint(location_id: UUID, db: Session = Depends(get_db)):
+def get_location_endpoint(location_id: UUID, db: Session = Depends(get_db)):
     location = get_location_by_id(db=db, location_id=location_id)
     if not location:
         raise HTTPException(status_code=404, detail="Location not found")
     return location
 
 @router.put("/{location_id}", response_model=LocationResponse)
-async def update_location_endpoint(location_id: UUID,
+def update_location_endpoint(location_id: UUID,
                           data: LocationUpdate,
                           user_id: str = Header(..., alias="X-User-Id"),
                           db: Session = Depends(get_db)):
@@ -46,7 +46,7 @@ async def update_location_endpoint(location_id: UUID,
     return location
 
 @router.delete("/{location_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_location_endpoint(location_id: UUID,
+def delete_location_endpoint(location_id: UUID,
                           user_id: str = Header(..., alias="X-User-Id"),
                           db: Session = Depends(get_db)):
     user_id = UUID(user_id)

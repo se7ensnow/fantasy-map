@@ -5,7 +5,7 @@ from uuid import UUID
 from user_service_app.models import User
 from user_service_app.schemas import UserCreate
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 
 def get_password_hash(password: str) -> str:
     return pwd_context.hash(password)
