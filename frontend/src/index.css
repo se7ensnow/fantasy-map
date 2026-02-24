@@ -23,3 +23,62 @@ body {
 h1, h2, h3, h4 {
   @apply font-display;
 }
+
+@layer components {
+  .markdown-body {
+    @apply leading-relaxed text-stone-800;
+  }
+
+  .markdown-body h1 {
+    @apply text-3xl font-extrabold mt-4 mb-3 text-amber-900;
+  }
+  .markdown-body h2 {
+    @apply text-2xl font-bold mt-4 mb-2 text-amber-900;
+  }
+  .markdown-body h3 {
+    @apply text-xl font-semibold mt-3 mb-2 text-amber-900;
+  }
+  .markdown-body p {
+    @apply leading-7 my-2;
+  }
+  .markdown-body ul {
+    @apply list-disc pl-6 my-2;
+  }
+  .markdown-body ol {
+    @apply list-decimal pl-6 my-2;
+  }
+  .markdown-body li {
+    @apply my-1 leading-7;
+  }
+  .markdown-body blockquote {
+    @apply border-l-4 border-amber-400 pl-4 italic my-3 text-stone-700;
+  }
+  .markdown-body hr {
+    @apply my-4 border-amber-200;
+  }
+  .markdown-body a {
+    @apply underline text-amber-700 hover:text-amber-900;
+  }
+  .markdown-body strong {
+    @apply text-stone-900;
+  }
+  .markdown-body code {
+    @apply px-1 py-0.5 rounded bg-amber-50 border border-amber-200 text-stone-900;
+  }
+  .markdown-body pre {
+    @apply p-3 rounded bg-amber-50 border border-amber-200 overflow-x-auto my-3;
+  }
+  .markdown-body table {
+    @apply w-full border-collapse my-3;
+  }
+  .markdown-body th,
+  .markdown-body td {
+    @apply border border-amber-200 px-2 py-1;
+  }
+  .markdown-body th {
+    @apply bg-amber-50 text-stone-900;
+  }
+  .markdown-body img {
+    @apply my-3;
+  }
+}

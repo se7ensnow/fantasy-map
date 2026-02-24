@@ -85,19 +85,17 @@ class LocationCreateRequest(BaseModel):
     map_id: UUID
     type: str
     name: str
-    description: Optional[str] = None
+    description_md: str = ""
     x: float
     y: float
-    metadata_json: Optional[Dict[str, Any]] = None
 
 
 class LocationUpdateRequest(BaseModel):
     type: Optional[str] = None
     name: Optional[str] = None
-    description: Optional[str] = None
+    description_md: Optional[str] = None
     x: Optional[float] = None
     y: Optional[float] = None
-    metadata_json: Optional[Dict[str, Any]] = None
 
 
 class LocationResponse(BaseModel):
@@ -105,10 +103,9 @@ class LocationResponse(BaseModel):
     map_id: UUID
     type: str
     name: str
-    description: Optional[str] = None
+    description_md: str = ""
     x: float
     y: float
-    metadata_json: Optional[Dict[str, Any]] = None
     created_at: datetime
     updated_at: datetime
 

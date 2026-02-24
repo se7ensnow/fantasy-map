@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, DateTime, Float, ForeignKey, JSON, Integer, Table, UniqueConstraint, Boolean
+from sqlalchemy import Column, String, DateTime, Float, ForeignKey, Integer, Table, UniqueConstraint, Text, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import declarative_base, relationship
 from datetime import datetime
@@ -29,8 +29,8 @@ class Map(Base):
     width = Column(Integer, nullable=True)
     height = Column(Integer, nullable=True)
     max_zoom = Column(Integer, nullable=True)
-    created_at = Column(DateTime(timezone=True), nullable=False, default=datetime.now())
-    updated_at = Column(DateTime(timezone=True), nullable=False, default=datetime.now(), onupdate=datetime.now())
+    created_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now())
 
     locations = relationship("Location", back_populates="map", cascade="all, delete-orphan")
     tags = relationship("Tag", secondary=map_tags, lazy="selectin", back_populates="maps")
@@ -42,12 +42,11 @@ class Location(Base):
     map_id = Column(UUID(as_uuid=True), ForeignKey("maps.id", ondelete="CASCADE"), nullable=False, index=True)
     type = Column(String, nullable=False)
     name = Column(String, nullable=False)
-    description = Column(String, nullable=True)
+    description_md = Column(Text, nullable=False, default='')
     x = Column(Float, nullable=False)
     y = Column(Float, nullable=False)
-    metadata_json = Column(JSON, nullable=True)
-    created_at = Column(DateTime(timezone=True), nullable=False, default=datetime.now())
-    updated_at = Column(DateTime(timezone=True), nullable=False, default=datetime.now(), onupdate=datetime.now())
+    created_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now())
 
     map = relationship("Map", back_populates="locations")
 
@@ -56,7 +55,7 @@ class Tag(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True, index=True)
     name = Column(String, nullable=False, unique=True, index=True)
-    created_at = Column(DateTime(timezone=True), nullable=False, default=datetime.now())
+    created_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
 
     maps = relationship("Map", secondary=map_tags, back_populates="tags")
 

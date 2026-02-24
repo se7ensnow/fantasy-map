@@ -4,6 +4,7 @@ from datetime import datetime
 from typing import Optional, List, Dict, Any, Literal
 
 from map_service_app.models import Tag
+from map_service_app.config import DESCRIPTION_MAX_LENGTH
 
 
 Visibility = Literal["private", "public"]
@@ -83,19 +84,17 @@ class LocationCreate(BaseModel):
     map_id: UUID
     type: str
     name: str
-    description: Optional[str] = None
+    description_md: str = Field(default="", max_length=DESCRIPTION_MAX_LENGTH)
     x: float
     y: float
-    metadata_json: Optional[Dict[str, Any]] = None
 
 
 class LocationUpdate(BaseModel):
     type: Optional[str] = None
     name: Optional[str] = None
-    description: Optional[str] = None
+    description_md: Optional[str] = Field(default=None, max_length=DESCRIPTION_MAX_LENGTH)
     x: Optional[float] = None
     y: Optional[float] = None
-    metadata_json: Optional[Dict[str, Any]] = None
 
 
 class LocationResponse(BaseModel):
@@ -103,10 +102,9 @@ class LocationResponse(BaseModel):
     map_id: UUID
     type: str
     name: str
-    description: Optional[str] = None
+    description_md: str = ""
     x: float
     y: float
-    metadata_json: Optional[Dict[str, Any]] = None
     created_at: datetime
     updated_at: datetime
 
