@@ -3,6 +3,7 @@ import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import LocationDetails from "./LocationDetails";
 import LocationEditor from "./LocationEditor";
+import OpenLayersMap from "./OpenLayersMap";
 import { NGINX_URL } from "@/config";
 import { Button } from "@/components/ui/button";
 import L from "leaflet";
@@ -63,42 +64,26 @@ export default function EditableMapViewer({ map, locations, onAddLocation, onDel
     return (
         <div className="flex h-[80vh] gap-4">
             <div className="flex-1 border rounded overflow-hidden relative">
-                <MapContainer
-                    crs={L.CRS.EPSG3857}
-                    center={[60, 0]}
-                    zoom={3}
-                    minZoom={2}
-                    maxZoom={map.max_zoom}
-                    style={{ height: "100%", width: "100%" }}
-                >
-                    <TileLayer
-                        url={`${NGINX_URL}/tiles/${map.id}/{z}/{x}/{y}.png`}
-                        tileSize={256}
-                        noWrap={true}
-                        minZoom={2}
-                        maxZoom={5}
-                    />
-
-                    {locations.map((loc) => (
-                        <Marker
-                            key={loc.id}
-                            position={[loc.y, loc.x]}
-                            eventHandlers={{
-                                click: () => {
-                                    setSelectedLocation(loc);
-                                    setAddMode(false);
-                                    setNewLocationCoords(null);
-                                }
-                            }}
-                        />
-                    ))}
-
-                    {addMode && <AddLocationHandler onMapClick={handleMapClick} />}
-
-                    {newLocationCoords && (
-                        <Marker position={[newLocationCoords.y, newLocationCoords.x]} />
-                    )}
-                </MapContainer>
+                <OpenLayersMap
+                  mapId={map.id}
+                  nginxUrl={NGINX_URL}
+                  width={map.width}
+                  height={map.height}
+                  maxZoom={map.max_zoom}
+                  locations={locations}
+                  addMode={addMode}
+                  previewCoord={newLocationCoords}
+                  onMapClick={(coords) => {
+                    setNewLocationCoords(coords);
+                  }}
+                  onSelectLocation={(loc) => {
+                    setSelectedLocation(loc);
+                    setAddMode(false);
+                    setNewLocationCoords(null);
+                  }}
+                  markerIconUrl="/marker.png"
+                  previewIconUrl="/marker.png"
+                />
             </div>
 
             <div className="w-1/3 p-4 border rounded bg-[rgba(252,247,233,0.95)] overflow-y-auto flex flex-col gap-4">

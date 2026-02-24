@@ -39,7 +39,7 @@ export default function LocationEditor({ location, coords, onSave, onCancel }) {
     const locationData = {
       type,
       name,
-      descriptionMd,
+      description_md: descriptionMd,
       x,
       y,
     };
