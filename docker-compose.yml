@@ -82,6 +82,7 @@ services:
       - "8002:8000"
     volumes:
       - ./shared_uploads:/shared_uploads
+      - ./tiles:/tiles
 
   tile_service:
     build: ./tile_service

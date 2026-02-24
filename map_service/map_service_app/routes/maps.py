@@ -109,8 +109,7 @@ def get_map_endpoint(
             is_owner = True
 
     if map_obj.visibility != "public" and not is_owner:
-        # raise HTTPException(status_code=404, detail="Map not found")
-        raise HTTPException(status_code=403, detail=f"{user_id} can't see this map")
+        raise HTTPException(status_code=404, detail="Map not found")
 
     return map_obj
 
@@ -149,6 +148,10 @@ def delete_map_endpoint(map_id: UUID,
     tiles_dir = os.path.join(TILES_BASE_PATH, str(map_id))
     if os.path.isdir(tiles_dir):
         shutil.rmtree(tiles_dir)
+
+    src_dir = os.path.join(SOURCE_IMAGES_PATH, str(map_id))
+    if os.path.isdir(src_dir):
+        shutil.rmtree(src_dir)
 
     return
 
