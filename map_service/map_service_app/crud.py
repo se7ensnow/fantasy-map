@@ -166,10 +166,9 @@ def create_location(db: Session, location_in: LocationCreate) -> Location:
         map_id=location_in.map_id,
         type=location_in.type,
         name=location_in.name,
-        description=location_in.description,
+        description_md=location_in.description_md,
         x=location_in.x,
         y=location_in.y,
-        metadata_json=location_in.metadata_json,
     )
     db.add(location)
     db.commit()
@@ -193,14 +192,12 @@ def update_location(db: Session, location_id: UUID, location_in: LocationUpdate)
         location.type = location_in.type
     if location_in.name is not None:
         location.name = location_in.name
-    if location_in.description is not None:
-        location.description = location_in.description
+    if location_in.description_md is not None:
+        location.description_md = location_in.description_md
     if location_in.x is not None:
         location.x = location_in.x
     if location_in.y is not None:
         location.y = location_in.y
-    if location_in.metadata_json is not None:
-        location.metadata_json = location_in.metadata_json
     db.commit()
     db.refresh(location)
     return location

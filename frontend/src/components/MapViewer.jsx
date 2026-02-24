@@ -17,13 +17,10 @@ export default function MapViewer({ map, locations }) {
         <div className="flex h-[80vh] gap-4">
             <div className="flex-1 border rounded overflow-hidden">
                 <MapContainer
-                    crs={L.CRS.Simple}
-                    bounds={bounds}
-                    maxBounds={bounds}
-                    maxBoundsViscosity={1.0}
-                    center={[0, 0]}
-                    zoom={0}
-                    minZoom={0}
+                    crs={L.CRS.EPSG3857}
+                    center={[60, 0]}
+                    zoom={3}
+                    minZoom={2}
                     maxZoom={map.max_zoom}
                     style={{ height: "100%", width: "100%" }}
                 >
