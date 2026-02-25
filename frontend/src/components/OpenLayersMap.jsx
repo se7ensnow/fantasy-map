@@ -28,8 +28,8 @@ export default function OpenLayersMap({
   addMode = false,
   onMapClick,
   onSelectLocation,
-  markerIconUrl = "/marker.png",
-  previewIconUrl = "/marker.png",
+  markerIconUrl = "/marker.svg",
+  previewIconUrl = "/marker.svg",
 }) {
   const elRef = useRef(null);
 
@@ -95,6 +95,8 @@ export default function OpenLayersMap({
     const markerLayer = new VectorLayer({
       source: markerSource,
       zIndex: 10,
+      updateWhileInteracting: true,
+      updateWhileAnimating: true,
     });
 
     const view = new View({
@@ -125,7 +127,12 @@ export default function OpenLayersMap({
       map.forEachFeatureAtPixel(evt.pixel, (feature) => {
         picked = feature;
         return true;
-      });
+      },
+      { 
+        hitTolerance: 8,
+        layerFilter: (layer) => layer === markerLayer,
+      },
+      );
 
       if (picked) {
         const kind = picked.get("kind");
@@ -159,7 +166,6 @@ export default function OpenLayersMap({
         anchorXUnits: "fraction",
         anchorYUnits: "fraction",
         crossOrigin: "anonymous",
-        scale: 0.1,
       }),
     });
   }, [markerIconUrl]);
@@ -171,9 +177,7 @@ export default function OpenLayersMap({
         anchor: [0.5, 1],
         anchorXUnits: "fraction",
         anchorYUnits: "fraction",
-        opacity: 0.8,
         crossOrigin: "anonymous",
-        scale: 0.1,
       }),
     });
   }, [previewIconUrl, markerIconUrl]);

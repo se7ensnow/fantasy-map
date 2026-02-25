@@ -1,38 +1,19 @@
 import React, { useState } from "react";
 import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
-import "leaflet/dist/leaflet.css";
-import LocationDetails from "./LocationDetails";
 import LocationEditor from "./LocationEditor";
 import OpenLayersMap from "./OpenLayersMap";
 import { NGINX_URL } from "@/config";
 import { Button } from "@/components/ui/button";
-import L from "leaflet";
 
 const BOUNDS = [
     [-66, -180],
     [500, 180]
 ];
 
-function AddLocationHandler({ onMapClick }) {
-    useMapEvents({
-        click(e) {
-            const { lat, lng } = e.latlng;
-            onMapClick({ x: lng, y: lat });
-        }
-    });
-    return null;
-}
-
 export default function EditableMapViewer({ map, locations, onAddLocation, onDeleteLocation, onUpdateLocation }) {
     const [selectedLocation, setSelectedLocation] = useState(null);
     const [addMode, setAddMode] = useState(false);
     const [newLocationCoords, setNewLocationCoords] = useState(null);
-
-    const handleMapClick = (coords) => {
-        if (addMode) {
-            setNewLocationCoords(coords);
-        }
-    };
 
     const handleSaveNewLocation = (locationData) => {
         if (!newLocationCoords) return;
@@ -81,8 +62,8 @@ export default function EditableMapViewer({ map, locations, onAddLocation, onDel
                     setAddMode(false);
                     setNewLocationCoords(null);
                   }}
-                  markerIconUrl="/marker.png"
-                  previewIconUrl="/marker.png"
+                  markerIconUrl="/marker.svg"
+                  previewIconUrl="/marker.svg"
                 />
             </div>
 
