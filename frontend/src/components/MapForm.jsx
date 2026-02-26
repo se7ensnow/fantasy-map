@@ -6,12 +6,12 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import TagsInput from "@/components/TagsInput";
 
 export default function MapForm({
-  initialTitle = "",
-  initialDescription = "",
-  initialTags = [],
-  initialVisibility = "private",
-  onSubmit,
-  loading
+    initialTitle = "",
+    initialDescription = "",
+    initialTags = [],
+    initialVisibility = "private",
+    onSubmit,
+    loading
 }) {
     const [title, setTitle] = useState(initialTitle);
     const [description, setDescription] = useState(initialDescription);
@@ -20,9 +20,9 @@ export default function MapForm({
     const [error, setError] = useState("");
 
     useEffect(() => {
-      setTitle(initialTitle ?? "");
-      setDescription(initialDescription ?? "");
-      setVisibility(initialVisibility ?? "private");
+        setTitle(initialTitle ?? "");
+        setDescription(initialDescription ?? "");
+        setVisibility(initialVisibility ?? "private");
     }, [initialTitle, initialDescription, initialVisibility]);
 
     const handleSubmit = (e) => {
@@ -89,7 +89,7 @@ export default function MapForm({
                             >
                                 Public
                             </button>
-                            
+
                             <span className="text-xs text-amber-900/60 ml-2">
                                 {visibility === "private"
                                     ? "Visible only to you."

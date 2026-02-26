@@ -84,7 +84,7 @@ services:
       - ./shared_uploads:/shared_uploads
       - ./tiles:/tiles
 
-  tile_service:
+  tile-service:
     build: ./tile_service
     depends_on:
       - redis

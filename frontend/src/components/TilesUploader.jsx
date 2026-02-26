@@ -34,10 +34,10 @@ export default function TilesUploader({ onSubmit }) {
                             Upload Image (.png):
                         </label>
                         <input
-                           type="file"
-                           accept=".png"
-                           onChange={(e) => setFile(e.target.files[0])}
-                           required
+                            type="file"
+                            accept=".png"
+                            onChange={(e) => setFile(e.target.files[0])}
+                            required
                         />
                     </div>
 

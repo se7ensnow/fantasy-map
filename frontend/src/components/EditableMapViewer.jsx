@@ -46,24 +46,24 @@ export default function EditableMapViewer({ map, locations, onAddLocation, onDel
         <div className="flex h-[80vh] gap-4">
             <div className="flex-1 border rounded overflow-hidden relative">
                 <OpenLayersMap
-                  mapId={map.id}
-                  nginxUrl={NGINX_URL}
-                  width={map.width}
-                  height={map.height}
-                  maxZoom={map.max_zoom}
-                  locations={locations}
-                  addMode={addMode}
-                  previewCoord={newLocationCoords}
-                  onMapClick={(coords) => {
-                    setNewLocationCoords(coords);
-                  }}
-                  onSelectLocation={(loc) => {
-                    setSelectedLocation(loc);
-                    setAddMode(false);
-                    setNewLocationCoords(null);
-                  }}
-                  markerIconUrl="/marker.svg"
-                  previewIconUrl="/marker.svg"
+                    mapId={map.id}
+                    nginxUrl={NGINX_URL}
+                    width={map.width}
+                    height={map.height}
+                    maxZoom={map.max_zoom}
+                    locations={locations}
+                    addMode={addMode}
+                    previewCoord={newLocationCoords}
+                    onMapClick={(coords) => {
+                        setNewLocationCoords(coords);
+                    }}
+                    onSelectLocation={(loc) => {
+                        setSelectedLocation(loc);
+                        setAddMode(false);
+                        setNewLocationCoords(null);
+                    }}
+                    markerIconUrl="/marker.svg"
+                    previewIconUrl="/marker.svg"
                 />
             </div>
 
