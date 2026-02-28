@@ -1,5 +1,6 @@
-import React, { useEffect, useMemo, useRef } from "react";
+import React, { useEffect, useMemo, useRef, useCallback } from "react";
 import { Plus, Minus } from "lucide-react";
+
 import OLMap from "ol/Map";
 import View from "ol/View";
 import Projection from "ol/proj/Projection";
@@ -15,12 +16,16 @@ import VectorLayer from "ol/layer/Vector";
 import Feature from "ol/Feature";
 import Point from "ol/geom/Point";
 
-import { Icon, Style, Circle as CircleStyle, Fill, Stroke } from "ol/style";
+import Translate from "ol/interaction/Translate";
+import Collection from "ol/Collection";
+import { primaryAction } from "ol/events/condition";
 
+import { Icon, Style, Circle as CircleStyle, Fill, Stroke } from "ol/style";
 
 import { Button } from "@/components/ui/button";
 
 const TILE_SIZE = 256;
+const HIT_TOLERANCE = 8;
 
 export default function OpenLayersMap({
     mapId,
@@ -28,38 +33,70 @@ export default function OpenLayersMap({
     width,
     height,
     maxZoom,
+
     locations = [],
+
+    // preview marker (for "add location")
     previewCoord = null,
+
+    // click to add new location
     addMode = false,
     onMapClick,
-    onSelectLocation,
-    markerIconUrl = "/marker.svg",
-    previewIconUrl = "/marker.svg",
-}) {
-    const elRef = useRef(null);
 
+    // select existing location
+    onSelectLocation,
+    selectedLocationId = null,
+
+    // drag selected marker
+    editMode = false,
+    onMoveLocation,
+
+    markerIconUrl = "/marker.svg",
+}) {
+    /** ---------------------------
+     * Refs: OL instances
+     * -------------------------- */
+    const elRef = useRef(null);
     const mapRef = useRef(null);
     const markerSourceRef = useRef(null);
     const markerLayerRef = useRef(null);
 
+    /** ---------------------------
+     * Refs: latest props for OL handlers (avoid rebind)
+     * -------------------------- */
     const addModeRef = useRef(addMode);
+    const editModeRef = useRef(editMode);
     const locationsRef = useRef(locations);
     const onMapClickRef = useRef(onMapClick);
     const onSelectLocationRef = useRef(onSelectLocation);
+    const onMoveLocationRef = useRef(onMoveLocation);
 
     useEffect(() => { addModeRef.current = addMode; }, [addMode]);
+    useEffect(() => { editModeRef.current = editMode; }, [editMode]);
     useEffect(() => { locationsRef.current = locations; }, [locations]);
     useEffect(() => { onMapClickRef.current = onMapClick; }, [onMapClick]);
     useEffect(() => { onSelectLocationRef.current = onSelectLocation; }, [onSelectLocation]);
+    useEffect(() => { onMoveLocationRef.current = onMoveLocation; }, [onMoveLocation]);
 
-    // marker bookkeeping
-    const featuresByIdRef = useRef(new Map());
-    const previewFeatureRef = useRef(null);
-    const hoveredIdRef = useRef(null);
-    const selectedIdRef = useRef(null);
+    /** ---------------------------
+     * Marker bookkeeping
+     * -------------------------- */
+    const featuresByIdRef = useRef(new Map());            // id -> Feature
+    const previewFeatureRef = useRef(null);               // Feature
+    const hoveredIdRef = useRef(null);                    // id | null
 
-    const styleCacheRef = useRef(new Map());
+    // selected is controlled from parent via selectedLocationId,
+    // но OL style function читает из ref
+    const selectedIdRef = useRef(selectedLocationId);
 
+    // pending coords exist only on client side until parent "commits" via locations update
+    const pendingCoordsRef = useRef(new Map());           // id -> {x,y}
+    const draggingIdRef = useRef(null);                   // id | null
+    const prevSelectedIdRef = useRef(null);               // last selected id (for revert)
+
+    /** ---------------------------
+     * Projection + tiling
+     * -------------------------- */
     const extent = useMemo(() => [0, 0, width, height], [width, height]);
 
     const projection = useMemo(() => {
@@ -71,22 +108,40 @@ export default function OpenLayersMap({
     }, [extent]);
 
     const resolutions = useMemo(() => {
+        // z=0 is most zoomed-out; z=maxZoom is most zoomed-in
         return Array.from({ length: maxZoom + 1 }, (_, z) => Math.pow(2, maxZoom - z));
     }, [maxZoom]);
 
-    const getStyleFor = (kind, iconUrl, variant) => {
-        const key = `${kind}|${iconUrl}|${variant}`;
+    /** ---------------------------
+     * Style cache
+     * -------------------------- */
+    const styleCacheRef = useRef(new Map());
+
+    const getMarkerStyle = useCallback((iconUrl, variant) => {
+        const key = `${iconUrl}|${variant}`;
         const cache = styleCacheRef.current;
         const cached = cache.get(key);
         if (cached) return cached;
 
+        // You can tweak these safely in one place:
         const scale =
-            variant === "hover" ? 1.1 :
+            variant === "hover" ? 1.10 :
                 variant === "selected" ? 1.18 :
-                    variant === "preview" ? 1.0 : 1.0;
+                    variant === "dragging" ? 1.22 :
+                        variant === "preview" ? 1.00 :
+                            1.00;
 
         const opacity =
-            variant === "preview" ? 0.75 : 1.0;
+            variant === "preview" ? 0.75 :
+                variant === "dragging" ? 0.95 :
+                    1.0;
+
+        const zIndex =
+            variant === "selected" ? 30 :
+                variant === "dragging" ? 28 :
+                    variant === "hover" ? 25 :
+                        variant === "preview" ? 15 :
+                            10;
 
         const icon = new Style({
             image: new Icon({
@@ -98,12 +153,20 @@ export default function OpenLayersMap({
                 scale,
                 opacity,
             }),
-            zIndex: variant === "selected" ? 20 : variant === "hover" ? 15 : 10,
+            zIndex,
         });
 
-        if (variant === "hover" || variant === "selected") {
-            const radius = variant === "selected" ? 10 : 9;
-            const strokeWidth = variant === "selected" ? 3 : 2;
+        // ring for hover/selected/dragging
+        if (variant === "hover" || variant === "selected" || variant === "dragging") {
+            const radius =
+                variant === "selected" ? 10 :
+                    variant === "dragging" ? 11 :
+                        9;
+
+            const strokeWidth =
+                variant === "selected" ? 3 :
+                    variant === "dragging" ? 3 :
+                        2;
 
             const ring = new Style({
                 image: new CircleStyle({
@@ -111,7 +174,7 @@ export default function OpenLayersMap({
                     fill: new Fill({ color: "rgba(255,255,255,0.35)" }),
                     stroke: new Stroke({ color: "rgba(0,0,0,0.55)", width: strokeWidth }),
                 }),
-                zIndex: icon.getZIndex() - 1,
+                zIndex: zIndex - 1,
             });
 
             const arr = [ring, icon];
@@ -121,11 +184,35 @@ export default function OpenLayersMap({
 
         cache.set(key, icon);
         return icon;
-    };
+    }, []);
 
+    /** ---------------------------
+     * Helpers: pick feature at pixel
+     * -------------------------- */
+    const pickLocationFeatureAtPixel = useCallback((map, pixel, markerLayer) => {
+        let picked = null;
+
+        map.forEachFeatureAtPixel(
+            pixel,
+            (feature) => (picked = feature, true),
+            {
+                hitTolerance: HIT_TOLERANCE,
+                layerFilter: (layer) => layer === markerLayer,
+            }
+        );
+
+        if (!picked) return null;
+        if (picked.get("kind") !== "location") return null;
+        return picked;
+    }, []);
+
+    /** ---------------------------
+     * Init OL map once per tileset/projection change
+     * -------------------------- */
     useEffect(() => {
         if (!elRef.current) return;
 
+        /** Tile grid + tiles */
         const tileGrid = new TileGrid({
             extent,
             origin: [0, 0],
@@ -143,13 +230,13 @@ export default function OpenLayersMap({
                     const z = tileCoord[0];
                     const x = tileCoord[1];
                     const y = -tileCoord[2] - 1;
-
                     if (z < 0 || z > maxZoom || x < 0 || y < 0) return undefined;
                     return `${nginxUrl}/tiles/${mapId}/${z}/${x}/${y}.png`;
                 },
             }),
         });
 
+        /** Marker layer */
         const markerSource = new VectorSource();
         markerSourceRef.current = markerSource;
 
@@ -161,15 +248,13 @@ export default function OpenLayersMap({
         });
         markerLayerRef.current = markerLayer;
 
+        // Style function reads from refs (hover/selected/dragging)
         markerLayer.setStyle((feature) => {
             const kind = feature.get("kind");
-
             if (kind === "preview") {
-                const visible = feature.get("visible");
-                if (!visible) return null;
-
-                const iconUrl = feature.get("iconUrl") || previewIconUrl || markerIconUrl;
-                return getStyleFor("preview", iconUrl, "preview");
+                if (!feature.get("visible")) return null;
+                const iconUrl = feature.get("iconUrl") || markerIconUrl;
+                return getMarkerStyle(iconUrl, "preview");
             }
 
             if (kind === "location") {
@@ -178,14 +263,21 @@ export default function OpenLayersMap({
 
                 const isSelected = selectedIdRef.current === id;
                 const isHovered = hoveredIdRef.current === id;
+                const isDragging = draggingIdRef.current === id;
 
-                const variant = isSelected ? "selected" : isHovered ? "hover" : "normal";
-                return getStyleFor("location", iconUrl, variant);
+                const variant =
+                    isDragging ? "dragging" :
+                        isSelected ? "selected" :
+                            isHovered ? "hover" :
+                                "normal";
+
+                return getMarkerStyle(iconUrl, variant);
             }
 
             return null;
         });
 
+        /** View + map */
         const view = new View({
             projection,
             minZoom: 0,
@@ -207,29 +299,28 @@ export default function OpenLayersMap({
         });
 
         view.fit(extent, { padding: [20, 20, 20, 20] });
+        mapRef.current = map;
 
+        /** Preview feature */
+        const previewFeature = new Feature({
+            geometry: new Point([0, 0]),
+            kind: "preview",
+        });
+        previewFeature.set("visible", false);
+        previewFeature.set("iconUrl", markerIconUrl);
+        markerSource.addFeature(previewFeature);
+        previewFeatureRef.current = previewFeature;
+
+        /** Hover */
         const onPointerMove = (evt) => {
-            let picked = null;
-            map.forEachFeatureAtPixel(
-                evt.pixel,
-                (feature) => (picked = feature, true),
-                {
-                    hitTolerance: 8,
-                    layerFilter: (layer) => layer === markerLayer,
-                }
-            );
-
-            const id =
-                picked && picked.get("kind") === "location"
-                    ? picked.get("locationId")
-                    : null;
+            const f = pickLocationFeatureAtPixel(map, evt.pixel, markerLayer);
+            const id = f ? f.get("locationId") : null;
 
             if (hoveredIdRef.current !== id) {
                 hoveredIdRef.current = id;
                 markerLayer.changed();
             }
         };
-
         map.on("pointermove", onPointerMove);
 
         const onMouseLeave = () => {
@@ -240,60 +331,98 @@ export default function OpenLayersMap({
         };
         elRef.current.addEventListener("mouseleave", onMouseLeave);
 
+        /** Click: select marker OR add new location */
         const onSingleClick = (evt) => {
-            let picked = null;
-
-            map.forEachFeatureAtPixel(
-                evt.pixel,
-                (feature) => (picked = feature, true),
-                {
-                    hitTolerance: 8,
-                    layerFilter: (layer) => layer === markerLayer,
-                }
-            );
+            const picked = pickLocationFeatureAtPixel(map, evt.pixel, markerLayer);
 
             if (picked) {
-                const kind = picked.get("kind");
+                const id = picked.get("locationId");
 
-                if (kind === "location") {
-                    const id = picked.get("locationId");
-                    if (selectedIdRef.current !== id) {
-                        selectedIdRef.current = id;
-                        markerLayer.changed();
-                    }
-
-                    const loc = locationsRef.current.find((l) => l.id === id);
-                    if (loc) onSelectLocationRef.current?.(loc);
-                }
-
+                // notify parent
+                const loc = locationsRef.current.find((l) => l.id === id);
+                if (loc) onSelectLocationRef.current?.(loc);
                 return;
             }
 
+            // clicked empty space: only meaningful in addMode
             if (!addModeRef.current) return;
             const [x, y] = evt.coordinate;
             onMapClickRef.current?.({ x, y });
         };
-
         map.on("singleclick", onSingleClick);
 
-        const previewFeature = new Feature({
-            geometry: new Point([0, 0]),
-            kind: "preview",
+        /** Drag selected marker (Translate interaction) */
+        const translateFeatures = new Collection();
+        const translate = new Translate({
+            features: translateFeatures,      // we will keep exactly one feature here
+            layers: [markerLayer],
+            hitTolerance: HIT_TOLERANCE,
+            condition: primaryAction,
         });
-        previewFeature.set("visible", false);
-        previewFeature.set("iconUrl", previewIconUrl || markerIconUrl);
-        markerSource.addFeature(previewFeature);
-        previewFeatureRef.current = previewFeature;
 
-        mapRef.current = map;
+        // Active only when editMode=true AND something selected (we update outside)
+        translate.setActive(false);
+        map.addInteraction(translate);
 
+        const onTranslateStart = (evt) => {
+            evt.features.forEach((feature) => {
+                if (feature.get("kind") !== "location") return;
+                draggingIdRef.current = feature.get("locationId") || null;
+            });
+            markerLayer.changed();
+        };
+
+        const onTranslateEnd = (evt) => {
+            evt.features.forEach((feature) => {
+                if (feature.get("kind") !== "location") return;
+
+                const id = feature.get("locationId");
+                const geom = feature.getGeometry();
+                if (!id || !geom) return;
+
+                const [x, y] = geom.getCoordinates();
+
+                // store as "pending" until parent commits via locations update
+                pendingCoordsRef.current.set(id, { x, y });
+
+                // notify parent (e.g. update form preview)
+                onMoveLocationRef.current?.({ id, x, y });
+            });
+
+            draggingIdRef.current = null;
+            markerLayer.changed();
+        };
+
+        translate.on("translatestart", onTranslateStart);
+        translate.on("translateend", onTranslateEnd);
+
+        // store to refs for later updates
+        // (we keep translateFeatures local but accessible through closure)
+        const api = {
+            translate,
+            translateFeatures,
+            cleanup() {
+                translate.un("translatestart", onTranslateStart);
+                translate.un("translateend", onTranslateEnd);
+                map.removeInteraction(translate);
+            },
+        };
+        map.__translateApi = api;
+
+        /** Cleanup */
         return () => {
             map.un("pointermove", onPointerMove);
             map.un("singleclick", onSingleClick);
             elRef.current?.removeEventListener("mouseleave", onMouseLeave);
 
+            if (map.__translateApi) {
+                map.__translateApi.cleanup();
+                map.__translateApi = null;
+            }
+
             map.setTarget(undefined);
 
+            // reset refs
             mapRef.current = null;
             markerLayerRef.current = null;
             markerSourceRef.current = null;
@@ -303,10 +432,26 @@ export default function OpenLayersMap({
 
             hoveredIdRef.current = null;
             selectedIdRef.current = null;
+            draggingIdRef.current = null;
+
+            pendingCoordsRef.current.clear();
             styleCacheRef.current.clear();
         };
-    }, [mapId, nginxUrl, extent, projection, resolutions, maxZoom, markerIconUrl, previewIconUrl]);
+    }, [
+        mapId,
+        nginxUrl,
+        extent,
+        projection,
+        resolutions,
+        maxZoom,
+        markerIconUrl,
+        getMarkerStyle,
+        pickLocationFeatureAtPixel,
+    ]);
 
+    /** ---------------------------
+     * Sync: locations -> features
+     * -------------------------- */
     useEffect(() => {
         const source = markerSourceRef.current;
         const layer = markerLayerRef.current;
@@ -315,16 +460,18 @@ export default function OpenLayersMap({
         const byId = featuresByIdRef.current;
         const nextIds = new Set(locations.map((l) => l.id));
 
+        // remove deleted
         for (const [id, f] of byId.entries()) {
             if (!nextIds.has(id)) {
                 source.removeFeature(f);
                 byId.delete(id);
-
+                pendingCoordsRef.current.delete(id);
                 if (hoveredIdRef.current === id) hoveredIdRef.current = null;
                 if (selectedIdRef.current === id) selectedIdRef.current = null;
             }
         }
 
+        // upsert + set coords (pending overrides until commit)
         for (const loc of locations) {
             let f = byId.get(loc.id);
             if (!f) {
@@ -335,8 +482,17 @@ export default function OpenLayersMap({
                 });
                 byId.set(loc.id, f);
                 source.addFeature(f);
-            } else {
-                f.getGeometry().setCoordinates([loc.x, loc.y]);
+            }
+
+            const pending = pendingCoordsRef.current.get(loc.id);
+            const x = pending ? pending.x : loc.x;
+            const y = pending ? pending.y : loc.y;
+
+            f.getGeometry().setCoordinates([x, y]);
+
+            // if parent committed (locations updated to pending), clear pending
+            if (pending && pending.x === loc.x && pending.y === loc.y) {
+                pendingCoordsRef.current.delete(loc.id);
             }
 
             if (loc.iconUrl) f.set("iconUrl", loc.iconUrl);
@@ -346,12 +502,15 @@ export default function OpenLayersMap({
         layer.changed();
     }, [locations]);
 
+    /** ---------------------------
+     * Preview marker
+     * -------------------------- */
     useEffect(() => {
         const f = previewFeatureRef.current;
         const layer = markerLayerRef.current;
         if (!f || !layer) return;
 
-        f.set("iconUrl", previewIconUrl || markerIconUrl);
+        f.set("iconUrl", markerIconUrl);
 
         if (!previewCoord) {
             f.set("visible", false);
@@ -362,8 +521,85 @@ export default function OpenLayersMap({
         f.set("visible", true);
         f.getGeometry().setCoordinates([previewCoord.x, previewCoord.y]);
         layer.changed();
-    }, [previewCoord, previewIconUrl, markerIconUrl]);
+    }, [previewCoord, markerIconUrl]);
 
+    /** ---------------------------
+     * Selection + translate activation + rollback logic
+     * -------------------------- */
+    useEffect(() => {
+        selectedIdRef.current = selectedLocationId;
+
+        const map = mapRef.current;
+        const layer = markerLayerRef.current;
+        const byId = featuresByIdRef.current;
+
+        // --- rollback rule ---
+        // if selection changed away from previous selected id (or became null, or addMode turned on),
+        // then discard pending coords for that previous id and reset marker to committed coordinates (from locations)
+        const prev = prevSelectedIdRef.current;
+        const next = selectedLocationId || null;
+
+        const shouldLeaveEditContext = addMode || !editModeRef.current;
+
+        // selection changed (prev -> next different)
+        if (prev && prev !== next) {
+            rollbackPendingFor(prev);
+        }
+
+        // selection cleared
+        if (prev && !next) {
+            rollbackPendingFor(prev);
+        }
+
+        // entering add-mode usually means "stop editing current marker"
+        if (prev && shouldLeaveEditContext) {
+            rollbackPendingFor(prev);
+        }
+
+        prevSelectedIdRef.current = next;
+
+        // --- translate setup (only if editMode + selected exists) ---
+        if (!map || !map.__translateApi) {
+            layer?.changed();
+            return;
+        }
+
+        const { translate, translateFeatures } = map.__translateApi;
+
+        translateFeatures.clear();
+
+        const canDrag = !!editMode && !!selectedLocationId && byId.has(selectedLocationId) && !addMode;
+        if (canDrag) {
+            translateFeatures.push(byId.get(selectedLocationId));
+        }
+
+        translate.setActive(!!canDrag);
+
+        layer?.changed();
+
+        function rollbackPendingFor(id) {
+            const pending = pendingCoordsRef.current.get(id);
+            if (!pending) return;
+
+            pendingCoordsRef.current.delete(id);
+
+            // reset feature coords back to committed value from locations prop
+            const loc = locationsRef.current.find((l) => l.id === id);
+            const f = byId.get(id);
+            if (loc && f) {
+                f.getGeometry().setCoordinates([loc.x, loc.y]);
+            }
+
+            // drop dragging state too
+            if (draggingIdRef.current === id) draggingIdRef.current = null;
+
+            layer?.changed();
+        }
+    }, [selectedLocationId, editMode, addMode]);
+
+    /** ---------------------------
+     * Zoom controls
+     * -------------------------- */
     const clampZoom = (z) => Math.max(0, Math.min(maxZoom, z));
 
     const animateZoomBy = (delta) => {
@@ -371,13 +607,26 @@ export default function OpenLayersMap({
         if (!olMap) return;
 
         const view = olMap.getView();
-        const current = view.getZoom() ?? 0;
-        const target = clampZoom(current + delta);
 
-        if (target === current) return;
+        const currentZoom = view.getZoom() ?? 0;
+        const targetZoom = clampZoom(currentZoom + delta);
+        if (targetZoom === currentZoom) return;
+
+        const center = view.getCenter();
+        if (!center) return;
+
+        const targetRes = view.getResolutionForZoom(targetZoom);
+        const constrainedCenter = view.getConstrainedCenter(center, targetRes);
 
         view.animate(
-            { zoom: target, duration: 220 },
+            { zoom: targetZoom, center: constrainedCenter, duration: 180 },
+            () => {
+                const z = view.getZoom() ?? targetZoom;
+                const res = view.getResolutionForZoom(z);
+                const c = view.getCenter();
+                if (c) view.setCenter(view.getConstrainedCenter(c, res));
+                olMap.renderSync();
+            }
         );
     };
 
@@ -385,28 +634,15 @@ export default function OpenLayersMap({
         <div style={{ position: "relative", width: "100%", height: "100%" }}>
             <div ref={elRef} style={{ width: "100%", height: "100%" }} />
 
-            <div className="absolute left-3 top-3 z-20 flex flex-col gap-2">
+            <div className="map-control-stack">
                 <Button
                     type="button"
                     size="icon"
                     variant="ghost"
-                    className="
-                    h-8 w-8
-                    rounded-md
-                    bg-[rgba(252,247,233,0.95)]
-                    border border-[#c9aa71]
-                    text-[#3a2f1b]
-                    shadow-md
-                    backdrop-blur-sm
-                    hover:bg-[#f2f0e6]
-                    hover:text-[#486248]
-                    hover:border-[#5b7a5b]
-                    active:scale-95
-                    transition-all
-                    "
+                    className="map-control-btn"
                     title="Приблизить"
                     aria-label="Приблизить"
-                    onClick={() => animateZoomBy(+1)}
+                    onClick={() => animateZoomBy(+0.5)}
                 >
                     <Plus className="h-4 w-4" strokeWidth={4} />
                 </Button>
@@ -415,24 +651,10 @@ export default function OpenLayersMap({
                     type="button"
                     size="icon"
                     variant="ghost"
-                    className="
-                    h-8 w-8
-                    rounded-md
-                    bg-[rgba(252,247,233,0.95)]
-                    border border-[#c9aa71]
-                    text-[#3a2f1b]
-                    shadow-md
-                    backdrop-blur-sm
-                    hover:bg-[#f2f0e6]
-                    hover:text-[#486248]
-                    hover:border-[#5b7a5b]
-                    hover:shadow-[0_0_10px_rgba(91,122,91,0.4)]
-                    active:scale-95
-                    transition-all
-                    "
+                    className="map-control-btn"
                     title="Отдалить"
                     aria-label="Отдалить"
-                    onClick={() => animateZoomBy(-1)}
+                    onClick={() => animateZoomBy(-0.5)}
                 >
                     <Minus className="h-4 w-4" strokeWidth={4} />
                 </Button>

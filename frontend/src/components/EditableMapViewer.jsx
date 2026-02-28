@@ -62,8 +62,15 @@ export default function EditableMapViewer({ map, locations, onAddLocation, onDel
                         setAddMode(false);
                         setNewLocationCoords(null);
                     }}
+                    selectedLocationId={selectedLocation?.id ?? null}
+                    editMode={!!selectedLocation && !addMode}
+                    onMoveLocation={({ id, x, y }) => {
+                        setSelectedLocation((prev) => {
+                            if (!prev || prev.id !== id) return prev;
+                            return { ...prev, x, y };
+                        });
+                    }}
                     markerIconUrl="/marker.svg"
-                    previewIconUrl="/marker.svg"
                 />
             </div>
 

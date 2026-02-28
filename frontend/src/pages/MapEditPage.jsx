@@ -12,7 +12,7 @@ import { Button } from "../components/ui/button";
 export default function MapEditPage() {
     const { map_id } = useParams();
     const navigate = useNavigate();
-    
+
     const [map, setMap] = useState(null);
     const [locations, setLocations] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -31,13 +31,13 @@ export default function MapEditPage() {
                     const locationsData = await getLocations(map_id);
                     setLocations(locationsData);
                 } else {
-                  setMap({
-                    title: "",
-                    description: "",
-                    tags: [],
-                    visibility: "private",
-                  });
-                  setLocations([]);
+                    setMap({
+                        title: "",
+                        description: "",
+                        tags: [],
+                        visibility: "private",
+                    });
+                    setLocations([]);
                 }
             } catch (err) {
                 setError(err.message || "Failed to load map");
@@ -78,7 +78,6 @@ export default function MapEditPage() {
         }
         try {
             await uploadImage(map_id, file);
-            toast.success("Image uploaded successfully");
             setIsProcessing(true);
         } catch (err) {
             toast.error(err.message || "Failed to upload image");
@@ -149,82 +148,82 @@ export default function MapEditPage() {
     }
 
     return (
-      <div className="space-y-8">
-        <Card>
-            <CardHeader>
-                <CardTitle>{map_id ? "Edit Map" : "Create Map"}</CardTitle>
-            </CardHeader>
-            <CardContent>
-                <MapForm
-                    initialTitle={map.title}
-                    initialDescription={map.description}
-                    initialTags={(map.tags || []).filter(Boolean)}
-                    initialVisibility={map.visibility}
-                    onSubmit={handleMapSubmit}
-                    loading={loading}
-                />
-            </CardContent>
-        </Card>
-        {map_id && (
-            <>
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Upload Tiles</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <TilesUploader onSubmit={handleUploadImage} />
-                        {isProcessing && (
-                            <div className="flex items-center gap-2 text-amber-600 font-bold mt-2 animate-pulse">
-                                <svg
-                                    className="animate-spin h-6 w-6 text-amber-600"
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <circle
-                                        className="opacity-25"
-                                        cx="12"
-                                        cy="12"
-                                        r="10"
-                                        stroke="currentColor"
-                                        strokeWidth="4"
-                                    ></circle>
-                                    <path
-                                        className="opacity-75"
-                                        fill="currentColor"
-                                        d="M4 12a8 8 0 018-8v8H4z"
-                                    ></path>
-                                </svg>
-                                <span>Processing tiles... Please wait.</span>
-                            </div>
-                        )}
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Edit Locations</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <EditableMapViewer
-                            map={map}
-                            locations={locations}
-                            onAddLocation={handleAddLocation}
-                            onDeleteLocation={handleDeleteLocation}
-                            onUpdateLocation={handleUpdateLocation}
-                        />
-                    </CardContent>
-                </Card>
-            </>
-        )}
-        <div className="flex justify-end px-8 pb-8">
-            <Button
-                variant="outline"
-                onClick={() => navigate(map_id ? `/maps/${map_id}` : "/profile")}
-                className="w-32"
-            >
-                View Map
-            </Button>
+        <div className="space-y-8">
+            <Card>
+                <CardHeader>
+                    <CardTitle>{map_id ? "Edit Map" : "Create Map"}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <MapForm
+                        initialTitle={map.title}
+                        initialDescription={map.description}
+                        initialTags={(map.tags || []).filter(Boolean)}
+                        initialVisibility={map.visibility}
+                        onSubmit={handleMapSubmit}
+                        loading={loading}
+                    />
+                </CardContent>
+            </Card>
+            {map_id && (
+                <>
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Upload Tiles</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <TilesUploader onSubmit={handleUploadImage} />
+                            {isProcessing && (
+                                <div className="flex items-center gap-2 text-amber-600 font-bold mt-2 animate-pulse">
+                                    <svg
+                                        className="animate-spin h-6 w-6 text-amber-600"
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <circle
+                                            className="opacity-25"
+                                            cx="12"
+                                            cy="12"
+                                            r="10"
+                                            stroke="currentColor"
+                                            strokeWidth="4"
+                                        ></circle>
+                                        <path
+                                            className="opacity-75"
+                                            fill="currentColor"
+                                            d="M4 12a8 8 0 018-8v8H4z"
+                                        ></path>
+                                    </svg>
+                                    <span>Processing tiles... Please wait.</span>
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Edit Locations</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <EditableMapViewer
+                                map={map}
+                                locations={locations}
+                                onAddLocation={handleAddLocation}
+                                onDeleteLocation={handleDeleteLocation}
+                                onUpdateLocation={handleUpdateLocation}
+                            />
+                        </CardContent>
+                    </Card>
+                </>
+            )}
+            <div className="flex justify-end px-8 pb-8">
+                <Button
+                    variant="outline"
+                    onClick={() => navigate(map_id ? `/maps/${map_id}` : "/profile")}
+                    className="w-32"
+                >
+                    View Map
+                </Button>
+            </div>
         </div>
-      </div>
     );
 }

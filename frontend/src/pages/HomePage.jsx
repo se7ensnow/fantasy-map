@@ -23,43 +23,43 @@ export default function HomePage() {
     const debouncedQuery = useDebouncedValue(query, 300);
 
     const handleClear = () => {
-      setQuery("");
-      setTagQuery("");
-      setSelectedTags([]);
-      setPage(1);
+        setQuery("");
+        setTagQuery("");
+        setSelectedTags([]);
+        setPage(1);
     };
 
     const toggleTag = (name) => {
-      setSelectedTags((prev) =>
-        prev.includes(name) ? prev.filter((t) => t !== name) : [...prev, name]
-      );
+        setSelectedTags((prev) =>
+            prev.includes(name) ? prev.filter((t) => t !== name) : [...prev, name]
+        );
     };
 
     const handleTagClick = (tag) => {
-      toggleTag(tag);
-      setPage(1);
+        toggleTag(tag);
+        setPage(1);
     };
-    
-    useEffect(() => {
-      async function fetchTags() {
-        try {
-          const tags = await listTags("", 20);
-          setAvailableTags(tags);
-        } catch (err) {
-          console.error("Failed to load tags", err);
-        }
-      }
 
-      fetchTags();
+    useEffect(() => {
+        async function fetchTags() {
+            try {
+                const tags = await listTags("", 20);
+                setAvailableTags(tags);
+            } catch (err) {
+                console.error("Failed to load tags", err);
+            }
+        }
+
+        fetchTags();
     }, []);
 
     useEffect(() => {
         async function fetchMaps() {
             try {
                 const mapsData = await getAllMaps(page, size, {
-                  q: debouncedQuery,
-                  tags: selectedTags.join(","),
-                  tagsMode: tagsMode,
+                    q: debouncedQuery,
+                    tags: selectedTags.join(","),
+                    tagsMode: tagsMode,
                 });
                 setMapsData(mapsData);
             } catch (err) {
@@ -72,7 +72,7 @@ export default function HomePage() {
     }, [page, debouncedQuery, selectedTags, tagsMode]);
 
     useEffect(() => {
-      setPage(1);
+        setPage(1);
     }, [query, selectedTags, tagsMode]);
 
     const totalPages = Math.ceil(mapsData.total / size);
@@ -84,7 +84,7 @@ export default function HomePage() {
     const handleCreateMap = () => {
         navigate('/maps/new');
     };
-    
+
 
     if (error) {
         return <p className="text-red-500">{error}</p>;
@@ -110,22 +110,22 @@ export default function HomePage() {
                 </CardHeader>
                 <CardContent>
                     <CatalogFilters
-                      query={query}
-                      onQueryChange={setQuery}
-                      availableTags={availableTags}
-                      selectedTags={selectedTags}
-                      onToggleTag={toggleTag}
-                      tagsMode={tagsMode}
-                      onTagsModeChange={setTagsMode}
-                      tagQuery={tagQuery}
-                      onTagQueryChange={setTagQuery}
-                      onClear={handleClear}
+                        query={query}
+                        onQueryChange={setQuery}
+                        availableTags={availableTags}
+                        selectedTags={selectedTags}
+                        onToggleTag={toggleTag}
+                        tagsMode={tagsMode}
+                        onTagsModeChange={setTagsMode}
+                        tagQuery={tagQuery}
+                        onTagQueryChange={setTagQuery}
+                        onClear={handleClear}
                     />
                     <div className="mt-4">
-                        <MapList 
-                            maps={mapsData.items} 
-                            onOpen={handleOpenMap} 
-                            onTagClick={handleTagClick} 
+                        <MapList
+                            maps={mapsData.items}
+                            onOpen={handleOpenMap}
+                            onTagClick={handleTagClick}
                             activeTags={selectedTags}
                         />
                     </div>
