@@ -21,6 +21,7 @@ export default function MapEditPage() {
     const { map_id } = useParams();
     const navigate = useNavigate();
 
+
     const [map, setMap] = useState(null);
     const [locations, setLocations] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -88,7 +89,6 @@ export default function MapEditPage() {
         }
         try {
             await uploadImage(map_id, file);
-            toast.success("Image uploaded successfully");
             setIsProcessing(true);
         } catch (err) {
             toast.error(err.message || "Failed to upload image");

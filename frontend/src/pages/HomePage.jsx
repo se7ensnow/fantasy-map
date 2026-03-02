@@ -26,9 +26,16 @@ export default function HomePage() {
         setTagQuery("");
         setSelectedTags([]);
         setPage(1);
+        setQuery("");
+        setTagQuery("");
+        setSelectedTags([]);
+        setPage(1);
     };
 
     const toggleTag = (name) => {
+        setSelectedTags((prev) =>
+            prev.includes(name) ? prev.filter((t) => t !== name) : [...prev, name]
+        );
         setSelectedTags((prev) =>
             prev.includes(name) ? prev.filter((t) => t !== name) : [...prev, name]
         );
@@ -37,7 +44,10 @@ export default function HomePage() {
     const handleTagClick = (tag) => {
         toggleTag(tag);
         setPage(1);
+        toggleTag(tag);
+        setPage(1);
     };
+
 
     useEffect(() => {
         async function fetchTags() {
@@ -48,7 +58,16 @@ export default function HomePage() {
                 console.error("Failed to load tags", err);
             }
         }
+        async function fetchTags() {
+            try {
+                const tags = await listTags("", 20);
+                setAvailableTags(tags);
+            } catch (err) {
+                console.error("Failed to load tags", err);
+            }
+        }
 
+        fetchTags();
         fetchTags();
     }, []);
 
@@ -56,6 +75,9 @@ export default function HomePage() {
         async function fetchMaps() {
             try {
                 const mapsData = await getAllMaps(page, size, {
+                    q: debouncedQuery,
+                    tags: selectedTags.join(","),
+                    tagsMode: tagsMode,
                     q: debouncedQuery,
                     tags: selectedTags.join(","),
                     tagsMode: tagsMode,
@@ -71,6 +93,7 @@ export default function HomePage() {
     }, [page, debouncedQuery, selectedTags, tagsMode]);
 
     useEffect(() => {
+        setPage(1);
         setPage(1);
     }, [query, selectedTags, tagsMode]);
 
@@ -119,8 +142,22 @@ export default function HomePage() {
                         tagQuery={tagQuery}
                         onTagQueryChange={setTagQuery}
                         onClear={handleClear}
+                        query={query}
+                        onQueryChange={setQuery}
+                        availableTags={availableTags}
+                        selectedTags={selectedTags}
+                        onToggleTag={toggleTag}
+                        tagsMode={tagsMode}
+                        onTagsModeChange={setTagsMode}
+                        tagQuery={tagQuery}
+                        onTagQueryChange={setTagQuery}
+                        onClear={handleClear}
                     />
                     <div className="mt-4">
+                        <MapList
+                            maps={mapsData.items}
+                            onOpen={handleOpenMap}
+                            onTagClick={handleTagClick}
                         <MapList
                             maps={mapsData.items}
                             onOpen={handleOpenMap}
