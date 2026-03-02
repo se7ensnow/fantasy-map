@@ -106,11 +106,11 @@ export default function CatalogFilters({
     }
 
     return (
-        <div className="rounded-lg border border-amber-700/30 bg-amber-50/60 p-4 space-y-3">
+        <div className="rounded-lg border border-border-default/30 bg-md-code-bg/60 p-4 space-y-3">
             {/* Row 1: title search + clear */}
             <div className="flex items-end justify-between gap-3">
                 <div className="flex-1">
-                    <label className="block mb-1 font-medium text-amber-900">
+                    <label className="block mb-1 font-medium text-text-heading">
                         Search
                     </label>
                     <Input
@@ -148,7 +148,7 @@ export default function CatalogFilters({
                             />
                         </div>
 
-                        <span className="text-xs text-amber-900/70 tabular-nums">
+                        <span className="text-xs text-text-heading/70 tabular-nums">
                             {tagQuery.length}/{MAX_TAG_LEN}
                         </span>
                     </div>
@@ -156,18 +156,18 @@ export default function CatalogFilters({
                     <TagsModeToggle value={tagsMode} onChange={onTagsModeChange} />
                 </div>
 
-                {/* dropdown stays the same */}
+                {/* dropdown */}
                 {open && normalizedTagQuery && (loadingSug || suggestions.length > 0) && (
-                    <div className="absolute z-20 mt-1 w-72 max-w-full rounded-md border bg-white shadow-md overflow-hidden">
+                    <div className="absolute z-20 mt-1 w-72 max-w-full rounded-md border border-border-default/30 bg-surface-input shadow-md overflow-hidden">
                         <div className="max-h-48 overflow-y-auto">
                             {loadingSug && (
-                                <div className="px-3 py-2 text-sm text-amber-900/70">
+                                <div className="px-3 py-2 text-sm text-text-heading/70">
                                     Loading…
                                 </div>
                             )}
 
                             {!loadingSug && suggestions.length === 0 && (
-                                <div className="px-3 py-2 text-sm text-amber-900/70">
+                                <div className="px-3 py-2 text-sm text-text-heading/70">
                                     No suggestions
                                 </div>
                             )}
@@ -177,7 +177,7 @@ export default function CatalogFilters({
                                     <button
                                         key={s}
                                         type="button"
-                                        className="w-full text-left px-3 py-2 text-sm hover:bg-amber-50 border-b last:border-b-0"
+                                        className="w-full text-left px-3 py-2 text-sm hover:bg-md-code-bg border-b border-border-default/20 last:border-b-0"
                                         onClick={() => addTag(s)}
                                     >
                                         <span className="tag-font">{s}</span>
@@ -188,7 +188,7 @@ export default function CatalogFilters({
                 )}
 
                 {open && normalizedTagQuery && !loadingSug && suggestions.length === 0 && (
-                    <div className="mt-1 text-xs text-amber-900/60">
+                    <div className="mt-1 text-xs text-text-heading/60">
                         Press Enter to add “{normalizedTagQuery}”
                     </div>
                 )}
@@ -200,7 +200,7 @@ export default function CatalogFilters({
                     {selectedTags.map((name) => (
                         <Badge
                             key={name}
-                            className="cursor-pointer bg-[#5b7a5b] text-white"
+                            className="cursor-pointer bg-accent-primary text-text-on-accent hover:bg-accent-primary-hover"
                             onClick={() => onToggleTag(name)}
                             title="Click to remove"
                         >

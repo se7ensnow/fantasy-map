@@ -10,7 +10,8 @@ export default function TagsModeToggle({ value, onChange }) {
             onClick={() => onChange(isAll ? "any" : "all")}
             className={cn(
                 "h-10 px-3 rounded-md border text-sm font-medium transition-colors",
-                "border-amber-700/40 bg-[#fcf7e9] hover:bg-amber-50",
+                "border-border-default/40 bg-surface-panel hover:bg-surface-muted",
+                "text-text-primary",
                 "flex items-center gap-1"
             )}
             title={isAll ? "Match all selected tags" : "Match any selected tag"}
@@ -18,16 +19,22 @@ export default function TagsModeToggle({ value, onChange }) {
             <span
                 className={cn(
                     "px-2 py-1 rounded-md transition-colors",
-                    !isAll ? "bg-[#5b7a5b] text-white" : "text-amber-900/70"
+                    !isAll
+                        ? "bg-accent-primary text-text-on-accent"
+                        : "text-text-heading/80"
                 )}
             >
                 any
             </span>
-            <span className="mx-1 text-amber-900/40">|</span>
+
+            <span className="mx-1 text-text-heading/40">|</span>
+
             <span
                 className={cn(
                     "px-2 py-1 rounded-md transition-colors",
-                    isAll ? "bg-[#5b7a5b] text-white" : "text-amber-900/70"
+                    isAll
+                        ? "bg-accent-primary text-text-on-accent"
+                        : "text-text-heading/80"
                 )}
             >
                 all

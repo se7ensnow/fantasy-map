@@ -1,29 +1,33 @@
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import { Toaster } from 'sonner'
-import './index.css'
-import App from './App.jsx'
+import { StrictMode } from "react";
+import { createRoot } from "react-dom/client";
+import { Toaster } from "sonner";
+import "./index.css";
+import App from "./App.jsx";
+import { applyTheme, loadTheme } from "./lib/theme";
 
-createRoot(document.getElementById('root')).render(
-  <StrictMode>
-    <App />
-    <Toaster 
-      position="bottom-right"
-      richColors
-      toastOptions={{
-        success: {
-          className: "bg-amber-100 text-green-900 border border-green-400",
-        },
-        error: {
-          className: "bg-amber-100 text-red-900 border border-red-400",
-        },
-        info: {
-          className: "bg-amber-100 text-blue-900 border border-blue-400",
-        },
-        warning: {
-          className: "bg-amber-100 text-orange-900 border border-orange-400",
-        },
-      }}
-    />
-  </StrictMode>,
-)
+applyTheme(loadTheme());
+
+createRoot(document.getElementById("root")).render(
+    <StrictMode>
+        <App />
+        <Toaster
+            position="bottom-right"
+            richColors
+            toastOptions={{
+                className: "bg-surface-panel text-text-heading border border-border-default",
+                success: {
+                    className: "bg-surface-panel text-status-success border border-status-success",
+                },
+                error: {
+                    className: "bg-surface-panel text-status-danger border border-status-danger",
+                },
+                info: {
+                    className: "bg-surface-panel text-status-info border border-status-info",
+                },
+                warning: {
+                    className: "bg-surface-panel text-status-warning border border-status-warning",
+                },
+            }}
+        />
+    </StrictMode>
+);

@@ -1,18 +1,27 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+
 import { getMapById, updateMap, createMap, uploadImage } from "../api/maps";
-import { getLocations, createLocation, updateLocation, deleteLocation } from "@/api/locations";
+import {
+    getLocations,
+    createLocation,
+    updateLocation,
+    deleteLocation,
+} from "@/api/locations";
+
 import MapForm from "../components/MapForm";
 import TilesUploader from "../components/TilesUploader";
 import EditableMapViewer from "@/components/EditableMapViewer";
+
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 
 export default function MapEditPage() {
     const { map_id } = useParams();
     const navigate = useNavigate();
-    
+
+
     const [map, setMap] = useState(null);
     const [locations, setLocations] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -21,9 +30,9 @@ export default function MapEditPage() {
 
     useEffect(() => {
         async function fetchData() {
-
             try {
                 setLoading(true);
+
                 if (map_id) {
                     const mapData = await getMapById(map_id);
                     setMap(mapData);
@@ -31,13 +40,13 @@ export default function MapEditPage() {
                     const locationsData = await getLocations(map_id);
                     setLocations(locationsData);
                 } else {
-                  setMap({
-                    title: "",
-                    description: "",
-                    tags: [],
-                    visibility: "private",
-                  });
-                  setLocations([]);
+                    setMap({
+                        title: "",
+                        description: "",
+                        tags: [],
+                        visibility: "private",
+                    });
+                    setLocations([]);
                 }
             } catch (err) {
                 setError(err.message || "Failed to load map");
@@ -53,9 +62,11 @@ export default function MapEditPage() {
     const handleMapSubmit = async (title, description, tags, visibility) => {
         try {
             setLoading(true);
+
             if (map_id) {
                 await updateMap(map_id, title, description, tags, visibility);
                 toast.success("Map updated successfully");
+
                 const updatedMap = await getMapById(map_id);
                 setMap(updatedMap);
             } else {
@@ -78,7 +89,6 @@ export default function MapEditPage() {
         }
         try {
             await uploadImage(map_id, file);
-            toast.success("Image uploaded successfully");
             setIsProcessing(true);
         } catch (err) {
             toast.error(err.message || "Failed to upload image");
@@ -104,7 +114,7 @@ export default function MapEditPage() {
         }, 2000);
 
         return () => clearInterval(interval);
-    }, [isProcessing, map_id])
+    }, [isProcessing, map_id]);
 
     const handleAddLocation = async (newLocation) => {
         if (!map_id) {
@@ -123,7 +133,7 @@ export default function MapEditPage() {
     const handleDeleteLocation = async (locationId) => {
         try {
             await deleteLocation(locationId);
-            setLocations(locations.filter(loc => loc.id !== locationId));
+            setLocations(locations.filter((loc) => loc.id !== locationId));
         } catch (err) {
             toast.error(err.message || "Failed to delete location");
             console.error(err);
@@ -133,7 +143,7 @@ export default function MapEditPage() {
     const handleUpdateLocation = async (locationId, updatedLocation) => {
         try {
             const saved = await updateLocation(locationId, updatedLocation);
-            setLocations(locations.map(loc => loc.id === saved.id ? saved : loc));
+            setLocations(locations.map((loc) => (loc.id === saved.id ? saved : loc)));
         } catch (err) {
             toast.error(err.message || "Failed to update location");
             console.error(err);
@@ -141,90 +151,99 @@ export default function MapEditPage() {
     };
 
     if (error) {
-        return <p className="text-red-500">{error}</p>;
+        return <p className="text-status-danger p-4">{error}</p>;
     }
 
     if (!map) {
-        return <p>Loading map...</p>;
+        return <p className="p-4 text-text-heading">Loading map...</p>;
     }
 
     return (
-      <div className="space-y-8">
-        <Card>
-            <CardHeader>
-                <CardTitle>{map_id ? "Edit Map" : "Create Map"}</CardTitle>
-            </CardHeader>
-            <CardContent>
-                <MapForm
-                    initialTitle={map.title}
-                    initialDescription={map.description}
-                    initialTags={(map.tags || []).filter(Boolean)}
-                    initialVisibility={map.visibility}
-                    onSubmit={handleMapSubmit}
-                    loading={loading}
-                />
-            </CardContent>
-        </Card>
-        {map_id && (
-            <>
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Upload Tiles</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <TilesUploader onSubmit={handleUploadImage} />
-                        {isProcessing && (
-                            <div className="flex items-center gap-2 text-amber-600 font-bold mt-2 animate-pulse">
-                                <svg
-                                    className="animate-spin h-6 w-6 text-amber-600"
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <circle
-                                        className="opacity-25"
-                                        cx="12"
-                                        cy="12"
-                                        r="10"
-                                        stroke="currentColor"
-                                        strokeWidth="4"
-                                    ></circle>
-                                    <path
-                                        className="opacity-75"
-                                        fill="currentColor"
-                                        d="M4 12a8 8 0 018-8v8H4z"
-                                    ></path>
-                                </svg>
-                                <span>Processing tiles... Please wait.</span>
-                            </div>
-                        )}
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Edit Locations</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <EditableMapViewer
-                            map={map}
-                            locations={locations}
-                            onAddLocation={handleAddLocation}
-                            onDeleteLocation={handleDeleteLocation}
-                            onUpdateLocation={handleUpdateLocation}
-                        />
-                    </CardContent>
-                </Card>
-            </>
-        )}
-        <div className="flex justify-end px-8 pb-8">
-            <Button
-                variant="outline"
-                onClick={() => navigate(map_id ? `/maps/${map_id}` : "/profile")}
-                className="w-32"
-            >
-                View Map
-            </Button>
+        <div className="space-y-8">
+            {/* Map form */}
+            <Card>
+                <CardHeader>
+                    <CardTitle className="text-text-heading">
+                        {map_id ? "Edit Map" : "Create Map"}
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <MapForm
+                        initialTitle={map.title}
+                        initialDescription={map.description}
+                        initialTags={(map.tags || []).filter(Boolean)}
+                        initialVisibility={map.visibility}
+                        onSubmit={handleMapSubmit}
+                        loading={loading}
+                    />
+                </CardContent>
+            </Card>
+
+            {map_id && (
+                <>
+                    {/* Upload tiles */}
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="text-text-heading">Upload Tiles</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <TilesUploader onSubmit={handleUploadImage} />
+
+                            {isProcessing && (
+                                <div className="flex items-center gap-2 text-accent-primary font-bold mt-2 animate-pulse">
+                                    <svg
+                                        className="animate-spin h-6 w-6"
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <circle
+                                            className="opacity-25"
+                                            cx="12"
+                                            cy="12"
+                                            r="10"
+                                            stroke="currentColor"
+                                            strokeWidth="4"
+                                        ></circle>
+                                        <path
+                                            className="opacity-75"
+                                            fill="currentColor"
+                                            d="M4 12a8 8 0 018-8v8H4z"
+                                        ></path>
+                                    </svg>
+                                    <span>Processing tiles... Please wait.</span>
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+
+                    {/* Edit locations */}
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="text-text-heading">Edit Locations</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <EditableMapViewer
+                                map={map}
+                                locations={locations}
+                                onAddLocation={handleAddLocation}
+                                onDeleteLocation={handleDeleteLocation}
+                                onUpdateLocation={handleUpdateLocation}
+                            />
+                        </CardContent>
+                    </Card>
+                </>
+            )}
+
+            <div className="flex justify-end px-8 pb-8">
+                <Button
+                    variant="outline"
+                    onClick={() => navigate(map_id ? `/maps/${map_id}` : "/profile")}
+                    className="w-32"
+                >
+                    View Map
+                </Button>
+            </div>
         </div>
-      </div>
     );
 }
