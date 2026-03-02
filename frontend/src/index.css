@@ -337,15 +337,17 @@
   .map-control-stack {
     @apply absolute left-3 top-3 z-20 flex flex-col gap-2;
   }
-
+  
   .map-control-btn {
-    @apply h-8 w-8 rounded-md shadow-md backdrop-blur-sm transition-all
-           border text-[color:var(--text)]
-           bg-[rgba(252,247,233,0.95)]
-           border-[#c9aa71]
-           hover:bg-[#f2f0e6]
-           hover:text-[#486248]
-           hover:border-[color:var(--accent)]
+    @apply h-8 w-8 rounded-md shadow-card
+           backdrop-blur-sm
+           transition-all duration-150
+           border-2
+           text-text-primary
+           bg-surface-panel/95
+           border-border-emphasis
+           hover:text-accent-primary-hover
+           hover:border-accent-primary/80
            active:scale-95;
   }
 }

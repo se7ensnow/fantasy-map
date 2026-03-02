@@ -23,6 +23,7 @@ export default function MapViewer({ map, locations }) {
                     maxZoom={map.max_zoom}
                     locations={locations}
                     onSelectLocation={setSelectedLocation}
+                    selectedLocationId={selectedLocation?.id ?? null}
                 />
             </div>
 
