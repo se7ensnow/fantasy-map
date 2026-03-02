@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -23,21 +22,30 @@ export default function TilesUploader({ onSubmit }) {
     };
 
     return (
-        <Card className="bg-[rgba(252,247,233,0.9)] border-amber-700 mb-6">
+        <Card className="bg-surface-panel border-border-default mb-6">
             <CardHeader>
-                <CardTitle className="text-xl">Upload Map Image</CardTitle>
+                <CardTitle className="text-xl text-text-heading">
+                    Upload Map Image
+                </CardTitle>
             </CardHeader>
+
             <CardContent>
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
-                        <label className="block mb-1 font-medium">
+                        <label className="block mb-1 font-medium text-text-heading">
                             Upload Image (.png):
                         </label>
+
+                        {/* файл-инпут оставляем нативным, но стилизуем через токены */}
                         <input
                             type="file"
                             accept=".png"
                             onChange={(e) => setFile(e.target.files[0])}
                             required
+                            className="block w-full text-sm text-text-heading file:mr-4 file:py-2 file:px-4
+                         file:rounded-md file:border file:border-border-default
+                         file:bg-surface-paper file:text-text-heading
+                         hover:file:bg-surface-panel/60 transition-colors"
                         />
                     </div>
 

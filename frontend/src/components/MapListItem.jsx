@@ -3,7 +3,15 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import ShareMapModal from "@/components/ShareMapModal";
 
-export default function MapListItem({ map, onDelete, onEdit, onOpen, onTagClick, activeTags = [], showShare = false }) {
+export default function MapListItem({
+    map,
+    onDelete,
+    onEdit,
+    onOpen,
+    onTagClick,
+    activeTags = [],
+    showShare = false,
+}) {
     const [shareOpen, setShareOpen] = useState(false);
 
     const tags = Array.isArray(map.tags) ? map.tags : [];
@@ -21,7 +29,10 @@ export default function MapListItem({ map, onDelete, onEdit, onOpen, onTagClick,
 
     const visible = ordered.slice(0, visibleCount);
 
-    const hiddenInactiveCount = Math.max(0, inactiveOnCard.length - Math.max(0, visibleCount - mustShowCount));
+    const hiddenInactiveCount = Math.max(
+        0,
+        inactiveOnCard.length - Math.max(0, visibleCount - mustShowCount)
+    );
 
     const openShare = (e) => {
         e.preventDefault();
@@ -31,10 +42,20 @@ export default function MapListItem({ map, onDelete, onEdit, onOpen, onTagClick,
 
     return (
         <>
-            <div className="rounded-lg border-2 border-[#c9aa71] bg-[#fcf7e9] shadow-md p-4 hover:shadow-lg transition-shadow duration-300">
+            <div
+                className="
+                rounded-lg border-2 border-border-emphasis bg-surface-panel p-4
+                shadow-card hover:shadow-card-hover
+                hover:border-border-emphasis/80
+                dark:hover:bg-state-hover/50
+                transition-[box-shadow,background-color,border-color] duration-200
+              "
+            >
                 <div className="flex justify-between items-center gap-4">
                     <div className="min-w-0">
-                        <h3 className="text-xl font-bold text-[#5b7a5b] mb-1">{map.title}</h3>
+                        <h3 className="text-xl font-bold text-accent-text mb-1">
+                            {map.title}
+                        </h3>
 
                         {tags.length > 0 && (
                             <div className="mt-2 flex flex-wrap gap-2">
@@ -47,7 +68,7 @@ export default function MapListItem({ map, onDelete, onEdit, onOpen, onTagClick,
                                             tabIndex={0}
                                             className={
                                                 isActive
-                                                    ? "cursor-pointer select-none border-[#5b7a5b] bg-[#5b7a5b]/15"
+                                                    ? "cursor-pointer select-none border-accent-primary bg-accent-primary/15"
                                                     : "cursor-pointer select-none"
                                             }
                                             onClick={(e) => {
@@ -62,7 +83,11 @@ export default function MapListItem({ map, onDelete, onEdit, onOpen, onTagClick,
                                                     onTagClick?.(t);
                                                 }
                                             }}
-                                            title={isActive ? "Active filter (click to remove)" : "Click to filter by this tag"}
+                                            title={
+                                                isActive
+                                                    ? "Active filter (click to remove)"
+                                                    : "Click to filter by this tag"
+                                            }
                                         >
                                             <span className="tag-font">{t}</span>
                                         </Badge>

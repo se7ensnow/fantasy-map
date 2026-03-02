@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { Input } from './ui/input';
-import { Textarea } from './ui/textarea';
-import { Button } from './ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import React, { useState, useEffect } from "react";
+import { Input } from "./ui/input";
+import { Textarea } from "./ui/textarea";
+import { Button } from "./ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import TagsInput from "@/components/TagsInput";
 
 export default function MapForm({
@@ -11,7 +11,7 @@ export default function MapForm({
     initialTags = [],
     initialVisibility = "private",
     onSubmit,
-    loading
+    loading,
 }) {
     const [title, setTitle] = useState(initialTitle);
     const [description, setDescription] = useState(initialDescription);
@@ -36,31 +36,33 @@ export default function MapForm({
     };
 
     return (
-        <Card className="bg-[rgba(252,247,233,0.9)] border-amber-700 mb-6">
+        <Card className="bg-surface-panel border-border-default mb-6">
             <CardHeader>
-                <CardTitle className="text-xl">
+                <CardTitle className="text-xl text-text-heading">
                     {initialTitle ? "Edit Map Info" : "Create New Map"}
                 </CardTitle>
             </CardHeader>
+
             <CardContent>
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
-                        <label className="block mb-1 font-medium text-amber-900">Title:</label>
-                        <Input
-                            value={title}
-                            onChange={(e) => setTitle(e.target.value)}
-                            required
-                        />
+                        <label className="block mb-1 font-medium text-text-heading">
+                            Title:
+                        </label>
+                        <Input value={title} onChange={(e) => setTitle(e.target.value)} required />
                     </div>
+
                     <div>
-                        <label className="block mb-1 font-medium text-amber-900">Description:</label>
-                        <Textarea
-                            value={description}
-                            onChange={(e) => setDescription(e.target.value)}
-                        />
+                        <label className="block mb-1 font-medium text-text-heading">
+                            Description:
+                        </label>
+                        <Textarea value={description} onChange={(e) => setDescription(e.target.value)} />
                     </div>
+
                     <div>
-                        <label className="block mb-1 font-medium text-amber-900">Visibility:</label>
+                        <label className="block mb-1 font-medium text-text-heading">
+                            Visibility:
+                        </label>
 
                         <div className="flex items-center gap-2">
                             <button
@@ -69,48 +71,52 @@ export default function MapForm({
                                 className={[
                                     "px-3 h-9 rounded-md border text-sm transition-colors",
                                     visibility === "private"
-                                        ? "bg-amber-100 border-amber-700/40 text-amber-900"
-                                        : "bg-white/60 border-amber-700/20 text-amber-900/70 hover:bg-amber-50"
+                                        ? "bg-state-selected border-border-default/40 text-text-heading"
+                                        : "bg-surface-paper/60 border-border-default/20 text-text-heading/60 hover:bg-state-hover",
                                 ].join(" ")}
                                 aria-pressed={visibility === "private"}
                             >
                                 Private
                             </button>
+
                             <button
                                 type="button"
                                 onClick={() => setVisibility("public")}
                                 className={[
                                     "px-3 h-9 rounded-md border text-sm transition-colors",
                                     visibility === "public"
-                                        ? "bg-[#5b7a5b]/15 border-[#5b7a5b]/40 text-[#2f4a2f]"
-                                        : "bg-white/60 border-amber-700/20 text-amber-900/70 hover:bg-amber-50"
+                                        ? "bg-accent-primary/15 border-accent-primary/40 text-accent-primary"
+                                        : "bg-surface-paper/60 border-border-default/20 text-text-heading/60 hover:bg-state-hover",
                                 ].join(" ")}
                                 aria-pressed={visibility === "public"}
                             >
                                 Public
                             </button>
 
-                            <span className="text-xs text-amber-900/60 ml-2">
-                                {visibility === "private"
-                                    ? "Visible only to you."
-                                    : "Visible in the catalog."}
+                            <span className="text-xs text-text-heading/60 ml-2">
+                                {visibility === "private" ? "Visible only to you." : "Visible in the catalog."}
                             </span>
                         </div>
                     </div>
+
                     <div>
-                        <label className="block mb-1 font-medium text-amber-900">
+                        <label className="block mb-1 font-medium text-text-heading">
                             Tags:
                         </label>
+
                         <TagsInput
                             value={tags}
                             onChange={setTags}
                             placeholder="Add tags (Enter / comma)…"
                         />
-                        <p className="text-xs text-amber-800/70 mt-1">
+
+                        <p className="text-xs text-text-heading/60 mt-1">
                             Press Enter or comma to add a tag.
                         </p>
                     </div>
-                    {error && <p className="text-red-500">{error}</p>}
+
+                    {error && <p className="text-status-danger">{error}</p>}
+
                     <Button type="submit" disabled={loading}>
                         {loading ? "Saving..." : "Save Map"}
                     </Button>

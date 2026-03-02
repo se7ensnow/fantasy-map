@@ -1,16 +1,16 @@
 import React, { useState } from "react";
-import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
 import LocationEditor from "./LocationEditor";
 import OpenLayersMap from "./OpenLayersMap";
 import { NGINX_URL } from "@/config";
 import { Button } from "@/components/ui/button";
 
-const BOUNDS = [
-    [-66, -180],
-    [500, 180]
-];
-
-export default function EditableMapViewer({ map, locations, onAddLocation, onDeleteLocation, onUpdateLocation }) {
+export default function EditableMapViewer({
+    map,
+    locations,
+    onAddLocation,
+    onDeleteLocation,
+    onUpdateLocation,
+}) {
     const [selectedLocation, setSelectedLocation] = useState(null);
     const [addMode, setAddMode] = useState(false);
     const [newLocationCoords, setNewLocationCoords] = useState(null);
@@ -22,7 +22,7 @@ export default function EditableMapViewer({ map, locations, onAddLocation, onDel
             ...locationData,
             map_id: map.id,
             x: newLocationCoords.x,
-            y: newLocationCoords.y
+            y: newLocationCoords.y,
         };
 
         onAddLocation(fullLocationData);
@@ -35,16 +35,17 @@ export default function EditableMapViewer({ map, locations, onAddLocation, onDel
 
         const fullLocationData = {
             ...locationData,
-            map_id: map.id
+            map_id: map.id,
         };
 
         onUpdateLocation(selectedLocation.id, fullLocationData);
         setSelectedLocation(null);
-    }
+    };
 
     return (
         <div className="flex h-[80vh] gap-4">
-            <div className="flex-1 border rounded overflow-hidden relative">
+            {/* Map */}
+            <div className="flex-1 rounded overflow-hidden relative">
                 <OpenLayersMap
                     mapId={map.id}
                     nginxUrl={NGINX_URL}
@@ -67,10 +68,11 @@ export default function EditableMapViewer({ map, locations, onAddLocation, onDel
                 />
             </div>
 
-            <div className="w-1/3 p-4 border rounded bg-[rgba(252,247,233,0.95)] overflow-y-auto flex flex-col gap-4">
-                {/* Верхний блок с заголовком + кнопкой */}
+            {/* Right panel */}
+            <div className="w-1/3 p-4 rounded bg-surface-panel/95 overflow-y-auto flex flex-col gap-4">
                 <div className="flex justify-between items-center mb-2">
-                    <h2 className="text-xl font-bold">Locations</h2>
+                    <h2 className="text-xl font-bold text-text-heading">Locations</h2>
+
                     <Button
                         onClick={() => {
                             setAddMode(!addMode);
@@ -82,7 +84,6 @@ export default function EditableMapViewer({ map, locations, onAddLocation, onDel
                     </Button>
                 </div>
 
-                {/* Контент правой панели */}
                 {addMode && newLocationCoords ? (
                     <LocationEditor
                         coords={newLocationCoords}
@@ -97,10 +98,9 @@ export default function EditableMapViewer({ map, locations, onAddLocation, onDel
                         <LocationEditor
                             location={selectedLocation}
                             onSave={handleSaveEditedLocation}
-                            onCancel={() => {
-                                setSelectedLocation(null);
-                            }}
+                            onCancel={() => setSelectedLocation(null)}
                         />
+
                         <div className="mt-4 space-x-2">
                             <Button
                                 variant="destructive"
@@ -114,7 +114,10 @@ export default function EditableMapViewer({ map, locations, onAddLocation, onDel
                         </div>
                     </>
                 ) : (
-                    <p className="text-amber-900">Select a location on the map or click "Add Location" to create a new one.</p>
+                    <p className="text-text-heading">
+                        Select a location on the map or click "Add Location" to create a new
+                        one.
+                    </p>
                 )}
             </div>
         </div>

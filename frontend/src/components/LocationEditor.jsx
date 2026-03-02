@@ -44,39 +44,49 @@ export default function LocationEditor({ location, coords, onSave, onCancel }) {
     };
 
     return (
-        <div className="bg-white border border-gray-300 rounded p-4 space-y-3 shadow">
-            <h2 className="text-xl font-bold mb-2">
+        <div className="bg-surface-paper/85 border border-border-default backdrop-blur-sm rounded p-4 space-y-3 shadow text-text-primary">
+            <h2 className="text-xl font-bold mb-2 text-text-heading">
                 {location ? "Edit Location" : "Add Location"}
             </h2>
 
             <form onSubmit={handleSubmit} className="space-y-3">
                 <div>
-                    <label className="block mb-1 font-medium">Name:</label>
+                    <label className="block mb-1 font-medium text-text-heading">Name:</label>
                     <Input value={name} onChange={(e) => setName(e.target.value)} required />
                 </div>
 
                 <div>
-                    <label className="block mb-1 font-medium">Type:</label>
+                    <label className="block mb-1 font-medium text-text-heading">Type:</label>
                     <Input value={type} onChange={(e) => setType(e.target.value)} required />
                 </div>
 
                 {/* Markdown editor */}
                 <div>
                     <div className="flex items-center justify-between mb-1">
-                        <label className="block font-medium">Article (Markdown):</label>
-
-                        <div className="inline-flex rounded border overflow-hidden">
+                        <label className="block font-medium text-text-heading">Article (Markdown):</label>
+                        <div className="inline-flex rounded border border-border-default overflow-hidden">
                             <button
                                 type="button"
                                 onClick={() => setTab("edit")}
-                                className={`px-3 py-1 text-sm ${tab === "edit" ? "bg-amber-100 font-semibold" : "bg-white"}`}
+                                className={[
+                                    "px-3 py-1 text-sm transition-colors",
+                                    tab === "edit"
+                                        ? "bg-state-selected font-semibold"
+                                        : "bg-surface-paper/60 hover:bg-state-hover",
+                                ].join(" ")}
                             >
                                 Edit
                             </button>
+
                             <button
                                 type="button"
                                 onClick={() => setTab("preview")}
-                                className={`px-3 py-1 text-sm ${tab === "preview" ? "bg-amber-100 font-semibold" : "bg-white"}`}
+                                className={[
+                                    "px-3 py-1 text-sm transition-colors",
+                                    tab === "preview"
+                                        ? "bg-state-selected font-semibold"
+                                        : "bg-surface-paper/60 hover:bg-state-hover",
+                                ].join(" ")}
                             >
                                 Preview
                             </button>
@@ -91,7 +101,7 @@ export default function LocationEditor({ location, coords, onSave, onCancel }) {
                             placeholder={`# Title\n\nWrite your location article...\n\n- lists\n- **bold**\n- [link](https://...)`}
                         />
                     ) : (
-                        <div className="border rounded p-3 bg-[rgba(252,247,233,0.6)]">
+                        <div className="border border-border-default rounded p-3 bg-surface-panel/60">
                             <MarkdownRenderer content={descriptionMd} />
                         </div>
                     )}
@@ -99,7 +109,7 @@ export default function LocationEditor({ location, coords, onSave, onCancel }) {
 
                 <div className="flex space-x-2">
                     <div className="flex-1">
-                        <label className="block mb-1 font-medium">X:</label>
+                        <label className="block mb-1 font-medium text-text-heading">X:</label>
                         <Input
                             type="number"
                             value={x}
@@ -107,7 +117,7 @@ export default function LocationEditor({ location, coords, onSave, onCancel }) {
                         />
                     </div>
                     <div className="flex-1">
-                        <label className="block mb-1 font-medium">Y:</label>
+                        <label className="block mb-1 font-medium text-text-heading">Y:</label>
                         <Input
                             type="number"
                             value={y}
@@ -117,7 +127,9 @@ export default function LocationEditor({ location, coords, onSave, onCancel }) {
                 </div>
 
                 <div className="flex justify-between mt-4">
-                    <Button type="submit">{location ? "Save Changes" : "Add Location"}</Button>
+                    <Button type="submit">
+                        {location ? "Save Changes" : "Add Location"}
+                    </Button>
                     <Button type="button" variant="outline" onClick={onCancel}>
                         Cancel
                     </Button>

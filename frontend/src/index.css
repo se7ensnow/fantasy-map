@@ -4,80 +4,332 @@
 @tailwind components;
 @tailwind utilities;
 
+/* =========================================================
+   TOKENS — site design system
+   Format: "R G B" to support alpha via:
+   rgb(var(--token) / 0.7)
+   ========================================================= */
 :root {
-  --bg: #f2f0e6;
-  --text: #3a2f1b;
-  --card: rgba(252,247,233,0.9);
-  --border: rgba(180, 83, 9, 0.35);
-  --accent: #5b7a5b;
+  /* ------------------------------
+     Surface (backgrounds)
+     ------------------------------ */
+  --surface-page: 242 240 230;     /* #f2f0e6 */
+  --surface-panel: 252 247 233;    /* #fcf7e9 */
+  --surface-input: 255 255 255;    /* white */
+  --surface-paper: 255 255 255;    /* white */
+
+  /* ------------------------------
+     Text
+     ------------------------------ */
+  --text-primary: 58 47 27;        /* #3a2f1b */
+  --text-heading: 120 53 15;       /* amber-900 */
+  --text-link: 180 83 9;           /* amber-700 */
+  --text-muted: 180 83 9;          /* amber-700 */
+  --text-link-hover: 120 53 15;    /* amber-900 */
+  --text-on-accent: 255 255 255;   /* white */
+
+  /* ------------------------------
+     Borders
+     ------------------------------ */
+  --border-default: 180 83 9;      /* amber-700 */
+  --border-emphasis: 201 170 113;  /* #c9aa71 */
+
+  /* ------------------------------
+     Accent (brand green)
+     ------------------------------ */
+  --accent-primary: 91 122 91;         /* #5b7a5b */
+  --accent-primary-hover: 72 98 72;    /* #486248 */
+  --accent-ink: 47 74 47;              /* #2f4a2f */
+  --accent-text: var(--accent-primary);
+
+  /* ------------------------------
+     Overlay
+     ------------------------------ */
+  --overlay-backdrop: 0 0 0;       /* black */
+
+  /* ------------------------------ 
+     Interaction states 
+     ------------------------------ */
+  --state-selected-bg: 254 243 199; /* amber-100 */
+  --state-hover-bg: 255 251 235;    /* amber-50 */
+
+  /* Elevation / shadows (light) */
+  --shadow-card: 0 8px 18px rgb(0 0 0 / 0.12);
+  --shadow-card-hover: 0 12px 28px rgb(0 0 0 / 0.16);
+
+  /* ------------------------------
+     Status (toasts, destructive)
+     ------------------------------ */
+  --status-toast-bg: 254 243 199;        /* amber-100 */
+
+  --status-danger: 239 68 68;            /* red-500 */
+  --status-danger-hover: 220 38 38;      /* red-600 */
+
+  --status-error-ink: 127 29 29;         /* red-900 */
+  --status-error-border: 248 113 113;    /* red-400 */
+
+  --status-success-ink: 20 83 45;        /* green-900 */
+  --status-success-border: 74 222 128;   /* green-400 */
+
+  --status-info-ink: 30 58 138;          /* blue-900 */
+  --status-info-border: 96 165 250;      /* blue-400 */
+
+  --status-warning-ink: 124 45 18;       /* orange-900 */
+  --status-warning-border: 251 146 60;   /* orange-400 */
+
+  /* =========================================================
+     Markdown tokens (separate)
+     ========================================================= */
+  --md-text: 41 37 36;                  /* stone-800 */
+  --md-strong: 28 25 23;                /* stone-900 */
+
+  --md-heading: 120 53 15;              /* amber-900 */
+  --md-link: 180 83 9;                  /* amber-700 */
+  --md-link-hover: 120 53 15;           /* amber-900 */
+
+  --md-quote-border: 251 191 36;        /* amber-400 */
+  --md-quote-text: 68 64 60;            /* stone-700 */
+
+  --md-hr: 253 230 138;                 /* amber-200 */
+
+  --md-code-bg: 255 251 235;            /* amber-50 */
+  --md-code-border: 253 230 138;        /* amber-200 */
+  --md-code-text: 28 25 23;             /* stone-900 */
+
+  --md-pre-bg: 255 251 235;             /* amber-50 */
+  --md-pre-border: 253 230 138;         /* amber-200 */
+
+  --md-table-border: 253 230 138;       /* amber-200 */
+  --md-th-bg: 255 251 235;              /* amber-50 */
+  --md-th-text: 28 25 23;               /* stone-900 */
 }
 
-body {
-  @apply font-serif;
-  color: var(--text);
-  background-color: var(--bg);
-  background-image: url('https://www.transparenttextures.com/patterns/paper-fibers.png');
-  background-repeat: repeat;
+/* =========================================================
+   DARK THEME — "Nocturne Manuscript"
+   ========================================================= */
+.dark {
+  /* ------------------------------
+     Surface (backgrounds)
+     ------------------------------ */
+  --surface-page: 24 20 17;
+  --surface-panel: 36 30 25;
+  --surface-input: 42 35 29;
+  --surface-paper: 32 27 23;
+
+  /* ------------------------------
+     Text
+     ------------------------------ */
+  --text-primary: 228 220 205;
+  --text-heading: 212 170 102;
+  --text-link: 200 150 85;
+  --text-muted: 198 185 165;
+  --text-link-hover: 232 188 120;
+  --text-on-accent: 10 14 12;
+
+  /* ------------------------------
+     Borders
+     ------------------------------ */
+  --border-default: 122 96 64;
+  --border-emphasis: 170 131 83;
+
+  /* ------------------------------
+     Accent (brand green)
+     ------------------------------ */
+  --accent-primary: 66 140 104;
+  --accent-primary-hover: 54 120 90;
+  --accent-ink: 22 66 48;
+  --accent-text: 120 200 160; /* светлее изумруд для текста */
+
+  /* ------------------------------
+     Overlay
+     ------------------------------ */
+  --overlay-backdrop: 0 0 0;
+
+  /* ------------------------------ 
+     Interaction states 
+     ------------------------------ */
+  --state-hover-bg: 42 35 28;
+  --state-selected-bg: 52 44 34;
+
+  /* Elevation / shadows (dark) — highlight instead of drop shadow */
+   --shadow-card:
+    inset 0 1px 0 rgb(255 255 255 / 0.10);
+
+  --shadow-card-hover:
+    inset 0 1px 0 rgb(255 255 255 / 0.16),
+    0 0 0 1px rgb(var(--border-emphasis) / 0.42),
+    0 0 18px rgb(var(--accent-primary) / 0.10);
+
+  /* ------------------------------
+     Status (toasts, destructive)
+     ------------------------------ */
+  --status-toast-bg: 52 44 34;
+
+  --status-danger: 248 113 113;
+  --status-danger-hover: 239 68 68;
+
+  --status-error-ink: 254 226 226;
+  --status-error-border: 248 113 113;
+
+  --status-success-ink: 220 252 231;
+  --status-success-border: 74 222 128;
+
+  --status-info-ink: 219 234 254;
+  --status-info-border: 96 165 250;
+
+  --status-warning-ink: 255 237 213;
+  --status-warning-border: 251 146 60;
+
+  /* ------------------------------
+     Markdown tokens (dark)
+     ------------------------------ */
+  --md-text: 226 216 200;
+  --md-strong: 255 247 237;
+
+  --md-heading: 212 170 102;
+  --md-link: 200 150 85;
+  --md-link-hover: 232 188 120;
+
+  --md-quote-border: 170 131 83;
+  --md-quote-text: 206 196 180;
+
+  --md-hr: 122 96 64;
+
+  --md-code-bg: 42 35 29;
+  --md-code-border: 122 96 64;
+  --md-code-text: 248 241 231;
+
+  --md-pre-bg: 36 30 25;
+  --md-pre-border: 122 96 64;
+
+  --md-table-border: 122 96 64;
+  --md-th-bg: 42 35 29;
+  --md-th-text: 255 247 237;
 }
 
-h1, h2, h3, h4 {
-  @apply font-display;
+/* =========================================================
+   BASE — global element styles
+   ========================================================= */
+@layer base {
+  body {
+    @apply font-serif;
+    color: rgb(var(--text-primary) / 1);
+    background-color: rgb(var(--surface-page) / 1);
+    background-image: url('https://www.transparenttextures.com/patterns/paper-fibers.png');
+    background-repeat: repeat;
+    transition:
+    background-color 180ms ease,
+    color 180ms ease;
+  }
+
+  .dark body {
+    background-color: rgb(var(--surface-page) / 1);
+    background-image:
+      radial-gradient(circle at 12% 10%, rgb(var(--border-emphasis) / 0.12), transparent 42%),
+      radial-gradient(circle at 88% 18%, rgb(var(--accent-primary) / 0.06), transparent 46%),
+      radial-gradient(circle at 50% 115%, rgb(0 0 0 / 0.35), transparent 55%),
+      linear-gradient(rgb(var(--surface-page) / 1), rgb(var(--surface-page) / 1));
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+  }
+
+  h1, h2, h3, h4 {
+    @apply font-display;
+  }
 }
 
+/* =========================================================
+   COMPONENTS — markdown styles (uses md-* tokens only)
+   ========================================================= */
 @layer components {
   .markdown-body {
-    @apply leading-relaxed text-stone-800;
+    @apply leading-relaxed;
+    color: rgb(var(--md-text) / 1);
   }
 
   .markdown-body h1 {
-    @apply text-3xl font-extrabold mt-4 mb-3 text-amber-900;
+    @apply text-3xl font-extrabold mt-4 mb-3;
+    color: rgb(var(--md-heading) / 1);
   }
+
   .markdown-body h2 {
-    @apply text-2xl font-bold mt-4 mb-2 text-amber-900;
+    @apply text-2xl font-bold mt-4 mb-2;
+    color: rgb(var(--md-heading) / 1);
   }
+
   .markdown-body h3 {
-    @apply text-xl font-semibold mt-3 mb-2 text-amber-900;
+    @apply text-xl font-semibold mt-3 mb-2;
+    color: rgb(var(--md-heading) / 1);
   }
+
   .markdown-body p {
     @apply leading-7 my-2;
   }
+
   .markdown-body ul {
     @apply list-disc pl-6 my-2;
   }
+
   .markdown-body ol {
     @apply list-decimal pl-6 my-2;
   }
+
   .markdown-body li {
     @apply my-1 leading-7;
   }
+
   .markdown-body blockquote {
-    @apply border-l-4 border-amber-400 pl-4 italic my-3 text-stone-700;
+    @apply border-l-4 pl-4 italic my-3;
+    border-left-color: rgb(var(--md-quote-border) / 1);
+    color: rgb(var(--md-quote-text) / 1);
   }
+
   .markdown-body hr {
-    @apply my-4 border-amber-200;
+    @apply my-4;
+    border-color: rgb(var(--md-hr) / 1);
   }
+
   .markdown-body a {
-    @apply underline text-amber-700 hover:text-amber-900;
+    @apply underline;
+    color: rgb(var(--md-link) / 1);
   }
+
+  .markdown-body a:hover {
+    color: rgb(var(--md-link-hover) / 1);
+  }
+
   .markdown-body strong {
-    @apply text-stone-900;
+    color: rgb(var(--md-strong) / 1);
   }
+
   .markdown-body code {
-    @apply px-1 py-0.5 rounded bg-amber-50 border border-amber-200 text-stone-900;
+    @apply px-1 py-0.5 rounded border;
+    background-color: rgb(var(--md-code-bg) / 1);
+    border-color: rgb(var(--md-code-border) / 1);
+    color: rgb(var(--md-code-text) / 1);
   }
+
   .markdown-body pre {
-    @apply p-3 rounded bg-amber-50 border border-amber-200 overflow-x-auto my-3;
+    @apply p-3 rounded border overflow-x-auto my-3;
+    background-color: rgb(var(--md-pre-bg) / 1);
+    border-color: rgb(var(--md-pre-border) / 1);
   }
+
   .markdown-body table {
     @apply w-full border-collapse my-3;
   }
+
   .markdown-body th,
   .markdown-body td {
-    @apply border border-amber-200 px-2 py-1;
+    @apply border px-2 py-1;
+    border-color: rgb(var(--md-table-border) / 1);
   }
+
   .markdown-body th {
-    @apply bg-amber-50 text-stone-900;
+    background-color: rgb(var(--md-th-bg) / 1);
+    color: rgb(var(--md-th-text) / 1);
   }
+
   .markdown-body img {
     @apply my-3;
   }

@@ -1,9 +1,21 @@
 import React from "react";
 import MapListItem from "./MapListItem";
 
-export default function MapList({ maps, onDelete, onEdit, onOpen, onTagClick, activeTags = [], showShare = false }) {
+export default function MapList({
+    maps,
+    onDelete,
+    onEdit,
+    onOpen,
+    onTagClick,
+    activeTags = [],
+    showShare = false,
+}) {
     if (!maps || maps.length === 0) {
-        return <p className="text-center text-[#3a2f1b]">No maps found.</p>;
+        return (
+            <p className="text-center text-text-heading">
+                No maps found.
+            </p>
+        );
     }
 
     return (
