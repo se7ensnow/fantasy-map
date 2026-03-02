@@ -142,22 +142,8 @@ export default function HomePage() {
                         tagQuery={tagQuery}
                         onTagQueryChange={setTagQuery}
                         onClear={handleClear}
-                        query={query}
-                        onQueryChange={setQuery}
-                        availableTags={availableTags}
-                        selectedTags={selectedTags}
-                        onToggleTag={toggleTag}
-                        tagsMode={tagsMode}
-                        onTagsModeChange={setTagsMode}
-                        tagQuery={tagQuery}
-                        onTagQueryChange={setTagQuery}
-                        onClear={handleClear}
                     />
                     <div className="mt-4">
-                        <MapList
-                            maps={mapsData.items}
-                            onOpen={handleOpenMap}
-                            onTagClick={handleTagClick}
                         <MapList
                             maps={mapsData.items}
                             onOpen={handleOpenMap}
