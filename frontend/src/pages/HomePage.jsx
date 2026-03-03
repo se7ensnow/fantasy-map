@@ -32,9 +32,6 @@ export default function HomePage() {
         setSelectedTags((prev) =>
             prev.includes(name) ? prev.filter((t) => t !== name) : [...prev, name]
         );
-        setSelectedTags((prev) =>
-            prev.includes(name) ? prev.filter((t) => t !== name) : [...prev, name]
-        );
     };
 
     const handleTagClick = (tag) => {
