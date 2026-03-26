@@ -68,14 +68,14 @@
   --status-error-ink: 127 29 29; /* red-900 */
   --status-error-border: 248 113 113; /* red-400 */
 
-  --status-success-ink: 20 83 45; /* green-900 */
-  --status-success-border: 74 222 128; /* green-400 */
+  --status-success-ink: 22 101 52; /* green-800 */
+  --status-success-border: 34 197 94; /* green-500 */
 
   --status-info-ink: 30 58 138; /* blue-900 */
   --status-info-border: 96 165 250; /* blue-400 */
 
-  --status-warning-ink: 124 45 18; /* orange-900 */
-  --status-warning-border: 251 146 60; /* orange-400 */
+  --status-warning-ink: 202 138 4; /* yellow-600 */
+  --status-warning-border: 234 179 8; /* yellow-500 */
 
   /* =========================================================
      Markdown tokens (separate)
@@ -170,14 +170,14 @@
   --status-error-ink: 254 226 226;
   --status-error-border: 248 113 113;
 
-  --status-success-ink: 220 252 231;
-  --status-success-border: 74 222 128;
+  --status-success-ink: 134 239 172; /* green-300 */
+  --status-success-border: 34 197 94; /* green-500 */
 
   --status-info-ink: 219 234 254;
   --status-info-border: 96 165 250;
 
-  --status-warning-ink: 255 237 213;
-  --status-warning-border: 251 146 60;
+  --status-warning-ink: 250 204 21; /* yellow-400 */
+  --status-warning-border: 234 179 8; /* yellow-500 */
 
   /* ------------------------------
      Markdown tokens (dark)

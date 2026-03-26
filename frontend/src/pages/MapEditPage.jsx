@@ -21,11 +21,11 @@ export default function MapEditPage() {
     const { map_id } = useParams();
     const navigate = useNavigate();
 
-
     const [map, setMap] = useState(null);
     const [locations, setLocations] = useState([]);
     const [loading, setLoading] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
+    const [tilesReadyMessage, setTilesReadyMessage] = useState("");
     const [error, setError] = useState("");
 
     useEffect(() => {
@@ -87,7 +87,9 @@ export default function MapEditPage() {
             toast.error("You must create the map first before uploading image.");
             return;
         }
+
         try {
+            setTilesReadyMessage("");
             await uploadImage(map_id, file);
             setIsProcessing(true);
         } catch (err) {
@@ -106,7 +108,7 @@ export default function MapEditPage() {
 
                 if (updatedMap.tiles_path) {
                     setIsProcessing(false);
-                    toast.success("Tiles are ready!");
+                    setTilesReadyMessage("Tiles are ready.");
                 }
             } catch (err) {
                 console.error(err);
@@ -160,7 +162,6 @@ export default function MapEditPage() {
 
     return (
         <div className="space-y-8">
-            {/* Map form */}
             <Card>
                 <CardHeader>
                     <CardTitle className="text-text-heading">
@@ -181,43 +182,19 @@ export default function MapEditPage() {
 
             {map_id && (
                 <>
-                    {/* Upload tiles */}
                     <Card>
                         <CardHeader>
                             <CardTitle className="text-text-heading">Upload Tiles</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <TilesUploader onSubmit={handleUploadImage} />
-
-                            {isProcessing && (
-                                <div className="flex items-center gap-2 text-accent-primary font-bold mt-2 animate-pulse">
-                                    <svg
-                                        className="animate-spin h-6 w-6"
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                    >
-                                        <circle
-                                            className="opacity-25"
-                                            cx="12"
-                                            cy="12"
-                                            r="10"
-                                            stroke="currentColor"
-                                            strokeWidth="4"
-                                        ></circle>
-                                        <path
-                                            className="opacity-75"
-                                            fill="currentColor"
-                                            d="M4 12a8 8 0 018-8v8H4z"
-                                        ></path>
-                                    </svg>
-                                    <span>Processing tiles... Please wait.</span>
-                                </div>
-                            )}
+                            <TilesUploader
+                                onSubmit={handleUploadImage}
+                                isProcessing={isProcessing}
+                                successMessage={tilesReadyMessage}
+                            />
                         </CardContent>
                     </Card>
 
-                    {/* Edit locations */}
                     <Card>
                         <CardHeader>
                             <CardTitle className="text-text-heading">Edit Locations</CardTitle>
