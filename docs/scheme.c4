@@ -1,134 +1,167 @@
 specification {
-  element person {
+    element person {
         style {
             shape person
             color green
+            textSize xl
         }
-  }
-  element system
-  element container
+    }
+
+    element system {
+        style {
+            color muted
+            textSize xl
+        }
+    }
+
+    element container {
+        style {
+            textSize xl
+        }
+    }
 }
 
 model {
-  user = person "Пользователь" "Пользователь сайта: просматривает карты, загружает карты"
-  interactive_map_platform = system "Interactive Maps" "Веб-сайт для загрузки и просмотра интерактивных карт" {
-    frontend = container "Frontend" {
-      description "
-        React приложение
-        Использует Leaflet для отображения карт
+    user = person "User" "Views and uploads interactive maps"
+
+    interactive_map_platform = system "Interactive Maps" "Web platform for publishing and exploring interactive maps" {
+
+        frontend = container "Frontend" {
+            description "
+        Web application
+        Map visualization, catalog, and location editing
       "
-      technology "React, Leaflet, JavaScript"
-      style {
-        icon tech:react
-        shape browser
-      }
-    }
+            technology "React, OpenLayers, JavaScript"
+            style {
+                icon tech:react
+                shape browser
+                color red
+            }
+        }
 
-    api_gateway = container "API Gateway" {
-      description "
-        Единая точка входа для API
-        Проксирует запросы на User Service и Map Service
+        api_gateway = container "API Gateway" {
+            description "
+        Single entry point for API
+        Routes requests to internal services
       "
-      technology "Python, FastAPI"
-    }
+            technology "Python, FastAPI"
+            style {
+                color amber
+            }
+        }
 
-    user_service = container "User Service" {
-      description "
-        Сервис пользователей:
-        регистрация, логин, управление пользователями
+        user_service = container "User Service" {
+            description "
+        Registration, authentication,
+        and user management
       "
-      technology "Python, FastAPI"
-    }
+            technology "Python, FastAPI"
+            style {
+                color amber
+            }
+        }
 
-    user_db = container "Users Database" {
-      description "
-        База данных пользователей
-        Хранит всю информацию о пользователях
+        user_db = container "Users Database" {
+            description "
+        Stores user data
       "
-      technology "PostgreSQL"
-      style {
-        shape cylinder
-      }
-    }
+            technology "PostgreSQL"
+            style {
+                shape cylinder
+                color green
+            }
+        }
 
-    map_service = container "Map Service" {
-      description "
-        Сервис карт:
-        каталог карт
-        загрузка ZIP с тайлами
-        управление локациями на карте
-        постановка задач на обработку PNG → тайлы
+        map_service = container "Map Service" {
+            description "
+        Manages maps, catalog, and locations
+        Stores map metadata
+        Uploads source images
+        Creates tile generation tasks
       "
-      technology "Python, FastAPI"
-    }
+            technology "Python, FastAPI"
+            style {
+                color amber
+            }
+        }
 
-    map_db = container "Maps Database" {
-      description "
-        База данных карт
-        Хранит всю информацию о картах и прогрессе обработки
+        map_db = container "Maps Database" {
+            description "
+        Stores map metadata, locations,
+        and processing status
       "
-      technology "PostgreSQL"
-      style {
-        shape cylinder
-      }
-    }
+            technology "PostgreSQL"
+            style {
+                shape cylinder
+                color green
+            }
+        }
 
-    tiles_nginx = container "NGINX (Static tiles server)" {
-      description "
-         Раздача тайлов
+        object_storage = container "Object Storage" {
+            description "
+        Stores source map images
+        and generated tiles
       "
-      technology "NGINX"
-      style {
-        icon tech:nginx
-        shape cylinder
-      }
-    }
+            technology "S3 / MinIO"
+            style {
+                shape cylinder
+                color green
+            }
+        }
 
-    redis = container "Redis (Task Queue + Progress)" {
-      description "
-        Очередь задач для обработки тайлов
-        Хранение статуса прогресса обработки
+        redis = container "Redis (Task Queue + Progress)" {
+            description "
+        Queue for tile generation tasks
+        Stores processing status
       "
-      technology "Redis"
-      style {
-        shape cylinder
-        icon tech:redis
-      }
-    }
+            technology "Redis"
+            style {
+                shape cylinder
+                icon tech:redis
+                color green
+            }
+        }
 
-    tile_processing_service = container "Tile Processing Service" {
-      description "
-        Отдельный сервис-воркер:
-        асинхронно обрабатывает PNG → Pyramid Tiles
-        пишет прогресс в Redis
+        tile_processing_service = container "Tile Processing Service" {
+            description "
+        Asynchronous worker:
+        reads source images,
+        generates pyramid tiles,
+        updates progress
       "
-      technology "Python, RQ, rio-tiler, PIL"
+            technology "Python, RQ, PIL"
+            style {
+                color amber
+            }
+        }
+
+        user -> frontend "Uses" "HTTPS"
+
+        frontend -> api_gateway "Sends API requests" "REST/JSON"
+        frontend -> object_storage "Requests tiles" "HTTP/PNG"
+
+        api_gateway -> user_service "Authentication & users" "REST/JSON"
+        api_gateway -> map_service "Maps & locations" "REST/JSON"
+
+        user_service -> user_db "Read/write user data" "SQL"
+        map_service -> map_db "Read/write map data" "SQL"
+
+        map_service -> object_storage "Uploads source images" "S3 API"
+        map_service -> redis "Publishes tile generation tasks" "RQ Job"
+
+        tile_processing_service -> redis "Consumes tasks, updates progress" "RQ Job + Progress"
+        tile_processing_service -> object_storage "Reads images, writes tiles" "S3 API"
+        tile_processing_service -> map_db "Updates processing status" "SQL"
     }
-
-    user -> frontend "Использует в браузере (работает с картами)" "HTTPS"
-
-    frontend -> api_gateway "Отправляет запросы" "REST/JSON"
-    frontend -> tiles_nginx "Запрашивает тайлы" "HTTP/PNG"
-
-    api_gateway -> user_service "Обрабатывает регистрацию и аутентификацию" "REST/JSON"
-    api_gateway -> map_service "Работа с картами и локациями" "REST/JSON"
-
-    user_service -> user_db "Читает/пишет информацию о пользователях" "SQL"
-    map_service -> map_db "Читает/пишет информацию о картах" "SQL"
-
-    map_service -> redis "Публикует задачи на обработку PNG → Tiles" "RQ Job"
-    tile_processing_service -> redis "Получает задачи, пишет прогресс" "RQ Job + Progress"
-    tile_processing_service -> tiles_nginx "Сохраняет Pyramid Tiles" "Filesystem (PNG)"
-    tile_processing_service -> map_db "Обновляет информацию о тайлах" "SQL"
-  }
 }
 
 views {
-  view index {
-    include *
-  }
+    view index {
+        include *
+    }
 
-  view of interactive_map_platform {
-    include *
-  }
+    view of interactive_map_platform {
+        include *
+        autoLayout TopBottom
+    }
 }
