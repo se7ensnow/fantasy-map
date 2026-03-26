@@ -38,7 +38,9 @@ export default function MapPage() {
         return <p className="p-4">Loading map...</p>;
     }
 
-    const tagNames = (map.tags || []).filter(Boolean);
+    const tagNames = (map.tags || [])
+    .filter(Boolean)
+    .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
 
     return (
         <div className="space-y-8 p-8">

@@ -14,48 +14,40 @@ export default function AppToaster() {
                     toast: `
                         group
                         pointer-events-auto
-                        rounded-xl
-                        border
+                        relative
+                        flex items-start gap-3
+                        rounded-xl border
                         bg-surface-panel/95
                         text-text-primary
                         shadow-card
                         backdrop-blur-sm
-                        p-4
+                        p-4 pr-12
                         font-serif
+                        w-full
                     `,
-                    content: "gap-1",
-                    title: "font-semibold text-sm",
-                    description: "text-sm opacity-90",
-                    actionButton: `
-                        bg-accent-primary
-                        text-text-on-accent
-                        hover:bg-accent-primary-hover
-                        rounded-md
-                        px-3
-                        py-2
-                        text-sm
-                        font-semibold
+                    icon: `
+                        mt-0.5 shrink-0
                     `,
-                    cancelButton: `
-                        bg-surface-paper
-                        text-text-heading
-                        border
-                        border-border-default
-                        hover:bg-state-hover
-                        rounded-md
-                        px-3
-                        py-2
-                        text-sm
-                        font-semibold
+                    content: `
+                        flex min-w-0 flex-1 flex-col
+                    `,
+                    title: `
+                        text-sm font-semibold text-inherit leading-5
+                    `,
+                    description: `
+                        mt-1 text-sm text-inherit/90 leading-5
                     `,
                     closeButton: `
+                        absolute right-3 top-3
+                        flex h-7 w-7 items-center justify-center
+                        rounded-md
+                        border border-transparent
                         bg-transparent
-                        text-text-muted
-                        border
-                        border-transparent
-                        hover:text-text-heading
-                        hover:bg-state-hover
+                        text-inherit/70
+                        hover:bg-black/5
+                        hover:text-inherit
                     `,
+                
                     success: `
                         !border-status-success-border
                         !bg-status-success-border/10
@@ -76,7 +68,6 @@ export default function AppToaster() {
                         !bg-status-warning-border/10
                         !text-status-warning-ink
                     `,
-                    icon: "shrink-0",
                 },
             }}
         />

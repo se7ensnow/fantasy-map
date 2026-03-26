@@ -17,9 +17,16 @@ export default function MapListItem({
     const tags = Array.isArray(map.tags) ? map.tags : [];
     const activeSet = new Set(activeTags);
 
-    const activeOnCard = tags.filter((t) => activeSet.has(t));
-    const inactiveOnCard = tags.filter((t) => !activeSet.has(t));
-
+    const sortTags = (a, b) => a.localeCompare(b);
+    
+    const activeOnCard = tags
+        .filter((t) => activeSet.has(t))
+        .sort(sortTags);
+    
+    const inactiveOnCard = tags
+        .filter((t) => !activeSet.has(t))
+        .sort(sortTags);
+    
     const ordered = [...activeOnCard, ...inactiveOnCard];
 
     const MAX_VISIBLE = 5;
