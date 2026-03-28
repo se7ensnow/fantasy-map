@@ -43,18 +43,16 @@ export default function ProfilePage() {
     const totalPages = Math.ceil(mapsData.total / size);
 
     async function handleDeleteMap(mapId) {
-        if (window.confirm("Are you sure you want to delete this map?")) {
-            try {
-                await deleteMap(mapId);
-                setMapsData({
-                    items: mapsData.items.filter((map) => map.id !== mapId),
-                    total: mapsData.total,
-                });
-                toast.success("Map deleted successfully");
-            } catch (err) {
-                toast.error(err.message || "Failed to delete map");
-                console.error(err);
-            }
+        try {
+            await deleteMap(mapId);
+            setMapsData((prev) => ({
+                items: prev.items.filter((map) => map.id !== mapId),
+                total: prev.total,
+            }));
+            toast.success("Map deleted successfully");
+        } catch (err) {
+            toast.error(err.message || "Failed to delete map");
+            console.error(err);
         }
     }
 
@@ -87,7 +85,6 @@ export default function ProfilePage() {
             <h1 className="text-3xl font-bold mb-4 text-text-heading">Profile</h1>
 
             {user && (
-                // Это как раз кейс "карточка как поверхность": пусть будет variant="surface"
                 <Card
                     variant="surface"
                     className="max-w-md text-left mr-auto shadow-md bg-surface-panel/80"
