@@ -219,42 +219,49 @@
     transition:
       background-color 180ms ease,
       color 180ms ease;
+    position: relative;
+  }
+
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: -1;
   }
 
   .dark body {
     background-color: rgb(24 20 17);
+    background-image: none;
+  }
 
-    background-image:
-    /* янтарный свет слева сверху — вытянут по горизонтали */
+  .dark body::before {
+    background:
       radial-gradient(
-        1100px 700px at 14% 12%,
+        85% 60% at 14% 12%,
         rgba(220, 170, 120, 0.15) 0%,
         rgba(200, 150, 100, 0.11) 22%,
         rgba(165, 125, 85, 0.07) 42%,
         rgba(120, 92, 66, 0.045) 58%,
         transparent 76%
       ),
-      /* изумрудный акцент справа сверху — вытянут по вертикали */
-        radial-gradient(
-          900px 900px at 86% 16%,
-          rgba(90, 130, 100, 0.08) 0%,
-          rgba(85, 120, 95, 0.06) 26%,
-          rgba(80, 110, 90, 0.04) 46%,
-          rgba(70, 95, 80, 0.03) 60%,
-          transparent 78%
-        ),
-      /* нижняя глубина — очень широкий эллипс */
-        radial-gradient(
-          2000px 1200px at 50% 122%,
-          rgba(0, 0, 0, 0.36) 0%,
-          rgba(0, 0, 0, 0.24) 35%,
-          rgba(0, 0, 0, 0.12) 60%,
-          rgba(0, 0, 0, 0.06) 74%,
-          transparent 88%
-        );
-
+      radial-gradient(
+        48% 48% at 86% 16%,
+        rgba(90, 130, 100, 0.08) 0%,
+        rgba(85, 120, 95, 0.06) 26%,
+        rgba(80, 110, 90, 0.04) 46%,
+        rgba(70, 95, 80, 0.03) 60%,
+        transparent 78%
+      ),
+      radial-gradient(
+        140% 85% at 50% 122%,
+        rgba(0, 0, 0, 0.36) 0%,
+        rgba(0, 0, 0, 0.24) 35%,
+        rgba(0, 0, 0, 0.12) 60%,
+        rgba(0, 0, 0, 0.06) 74%,
+        transparent 88%
+      );
     background-repeat: no-repeat;
-    background-attachment: fixed;
   }
 
   h1,
