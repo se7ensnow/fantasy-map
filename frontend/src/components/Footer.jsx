@@ -2,11 +2,11 @@ import React from "react";
 
 export default function Footer() {
     return (
-        <footer className="mt-10 border-t border-border-default/30 bg-surface-panel/70">
+        <footer className="border-t border-border-default/30 bg-surface-panel/70">
             <div className="mx-auto flex max-w-7xl items-center justify-center px-6 py-3 text-xs text-text-muted">
                 <p className="text-center">
-                    Fantasy Maps © 2026.{" "}
-                    <span className="mx-1">|</span>
+                    Fantasy Maps © 2026
+                    <span className="mx-1"> | </span>
                     Contact:{" "}
                     <a
                         href="mailto:art.lazar.ig@gmail.com"
