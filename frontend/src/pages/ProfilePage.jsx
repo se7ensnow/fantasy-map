@@ -6,6 +6,8 @@ import { getMyMaps, deleteMap } from "../api/maps";
 import { Button } from "../components/ui/button";
 import MapList from "../components/MapList";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
+import { isInvalidAuthError  } from "@/api/errors";
+import { handleInvalidAuth  } from "@/lib/auth_session";
 
 export default function ProfilePage() {
     const navigate = useNavigate();
@@ -16,29 +18,40 @@ export default function ProfilePage() {
     const [error, setError] = useState("");
 
     useEffect(() => {
-        async function fetchProfile() {
+        let cancelled = false;
+
+        async function fetchProfilePage() {
             try {
-                const userData = await getMe();
+                setError("");
+
+                const [userData, maps] = await Promise.all([
+                    getMe(),
+                    getMyMaps(page, size),
+                ]);
+
+                if (cancelled) return;
+
                 setUser(userData);
+                setMapsData(maps);
             } catch (err) {
+                if (cancelled) return;
+
+                if (isInvalidAuthError(err)) {
+                    handleInvalidAuth(navigate, toast);
+                    return;
+                }
+
                 setError(err.message || "Failed to load profile");
                 console.error(err);
             }
         }
 
-        async function fetchMyMaps() {
-            try {
-                const data = await getMyMaps(page, size);
-                setMapsData(data);
-            } catch (err) {
-                setError(err.message || "Failed to load owned maps");
-                console.error(err);
-            }
-        }
+        fetchProfilePage();
 
-        fetchProfile();
-        fetchMyMaps();
-    }, [page]);
+        return () => {
+            cancelled = true;
+        };
+    }, [page, navigate]);
 
     const totalPages = Math.ceil(mapsData.total / size);
 
@@ -51,6 +64,11 @@ export default function ProfilePage() {
             }));
             toast.success("Map deleted successfully");
         } catch (err) {
+            if (isInvalidAuthError(err)) {
+                handleInvalidAuth(navigate, toast);
+                return;
+            }
+
             toast.error(err.message || "Failed to delete map");
             console.error(err);
         }
@@ -69,43 +87,50 @@ export default function ProfilePage() {
     };
 
     if (error) {
-        return <p className="text-destructive p-4">{error}</p>;
+        return (
+            <div className="px-8 py-6">
+                <Card className="max-w-xl border-status-error-border bg-status-error-border/10">
+                    <CardHeader>
+                        <CardTitle className="text-status-error-ink">
+                            Failed to load profile
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="text-status-error-ink">
+                        {error}
+                    </CardContent>
+                </Card>
+            </div>
+        );
     }
 
     if (!user) {
         return <p className="p-4 text-text-primary">Loading profile...</p>;
     }
 
-    if (!mapsData) {
-        return <p className="p-4 text-text-primary">Loading maps...</p>;
-    }
-
     return (
         <div className="space-y-8 px-8 py-6">
             <h1 className="text-3xl font-bold mb-4 text-text-heading">Profile</h1>
 
-            {user && (
-                <Card
-                    variant="surface"
-                    className="max-w-md text-left mr-auto shadow-md bg-surface-panel/80"
-                >
-                    <CardHeader>
-                        <CardTitle>User Information</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-2 text-text-heading">
-                        <p>
-                            <strong>Username:</strong> {user.username}
-                        </p>
-                        <p>
-                            <strong>Email:</strong> {user.email}
-                        </p>
-                        <p>
-                            <strong>Created at:</strong>{" "}
-                            {new Date(user.created_at).toLocaleString()}
-                        </p>
-                    </CardContent>
-                </Card>
-            )}
+            <Card
+                variant="surface"
+                className="max-w-md text-left mr-auto shadow-md bg-surface-panel/80"
+            >
+                <CardHeader>
+                    <CardTitle>User Information</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2 text-text-heading">
+                    <p>
+                        <strong>Username:</strong> {user.username}
+                    </p>
+                    <p>
+                        <strong>Email:</strong> {user.email}
+                    </p>
+                    <p>
+                        <strong>Created at:</strong>{" "}
+                        {new Date(user.created_at).toLocaleString()}
+                    </p>
+                </CardContent>
+            </Card>
 
             <h2 className="text-2xl font-bold mb-4 text-accent-primary">My Maps</h2>
 

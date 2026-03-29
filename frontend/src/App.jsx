@@ -10,6 +10,7 @@ import RegisterPage from "./pages/RegisterPage";
 import MapPage from "./pages/MapPage.jsx";
 import MapEditPage from "./pages/MapEditPage.jsx";
 import SharedMapPage from "@/pages/SharedMapPage";
+import NotFoundPage from "./pages/NotFoundPage.jsx";
 
 import Footer from "@/components/Footer";
 
@@ -50,6 +51,8 @@ function App() {
                                 </RequireAuth>
                             }
                         />
+                        <Route path="/test" />
+                        <Route path="*" element={<NotFoundPage />} />
                     </Routes>
                 </main>
 

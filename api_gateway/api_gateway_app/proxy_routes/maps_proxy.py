@@ -7,6 +7,7 @@ from api_gateway_app.config import USER_SERVICE_URL, MAP_SERVICE_URL
 from api_gateway_app.security import require_user_id, optional_user_id
 from api_gateway_app.schemas import (MapCreateRequest, MapUpdateRequest, ListMapCardResponse, MapResponse,
                                      TagStatResponse, ShareIdResponse)
+from api_gateway_app.utils import forward_error
 
 router = APIRouter()
 
@@ -45,7 +46,7 @@ async def create_map(map_data: MapCreateRequest, user_id: UUID = require_user_id
             raise HTTPException(status_code=503, detail="Map Service unavailable")
 
     if response.status_code != 200:
-        raise HTTPException(status_code=response.status_code, detail=response.text)
+        return forward_error(response)
 
     return response.json()
 
@@ -77,7 +78,7 @@ async def get_owned_maps(
         )
 
     if response.status_code != 200:
-        raise HTTPException(status_code=response.status_code, detail=response.text)
+        return forward_error(response)
 
     return response.json()
 
@@ -109,7 +110,7 @@ async def get_all_maps(
             raise HTTPException(status_code=503, detail="Map Service unavailable")
 
     if response.status_code != 200:
-        raise HTTPException(status_code=response.status_code, detail=response.text)
+        return forward_error(response)
 
     return response.json()
 
@@ -133,7 +134,7 @@ async def list_tags(
             raise HTTPException(status_code=503, detail="Map Service unavailable")
 
     if response.status_code != 200:
-        raise HTTPException(status_code=response.status_code, detail=response.text)
+        return forward_error(response)
 
     return response.json()
 
@@ -149,7 +150,7 @@ async def get_map_by_share_id(share_id: str):
     if response.status_code != 200:
         if response.status_code == 404:
             raise HTTPException(status_code=404, detail="Shared map not found or expired")
-        raise HTTPException(status_code=response.status_code, detail=response.text)
+        return forward_error(response)
 
     return response.json()
 
@@ -170,7 +171,7 @@ async def get_map(map_id: UUID, user_id: Optional[UUID] = optional_user_id()):
             raise HTTPException(status_code=503, detail="Map Service unavailable")
 
     if response.status_code != 200:
-        raise HTTPException(status_code=response.status_code, detail=response.text)
+        return forward_error(response)
 
     return response.json()
 
@@ -194,7 +195,7 @@ async def update_map(map_id: UUID, map_data: MapUpdateRequest, user_id: UUID = r
             raise HTTPException(status_code=503, detail="Map Service unavailable")
 
     if response.status_code != 200:
-        raise HTTPException(status_code=response.status_code, detail=response.text)
+        return forward_error(response)
 
     return response.json()
 
@@ -215,7 +216,7 @@ async def delete_map(map_id: UUID, user_id: UUID = require_user_id()):
             raise HTTPException(status_code=503, detail="Map Service unavailable")
 
     if response.status_code != 204:
-        raise HTTPException(status_code=response.status_code, detail=response.text)
+        return forward_error(response)
 
     return
 
@@ -239,7 +240,7 @@ async def upload_image(map_id: UUID, file: UploadFile = File(...), user_id: UUID
             raise HTTPException(status_code=503, detail="Map Service unavailable")
 
     if response.status_code != 200:
-        raise HTTPException(status_code=response.status_code, detail=response.text)
+        return forward_error(response)
 
     return response.json()
 
@@ -250,17 +251,17 @@ async def create_share(map_id: UUID, user_id: UUID = require_user_id()):
 
     async with httpx.AsyncClient() as client:
         try:
-            resp = await client.post(
+            response = await client.post(
                 f"{MAP_SERVICE_URL}/maps/{map_id}/share",
                 headers=headers,
             )
         except httpx.RequestError:
             raise HTTPException(status_code=503, detail="Map Service unavailable")
 
-    if resp.status_code != 200:
-        raise HTTPException(status_code=resp.status_code, detail=resp.text)
+    if response.status_code != 200:
+        return forward_error(response)
 
-    return resp.json()
+    return response.json()
 
 
 @router.get("/{map_id}/share", response_model=ShareIdResponse)
@@ -269,17 +270,17 @@ async def get_share_id(map_id: UUID, user_id: UUID = require_user_id()):
 
     async with httpx.AsyncClient() as client:
         try:
-            resp = await client.get(
+            response = await client.get(
                 f"{MAP_SERVICE_URL}/maps/{map_id}/share",
                 headers=headers,
             )
         except httpx.RequestError:
             raise HTTPException(status_code=503, detail="Map Service unavailable")
 
-    if resp.status_code != 200:
-        raise HTTPException(status_code=resp.status_code, detail=resp.text)
+    if response.status_code != 200:
+        return forward_error(response)
 
-    return resp.json()
+    return response.json()
 
 
 @router.delete("/{map_id}/share", status_code=status.HTTP_204_NO_CONTENT)
@@ -288,14 +289,14 @@ async def delete_share(map_id: UUID, user_id: UUID = require_user_id()):
 
     async with httpx.AsyncClient() as client:
         try:
-            resp = await client.delete(
+            response = await client.delete(
                 f"{MAP_SERVICE_URL}/maps/{map_id}/share",
                 headers=headers,
             )
         except httpx.RequestError:
             raise HTTPException(status_code=503, detail="Map Service unavailable")
 
-    if resp.status_code != 204:
-        raise HTTPException(status_code=resp.status_code, detail=resp.text)
+    if response.status_code != 204:
+        return forward_error(response)
 
     return

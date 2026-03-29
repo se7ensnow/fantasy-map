@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { register } from "../api/auth";
@@ -6,14 +6,16 @@ import AuthForm from "@/components/AuthForm";
 
 export default function RegisterPage() {
     const navigate = useNavigate();
+    const [errorMessage, setErrorMessage] = useState("");
 
     const handleSubmit = async ({ username, email, password }) => {
         try {
+            setErrorMessage("");
             await register(username, email, password);
             toast.success("Registration successful! Please log in.");
             navigate("/login");
         } catch (err) {
-            toast.error(err.message || "Registration failed. Please try again.");
+            setErrorMessage(err.message || "Registration failed. Please try again.");
             console.error(err);
         }
     };
@@ -29,6 +31,7 @@ export default function RegisterPage() {
                     onSubmit={handleSubmit}
                     showEmail={true}
                     submitLabel="Register"
+                    errorMessage={errorMessage}
                 />
             </div>
         </div>

@@ -1,3 +1,4 @@
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { login } from "../api/auth";
@@ -5,14 +6,16 @@ import AuthForm from "@/components/AuthForm";
 
 export default function LoginPage() {
     const navigate = useNavigate();
+    const [errorMessage, setErrorMessage] = useState("");
 
     const handleSubmit = async ({ username, password }) => {
         try {
+            setErrorMessage("");
             await login(username, password);
             toast.success("Logged in successfully!");
             navigate("/");
         } catch (err) {
-            toast.error(err.message || "Login failed. Please try again.");
+            setErrorMessage(err.message || "Login failed. Please try again.");
             console.error(err);
         }
     };
@@ -24,7 +27,11 @@ export default function LoginPage() {
                     Login
                 </h1>
 
-                <AuthForm onSubmit={handleSubmit} submitLabel="Login" />
+                <AuthForm
+                    onSubmit={handleSubmit}
+                    submitLabel="Login"
+                    errorMessage={errorMessage}
+                />
             </div>
         </div>
     );

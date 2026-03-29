@@ -4,6 +4,7 @@ import httpx
 
 from api_gateway_app.config import USER_SERVICE_URL
 from api_gateway_app.schemas import RegisterRequest, TokenResponse, UserResponse
+from api_gateway_app.utils import forward_error
 
 router = APIRouter()
 
@@ -18,7 +19,7 @@ async def register(data: RegisterRequest):
         except httpx.RequestError:
             raise HTTPException(status_code=503, detail="User service unavailable.")
     if response.status_code != 200:
-        raise HTTPException(status_code=response.status_code, detail=response.text)
+        return forward_error(response)
 
     return response.json()
 
@@ -38,6 +39,6 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
             raise HTTPException(status_code=503, detail="User service unavailable.")
 
     if response.status_code != 200:
-        raise HTTPException(status_code=response.status_code, detail=response.text)
+        return forward_error(response)
 
     return response.json()

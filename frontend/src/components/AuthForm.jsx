@@ -3,17 +3,24 @@ import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 
-export default function AuthForm({ onSubmit, showEmail = false, submitLabel = "Submit" }) {
+export default function AuthForm({
+    onSubmit,
+    showEmail = false,
+    submitLabel = "Submit",
+    errorMessage = "",
+}) {
     const [username, setUsername] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
 
     const handleSubmit = (e) => {
         e.preventDefault();
+
         const data = { username, password };
         if (showEmail) {
             data.email = email;
         }
+
         onSubmit(data);
     };
 
@@ -21,15 +28,15 @@ export default function AuthForm({ onSubmit, showEmail = false, submitLabel = "S
         <form
             onSubmit={handleSubmit}
             className="
-        space-y-4
-        max-w-md
-        mx-auto
-        p-6
-        rounded-lg
-        shadow
-        bg-surface-panel/90
-        border border-border-default/40
-      "
+                space-y-4
+                max-w-md
+                mx-auto
+                p-6
+                rounded-lg
+                shadow
+                bg-surface-panel/90
+                border border-border-default/40
+            "
         >
             <div>
                 <Label className="block mb-1 font-semibold">
@@ -71,6 +78,14 @@ export default function AuthForm({ onSubmit, showEmail = false, submitLabel = "S
                     required
                 />
             </div>
+
+            {errorMessage && (
+                <div className="rounded-md border border-status-error-border bg-status-error-border/10 px-4 py-3">
+                    <p className="text-sm font-medium text-status-error-ink">
+                        {errorMessage}
+                    </p>
+                </div>
+            )}
 
             <Button type="submit" className="w-full">
                 {submitLabel}
