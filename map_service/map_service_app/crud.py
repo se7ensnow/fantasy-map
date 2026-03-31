@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session, selectinload
 from uuid import UUID
 from typing import Optional, List
-from sqlalchemy import func, text, desc
+from sqlalchemy import func, text, desc, case
 from sqlalchemy.exc import IntegrityError
 
 import re
@@ -128,33 +128,50 @@ def list_maps_catalog(
         limit: int = 10,
 ):
     query = db.query(Map).options(selectinload(Map.tags)).filter(Map.visibility == 'public')
+
+    matched_tags_count = None
+
     if tags:
         names = prepare_tags(tags)
         if names:
             n = len(set(names))
             query = query.join(Map.tags).filter(Tag.name.in_(names))
+            matched_tags_count = func.count(func.distinct(Tag.name))
 
             if tags_mode == "all":
-                query = query.group_by(Map.id).having(func.count(func.distinct(Tag.name)) == n)
+                query = query.group_by(Map.id).having(matched_tags_count == n)
             else:
                 query = query.group_by(Map.id)
 
     q = (q or "").strip()
+    order_criteria = []
     if q:
         if len(q) < 3:
-            q_pattern = f"%{q.lower()}%"
+            q_lower = q.lower()
+            q_pattern = f"%{q_lower}%"
+            q_prefix = f"{q_lower}%"
             query = query.filter(func.lower(Map.title).like(q_pattern))
             query = query.order_by(Map.updated_at.desc())
+
+            short_q_rank = case(
+                (func.lower(Map.title) == q_lower, 3),
+                (func.lower(Map.title).like(q_prefix), 2),
+                else_=1,
+            )
+            order_criteria.append(short_q_rank.desc())
         else:
             threshold = 0.15
-            query = (
-                query.filter(text("similarity(maps.title, :q) >= :th"))
-                .params(q=q, th=threshold)
-                .order_by(text("similarity(maps.title, :q) DESC"), Map.updated_at.desc())
-                .params(q=q)
-            )
-    else:
-        query = query.order_by(Map.updated_at.desc())
+            similarity_expr = func.similarity(Map.title, q)
+
+            query = query.filter(similarity_expr >= threshold)
+            order_criteria.append(similarity_expr.desc())
+
+    if matched_tags_count is not None:
+        order_criteria.append(matched_tags_count.desc())
+
+    order_criteria.append(Map.updated_at.desc())
+
+    query = query.order_by(*order_criteria)
 
     total = query.count()
     items = query.offset(offset).limit(limit).all()

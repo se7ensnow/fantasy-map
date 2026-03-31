@@ -24,7 +24,7 @@ def generate_tile_pyramid(map_id: str, source_image_path: str, output_base_path:
         scale = 2 ** (max_zoom - z)
         resized = image.resize(
             (math.ceil(width / scale), math.ceil(height / scale)),
-            Image.LANCZOS
+            Image.Resampling.LANCZOS,
         )
 
         resized_width, resized_height = resized.size

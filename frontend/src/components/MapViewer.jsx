@@ -1,16 +1,41 @@
-import React, { useMemo, useState } from "react";
-import "leaflet/dist/leaflet.css";
+import React, { useEffect, useRef, useState } from "react";
+import { ChevronUp } from "lucide-react";
 import LocationDetails from "./LocationDetails";
 import OpenLayersMap from "./OpenLayersMap";
 import { NGINX_URL } from "@/config";
 
 export default function MapViewer({ map, locations }) {
     const [selectedLocation, setSelectedLocation] = useState(null);
+    const [showTopFade, setShowTopFade] = useState(false);
+    const [showBottomFade, setShowBottomFade] = useState(false);
+    const scrollRef = useRef(null);
 
-    // bounds/center тут уже не используются — можно удалить, чтобы не было “мертвого” кода
-    // (раньше нужно было для react-leaflet)
-    // const bounds = useMemo(() => [[0, 0], [map.height, map.width]], [map.height, map.width]);
-    // const center = useMemo(() => [map.height / 2, map.width / 2], [map.height, map.width]);
+    const updateFades = () => {
+        const el = scrollRef.current;
+        if (!el) return;
+
+        const { scrollTop, scrollHeight, clientHeight } = el;
+        setShowTopFade(scrollTop > 4);
+        setShowBottomFade(scrollTop + clientHeight < scrollHeight - 4);
+    };
+
+    const scrollToTop = () => {
+        const el = scrollRef.current;
+        if (!el) return;
+
+        el.scrollTo({
+            top: 0,
+            behavior: "smooth",
+        });
+    };
+
+    useEffect(() => {
+        const el = scrollRef.current;
+        if (!el) return;
+
+        el.scrollTop = 0;
+        updateFades();
+    }, [selectedLocation]);
 
     return (
         <div className="flex h-[80vh] gap-4">
@@ -27,18 +52,56 @@ export default function MapViewer({ map, locations }) {
                 />
             </div>
 
-            <div className="w-1/3 p-4 rounded bg-surface-panel/95 overflow-y-auto flex flex-col gap-4">
-                <div className="flex justify-between items-center mb-2">
-                    <h2 className="text-xl font-bold text-text-heading">Locations</h2>
+            <div className="relative w-1/3 rounded bg-surface-panel/95 min-h-0 overflow-hidden">
+                <div
+                    ref={scrollRef}
+                    onScroll={updateFades}
+                    className="h-full overflow-y-auto p-4"
+                >
+                    {selectedLocation ? (
+                        <LocationDetails location={selectedLocation} />
+                    ) : (
+                        <p className="text-text-heading">
+                            Select a location on the map to view details.
+                        </p>
+                    )}
                 </div>
 
-                {selectedLocation ? (
-                    <LocationDetails location={selectedLocation} />
-                ) : (
-                    <p className="text-text-heading">
-                        Select a location on the map to view details.
-                    </p>
-                )}
+                <button
+                    type="button"
+                    onClick={scrollToTop}
+                    aria-label="Scroll to top"
+                    className={`
+                        absolute top-3 left-1/2 -translate-x-1/2 z-10
+                        flex h-9 w-9 items-center justify-center
+                        rounded-full border border-border-default
+                        bg-surface-panel/90 text-text-heading
+                        shadow-md backdrop-blur-sm
+                        transition-all duration-200
+                        hover:bg-surface-panel hover:scale-105
+                        ${showTopFade ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}
+                    `}
+                >
+                    <ChevronUp className="h-4 w-4" />
+                </button>
+
+                <div
+                    className={`
+                        pointer-events-none absolute top-0 left-0 right-0 h-10
+                        bg-gradient-to-b from-surface-panel/95 to-transparent
+                        transition-opacity duration-200
+                        ${showTopFade ? "opacity-100" : "opacity-0"}
+                    `}
+                />
+
+                <div
+                    className={`
+                        pointer-events-none absolute bottom-0 left-0 right-0 h-8
+                        bg-gradient-to-t from-surface-panel/95 to-transparent
+                        transition-opacity duration-200
+                        ${showBottomFade ? "opacity-100" : "opacity-0"}
+                    `}
+                />
             </div>
         </div>
     );

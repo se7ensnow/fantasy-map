@@ -8,6 +8,7 @@ from starlette import status
 from api_gateway_app.config import MAP_SERVICE_URL
 from api_gateway_app.security import require_user_id
 from api_gateway_app.schemas import LocationCreateRequest, LocationUpdateRequest, LocationResponse
+from api_gateway_app.utils import forward_error
 
 router = APIRouter()
 
@@ -30,7 +31,7 @@ async def create_location(location_data: LocationCreateRequest, user_id: UUID = 
             raise HTTPException(status_code=503, detail="Map Service unavailable")
 
     if response.status_code != 200:
-        raise HTTPException(status_code=response.status_code, detail=response.text)
+        return forward_error(response)
 
     return response.json()
 
@@ -49,7 +50,7 @@ async def list_locations(map_id: UUID = Query(...)):
         return []
 
     if response.status_code != 200:
-        raise HTTPException(status_code=response.status_code, detail=response.text)
+        return forward_error(response)
 
     return response.json()
 
@@ -64,7 +65,7 @@ async def get_location(location_id: UUID):
             raise HTTPException(status_code=503, detail="Map Service unavailable")
 
     if response.status_code != 200:
-        raise HTTPException(status_code=response.status_code, detail=response.text)
+        return forward_error(response)
 
     return response.json()
 
@@ -87,7 +88,7 @@ async def update_location(location_id: UUID, location_data: LocationUpdateReques
             raise HTTPException(status_code=503, detail="Map Service unavailable")
 
     if response.status_code != 200:
-        raise HTTPException(status_code=response.status_code, detail=response.text)
+        return forward_error(response)
 
     return response.json()
 
@@ -107,6 +108,6 @@ async def delete_location(location_id: UUID, user_id: UUID = require_user_id()):
             raise HTTPException(status_code=503, detail="Map Service unavailable")
 
     if response.status_code != 204:
-        raise HTTPException(status_code=response.status_code, detail=response.text)
+        return forward_error(response)
 
     return

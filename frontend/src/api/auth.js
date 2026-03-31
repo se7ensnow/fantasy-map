@@ -1,5 +1,6 @@
 import axios from "axios";
 import { API_URL } from "../config";
+import { toApiError } from "./errors";
 
 export async function register(username, email, password) {
     try {
@@ -11,13 +12,7 @@ export async function register(username, email, password) {
 
         return response.data;
     } catch (error) {
-        if (error.response) {
-            throw new Error(error.response.data?.detail || "Registration failed");
-        } else if (error.request) {
-            throw new Error("No response received from server");
-        } else {
-            throw new Error("Registration error: " + error.message);
-        }
+        throw toApiError(error, "Registration failed. Please try again.");
     }
 }
 
@@ -39,13 +34,7 @@ export async function login(username, password) {
 
         return { access_token, token_type };
     } catch (error) {
-        if (error.response) {
-            throw new Error(error.response.data?.detail || "Login failed");
-        } else if (error.request) {
-            throw new Error("No response received from server");
-        } else {
-            throw new Error("Login error: " + error.message);
-        }
+        throw toApiError(error, "Login failed. Please try again.");
     }
 }
 

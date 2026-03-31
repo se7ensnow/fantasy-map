@@ -5,6 +5,7 @@ from uuid import UUID
 from api_gateway_app.config import USER_SERVICE_URL
 from api_gateway_app.schemas import UserResponse
 from api_gateway_app.security import require_user_id
+from api_gateway_app.utils import forward_error
 
 router = APIRouter()
 
@@ -24,7 +25,7 @@ async def get_me(user_id: UUID = require_user_id()):
             raise HTTPException(status_code=503, detail="User service unavailable.")
 
     if response.status_code != 200:
-        raise HTTPException(status_code=response.status_code, detail=response.text)
+        return forward_error(response)
 
     return response.json()
 
@@ -40,6 +41,6 @@ async def get_user(user_id: UUID):
             raise HTTPException(status_code=503, detail="User service unavailable.")
 
     if response.status_code != 200:
-        raise HTTPException(status_code=response.status_code, detail=response.text)
+        return forward_error(response)
 
     return response.json()
