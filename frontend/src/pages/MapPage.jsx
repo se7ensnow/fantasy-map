@@ -59,14 +59,14 @@ export default function MapPage() {
                     <h1 className="text-4xl font-bold text-text-heading">
                         We couldn’t find this map
                     </h1>
-        
+                    
                     <div className="mx-auto mt-5 max-w-3xl space-y-3">
                         <p className="text-lg leading-relaxed text-text-primary">
                             It seems this map does not exist, the link is invalid, or it is no longer available.
                         </p>
-        
-                        <p className="text-text-muted">
-                            Sorry about that.
+
+                        <p className="text-text-muted italic">
+                            It may have been lost, removed, or never charted at all.
                         </p>
                     </div>
         
