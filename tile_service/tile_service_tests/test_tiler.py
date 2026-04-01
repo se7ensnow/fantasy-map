@@ -28,7 +28,7 @@ def test_generate_tile_pyramid_square(tmp_image, tmp_output):
     assert result["width"] == 512
     assert result["height"] == 512
     assert result["max_zoom"] >= 0
-    assert result["tiles_path"] == "/tiles/1/"
+    assert result["tiles_local_dir"] == str(tmp_output / "1")
 
     tile_dir = tmp_output / "1" / str(result["max_zoom"]) / "0"
     assert tile_dir.exists()
@@ -52,7 +52,7 @@ def test_generate_tile_pyramid_non_square(tmp_path):
     assert result["width"] == 1024
     assert result["height"] == 512
     assert result["max_zoom"] >= 0
-    assert result["tiles_path"] == "/tiles/2/"
+    assert result["tiles_local_dir"] == str(output_path / "2")
 
     tile_dir = output_path / "2" / str(result["max_zoom"]) / "0"
     assert tile_dir.exists()
@@ -76,7 +76,7 @@ def test_generate_tile_pyramid_small(tmp_path):
     assert result["width"] == 100
     assert result["height"] == 100
     assert result["max_zoom"] == 0
-    assert result["tiles_path"] == "/tiles/3/"
+    assert result["tiles_local_dir"] == str(output_path / "3")
 
     tile_dir = output_path / "3" / str(result["max_zoom"]) / "0"
     assert tile_dir.exists()
