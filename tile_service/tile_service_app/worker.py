@@ -1,4 +1,3 @@
-import os
 from redis import Redis
 from rq import Worker, Queue
 from tile_service_app.config import REDIS_URL

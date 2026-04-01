@@ -29,7 +29,8 @@ const HIT_TOLERANCE = 8;
 
 export default function OpenLayersMap({
     mapId,
-    nginxUrl,
+    storageUrl,
+    tiles_version,
     width,
     height,
     maxZoom,
@@ -231,7 +232,7 @@ export default function OpenLayersMap({
                     const x = tileCoord[1];
                     const y = -tileCoord[2] - 1;
                     if (z < 0 || z > maxZoom || x < 0 || y < 0) return undefined;
-                    return `${nginxUrl}/tiles/${mapId}/${z}/${x}/${y}.png`;
+                    return `${storageUrl}/maps/${mapId}/tiles/${z}/${x}/${y}.png?v=${tiles_version}`;
                 },
             }),
         });
@@ -293,7 +294,7 @@ export default function OpenLayersMap({
         const map = new OLMap({
             target: elRef.current,
             controls: defaultControls({ zoom: false, rotate: false }),
-            interactions: defaultInteractions({ altShiftDragRotate: false, pinchRotate: false }),
+            interactions: defaultInteractions(/*{ altShiftDragRotate: false, pinchRotate: false }*/),
             layers: [tiles, markerLayer],
             view,
         });
@@ -439,7 +440,7 @@ export default function OpenLayersMap({
         };
     }, [
         mapId,
-        nginxUrl,
+        storageUrl,
         extent,
         projection,
         resolutions,

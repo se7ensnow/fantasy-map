@@ -5,6 +5,7 @@ import logging
 from map_service_app.database import engine
 from map_service_app.models import Base
 from map_service_app.routes import maps, locations
+from map_service_app.storage import storage
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("map_service")

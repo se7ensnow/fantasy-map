@@ -24,11 +24,6 @@ def create_map(db: Session, owner_id: UUID, map_in: MapCreate) -> Map:
         title=map_in.title,
         description=map_in.description,
         visibility=map_in.visibility,
-        source_path='',
-        tiles_path='',
-        width=0,
-        height=0,
-        max_zoom=0,
     )
 
     db.add(db_map)
@@ -52,11 +47,24 @@ def get_map_by_id(db: Session, map_id: UUID) -> Optional[Map]:
     )
 
 
+def delete_map_tiles_info(db: Session, map_id: UUID) -> Optional[Map]:
+    db_map = get_map_by_id(db, map_id)
+    if db_map is None:
+        return None
+    db_map.has_tiles = False
+    db_map.width = None
+    db_map.height = None
+    db_map.max_zoom = None
+    db.commit()
+    db.refresh(db_map)
+    return db_map
+
 def update_map_tiles_info(db: Session, map_id: UUID, tiles_info: TilesInfo) -> Optional[Map]:
     db_map = get_map_by_id(db, map_id)
     if db_map is None:
         return None
-    db_map.tiles_path = tiles_info.tiles_path
+    db_map.has_tiles = True
+    db_map.tiles_version += 1
     db_map.width = tiles_info.width
     db_map.height = tiles_info.height
     db_map.max_zoom = tiles_info.max_zoom
