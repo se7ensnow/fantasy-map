@@ -29,7 +29,8 @@ const HIT_TOLERANCE = 8;
 
 export default function OpenLayersMap({
     mapId,
-    nginxUrl,
+    storageUrl,
+    tilesVersion,
     width,
     height,
     maxZoom,
@@ -211,7 +212,12 @@ export default function OpenLayersMap({
      * -------------------------- */
     useEffect(() => {
         if (!elRef.current) return;
-
+        
+        const currentEl = elRef.current;
+        const currentFeaturesById = featuresByIdRef.current;
+        const currentPendingCoords = pendingCoordsRef.current;
+        const currentStyleCache = styleCacheRef.current;
+        
         /** Tile grid + tiles */
         const tileGrid = new TileGrid({
             extent,
@@ -219,7 +225,7 @@ export default function OpenLayersMap({
             resolutions,
             tileSize: TILE_SIZE,
         });
-
+    
         const tiles = new TileLayer({
             source: new XYZ({
                 projection,
@@ -231,7 +237,7 @@ export default function OpenLayersMap({
                     const x = tileCoord[1];
                     const y = -tileCoord[2] - 1;
                     if (z < 0 || z > maxZoom || x < 0 || y < 0) return undefined;
-                    return `${nginxUrl}/tiles/${mapId}/${z}/${x}/${y}.png`;
+                    return `${storageUrl}/maps/${mapId}/tiles/${z}/${x}/${y}.png?v=${tilesVersion}`;
                 },
             }),
         });
@@ -291,7 +297,7 @@ export default function OpenLayersMap({
         });
 
         const map = new OLMap({
-            target: elRef.current,
+            target: currentEl,
             controls: defaultControls({ zoom: false, rotate: false }),
             interactions: defaultInteractions({ altShiftDragRotate: false, pinchRotate: false }),
             layers: [tiles, markerLayer],
@@ -329,16 +335,14 @@ export default function OpenLayersMap({
                 markerLayer.changed();
             }
         };
-        elRef.current.addEventListener("mouseleave", onMouseLeave);
-
+        currentEl.addEventListener("mouseleave", onMouseLeave);
+    
         /** Click: select marker OR add new location */
         const onSingleClick = (evt) => {
             const picked = pickLocationFeatureAtPixel(map, evt.pixel, markerLayer);
 
             if (picked) {
                 const id = picked.get("locationId");
-
-                // notify parent
                 const loc = locationsRef.current.find((l) => l.id === id);
                 if (loc) onSelectLocationRef.current?.(loc);
                 return;
@@ -354,7 +358,7 @@ export default function OpenLayersMap({
         /** Drag selected marker (Translate interaction) */
         const translateFeatures = new Collection();
         const translate = new Translate({
-            features: translateFeatures,      // we will keep exactly one feature here
+            features: translateFeatures,
             layers: [markerLayer],
             hitTolerance: HIT_TOLERANCE,
             condition: primaryAction,
@@ -413,8 +417,8 @@ export default function OpenLayersMap({
         return () => {
             map.un("pointermove", onPointerMove);
             map.un("singleclick", onSingleClick);
-            elRef.current?.removeEventListener("mouseleave", onMouseLeave);
-
+            currentEl.removeEventListener("mouseleave", onMouseLeave);
+        
             if (map.__translateApi) {
                 map.__translateApi.cleanup();
                 map.__translateApi = null;
@@ -426,20 +430,21 @@ export default function OpenLayersMap({
             mapRef.current = null;
             markerLayerRef.current = null;
             markerSourceRef.current = null;
-
-            featuresByIdRef.current.clear();
+        
+            currentFeaturesById.clear();
             previewFeatureRef.current = null;
 
             hoveredIdRef.current = null;
             selectedIdRef.current = null;
             draggingIdRef.current = null;
-
-            pendingCoordsRef.current.clear();
-            styleCacheRef.current.clear();
+        
+            currentPendingCoords.clear();
+            currentStyleCache.clear();
         };
     }, [
         mapId,
-        nginxUrl,
+        storageUrl,
+        tilesVersion,
         extent,
         projection,
         resolutions,

@@ -75,11 +75,11 @@ def test_update_map_replaces_tags_and_cleans_unused(db, map_obj):
 
 
 def test_update_map_tiles_info(db, map_obj):
-    tiles_info = TilesInfo(width=256, height=256, max_zoom=5, tiles_path="/tiles/test-path")
+    tiles_info = TilesInfo(width=256, height=256, max_zoom=5)
     updated = update_map_tiles_info(db, map_obj.id, tiles_info)
 
     assert updated is not None
-    assert updated.tiles_path == "/tiles/test-path"
+    assert updated.has_tiles
     assert updated.max_zoom == 5
     assert updated.width == 256
     assert updated.height == 256

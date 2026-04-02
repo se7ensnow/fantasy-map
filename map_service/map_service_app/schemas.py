@@ -55,11 +55,11 @@ class MapResponse(BaseModel):
     title: str
     description: Optional[str] = None
     tags: List[str] = Field(default_factory=list)
-    source_path: str
-    tiles_path: str
-    width: int
-    height: int
-    max_zoom: int
+    has_tiles: bool
+    tiles_version: int
+    width: Optional[int] = None
+    height: Optional[int] = None
+    max_zoom: Optional[int] = None
     visibility: Visibility
     share_id: Optional[str] = None
     created_at: datetime
@@ -77,7 +77,6 @@ class TilesInfo(BaseModel):
     width: int
     height: int
     max_zoom: int
-    tiles_path: str
 
 
 class LocationCreate(BaseModel):

@@ -1,5 +1,3 @@
-import os
-import shutil
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, status, Header, Query
 from typing import Optional
 from sqlalchemy.orm import Session
@@ -9,11 +7,12 @@ from rq import Queue
 
 from map_service_app.crud import (create_map, update_map, delete_map, get_map_by_id, get_maps_by_owner,
                                   is_map_owned_by_user, list_maps_catalog, list_tags, get_map_by_share_id,
-                                  update_map_tiles_info, create_share, delete_share)
+                                  update_map_tiles_info, create_share, delete_share, delete_map_tiles_info)
 from map_service_app.schemas import (MapCreate, MapUpdate, ListMapCardResponse, MapResponse, TagStatResponse, TilesInfo,
                                      ShareIdResponse)
 from map_service_app.database import get_db
-from map_service_app.config import REDIS_URL, SOURCE_IMAGES_PATH, TILES_BASE_PATH, TILE_SERVICE_TASK
+from map_service_app.config import REDIS_URL, TILE_SERVICE_TASK
+from map_service_app.storage import (storage, StorageError, build_map_source_key, build_map_tiles_prefix)
 
 router = APIRouter()
 
@@ -145,14 +144,14 @@ def delete_map_endpoint(map_id: UUID,
     if not deleted:
         raise HTTPException(status_code=404, detail="Map not found")
 
-    tiles_dir = os.path.join(TILES_BASE_PATH, str(map_id))
-    if os.path.isdir(tiles_dir):
-        shutil.rmtree(tiles_dir)
+    source_object_key = build_map_source_key(map_id)
+    tiles_prefix = build_map_tiles_prefix(map_id)
 
-    src_dir = os.path.join(SOURCE_IMAGES_PATH, str(map_id))
-    if os.path.isdir(src_dir):
-        shutil.rmtree(src_dir)
-
+    try:
+        storage.delete_object(source_object_key)
+        storage.delete_prefix(tiles_prefix)
+    except StorageError as e:
+        raise HTTPException(status_code=500, detail=f"Failed to delete map files from storage: {str(e)}")
     return
 
 
@@ -165,25 +164,28 @@ async def upload_image_endpoint(map_id: UUID,
     if not is_map_owned_by_user(db, user_id, map_id):
         raise HTTPException(status_code=403, detail="You do not own this map")
 
-    map_obj = get_map_by_id(db, map_id)
+    map_obj = delete_map_tiles_info(db, map_id) # TODO: исправить порядок
+
     if not map_obj:
         raise HTTPException(status_code=404, detail="Map not found")
-
-    print('found map_obj')
 
     if file.content_type != "image/png":
         raise HTTPException(status_code=400, detail="Only PNG images are supported")
 
-    save_dir = os.path.join(SOURCE_IMAGES_PATH, str(map_id))
-    os.makedirs(save_dir, exist_ok=True)
-    save_path = os.path.join(save_dir, "source.png")
+    object_key = build_map_source_key(map_id)
 
-    with open(save_path, mode="wb") as f:
-        f.write(await file.read())
+    try:
+        storage.upload_fileobj(
+            file_obj=file.file,
+            object_key=object_key,
+            content_type=file.content_type,
+        )
+    except StorageError as e:
+        raise HTTPException(status_code=500, detail=f"Failed to upload image to storage: {str(e)}")
 
     redis_conn = Redis.from_url(REDIS_URL)
     q = Queue(connection=redis_conn)
-    q.enqueue(TILE_SERVICE_TASK, map_id)
+    q.enqueue(TILE_SERVICE_TASK, str(map_id))
 
     return {"status": "image uploaded", "task": "tile generation started"}
 

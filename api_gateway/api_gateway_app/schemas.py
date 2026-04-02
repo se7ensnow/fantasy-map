@@ -69,11 +69,11 @@ class MapResponse(BaseModel):
     description: Optional[str] = None
     tags: List[str] = Field(default_factory=list)
     visibility: Visibility
-    source_path: str
-    tiles_path: str
-    width: int
-    height: int
-    max_zoom: int
+    has_tiles: bool
+    tiles_version: int
+    width: Optional[int] = None
+    height: Optional[int] = None
+    max_zoom: Optional[int] = None
     created_at: datetime
     updated_at: datetime
     share_id: Optional[str] = None

@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { ChevronUp } from "lucide-react";
 import LocationDetails from "./LocationDetails";
 import OpenLayersMap from "./OpenLayersMap";
-import { NGINX_URL } from "@/config";
+import { STORAGE_URL } from "@/config";
 
 export default function MapViewer({ map, locations }) {
     const [selectedLocation, setSelectedLocation] = useState(null);
@@ -42,7 +42,8 @@ export default function MapViewer({ map, locations }) {
             <div className="flex-1 rounded overflow-hidden">
                 <OpenLayersMap
                     mapId={map.id}
-                    nginxUrl={NGINX_URL}
+                    storageUrl={STORAGE_URL}
+                    tiles_version={map.tiles_version}
                     width={map.width}
                     height={map.height}
                     maxZoom={map.max_zoom}

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import LocationEditor from "./LocationEditor";
 import OpenLayersMap from "./OpenLayersMap";
-import { NGINX_URL } from "@/config";
+import { STORAGE_URL } from "@/config";
 import { Button } from "@/components/ui/button";
 
 export default function EditableMapViewer({
@@ -48,7 +48,8 @@ export default function EditableMapViewer({
             <div className="flex-1 rounded overflow-hidden relative">
                 <OpenLayersMap
                     mapId={map.id}
-                    nginxUrl={NGINX_URL}
+                    storageUrl={STORAGE_URL}
+                    tiles_version={map.tiles_version}
                     width={map.width}
                     height={map.height}
                     maxZoom={map.max_zoom}

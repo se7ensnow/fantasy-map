@@ -90,9 +90,10 @@ export default function MapEditPage() {
 
         try {
             setTilesReadyMessage("");
-            await uploadImage(map_id, file);
             setIsProcessing(true);
+            await uploadImage(map_id, file);
         } catch (err) {
+            setIsProcessing(false);
             toast.error(err.message || "Failed to upload image");
             console.error(err);
         }
@@ -106,7 +107,7 @@ export default function MapEditPage() {
                 const updatedMap = await getMapById(map_id);
                 setMap(updatedMap);
 
-                if (updatedMap.tiles_path) {
+                if (updatedMap.has_tiles) {
                     setIsProcessing(false);
                     setTilesReadyMessage("Tiles are ready.");
                 }
@@ -152,6 +153,8 @@ export default function MapEditPage() {
         }
     };
 
+    const hasTiles = !!map?.has_tiles;
+
     if (error) {
         return <p className="text-status-danger p-4">{error}</p>;
     }
@@ -195,20 +198,22 @@ export default function MapEditPage() {
                         </CardContent>
                     </Card>
 
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="text-text-heading">Edit Locations</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <EditableMapViewer
-                                map={map}
-                                locations={locations}
-                                onAddLocation={handleAddLocation}
-                                onDeleteLocation={handleDeleteLocation}
-                                onUpdateLocation={handleUpdateLocation}
-                            />
-                        </CardContent>
-                    </Card>
+                    {hasTiles && (
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="text-text-heading">Edit Locations</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <EditableMapViewer
+                                    map={map}
+                                    locations={locations}
+                                    onAddLocation={handleAddLocation}
+                                    onDeleteLocation={handleDeleteLocation}
+                                    onUpdateLocation={handleUpdateLocation}
+                                />
+                            </CardContent>
+                        </Card>
+                    )}
                 </>
             )}
 

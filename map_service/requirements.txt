@@ -7,3 +7,5 @@ pydantic~=2.11.5
 python-multipart~=0.0.20
 redis~=6.2.0
 rq~=2.3.3
+boto3~=1.42.80
+botocore~=1.42.80

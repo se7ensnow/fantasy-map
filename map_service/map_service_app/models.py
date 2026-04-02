@@ -1,7 +1,7 @@
-from sqlalchemy import Column, String, DateTime, Float, ForeignKey, Integer, Table, UniqueConstraint, Text, func
+from sqlalchemy import (Column, String, DateTime, Float, ForeignKey, Integer, Table, UniqueConstraint, Text, func,
+                        Boolean)
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import declarative_base, relationship
-from datetime import datetime
 import uuid
 
 Base = declarative_base()
@@ -24,11 +24,11 @@ class Map(Base):
     owner_username = Column(String, nullable=False)
     title = Column(String, nullable=False)
     description = Column(String, nullable=True)
-    source_path = Column(String, nullable=False)
-    tiles_path = Column(String, nullable=False)
-    width = Column(Integer, nullable=True)
-    height = Column(Integer, nullable=True)
-    max_zoom = Column(Integer, nullable=True)
+    has_tiles = Column(Boolean, nullable=False, default=False) # TODO: решить лучше проблему сброса кэша
+    tiles_version = Column(Integer, nullable=False, default=0)
+    width = Column(Integer, nullable=True, default=None)
+    height = Column(Integer, nullable=True, default=None)
+    max_zoom = Column(Integer, nullable=True, default=None)
     created_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
     updated_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now())
 
