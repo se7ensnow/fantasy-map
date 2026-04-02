@@ -40,7 +40,7 @@ def process_task(map_id: str):
             "max_zoom": result["max_zoom"],
         }
 
-        with httpx.Client(timeout=30.0) as client:
+        with httpx.Client() as client:
             response = client.post(callback_url, json=callback_payload)
             response.raise_for_status()
 
