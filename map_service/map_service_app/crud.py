@@ -59,6 +59,7 @@ def delete_map_tiles_info(db: Session, map_id: UUID) -> Optional[Map]:
     db.refresh(db_map)
     return db_map
 
+
 def update_map_tiles_info(db: Session, map_id: UUID, tiles_info: TilesInfo) -> Optional[Map]:
     db_map = get_map_by_id(db, map_id)
     if db_map is None:

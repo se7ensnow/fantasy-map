@@ -8,11 +8,11 @@ from tile_service_app.tiler import generate_tile_pyramid
 from tile_service_app.utils import upload_generated_tiles
 from tile_service_app.config import MAP_SERVICE_URL
 
-def process_task(map_id: str):
+def process_task(map_id: str, source_ext: str) -> dict:
     temp_dir = tempfile.mkdtemp(prefix=f"tiles_{map_id}_")
     try:
-        source_path = os.path.join(temp_dir, "source.png")
-        source_key = build_map_source_key(map_id)
+        source_path = os.path.join(temp_dir, f"source.{source_ext}")
+        source_key = build_map_source_key(map_id, source_ext)
 
         storage.download_file(source_key, source_path)
 
@@ -51,8 +51,5 @@ def process_task(map_id: str):
             "height": result["height"],
             "max_zoom": result["max_zoom"],
         }
-    except Exception as e:
-        raise e
-
     finally:
         shutil.rmtree(temp_dir, ignore_errors=True)

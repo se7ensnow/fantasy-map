@@ -34,12 +34,12 @@ export default function TilesUploader({ onSubmit, isProcessing = false, successM
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
                         <label className="block mb-1 font-medium text-text-heading">
-                            Upload Image (.png):
+                            Upload Image (.png, .jpg, .jpeg, .webp):
                         </label>
 
                         <input
                             type="file"
-                            accept=".png"
+                            accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp"
                             onChange={(e) => setFile(e.target.files[0] || null)}
                             required
                             className="block w-full text-sm text-text-heading file:mr-4 file:py-2 file:px-4

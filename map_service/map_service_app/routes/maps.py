@@ -12,9 +12,15 @@ from map_service_app.schemas import (MapCreate, MapUpdate, ListMapCardResponse, 
                                      ShareIdResponse)
 from map_service_app.database import get_db
 from map_service_app.config import REDIS_URL, TILE_SERVICE_TASK
-from map_service_app.storage import (storage, StorageError, build_map_source_key, build_map_tiles_prefix)
+from map_service_app.storage import (storage, StorageError, build_map_source_key, build_map_prefix)
 
 router = APIRouter()
+
+SUPPORTED_CONTENT_TYPES = {
+    "image/png": "png",
+    "image/jpeg": "jpg",
+    "image/webp": "webp",
+}
 
 
 @router.post("/create", response_model=MapResponse)
@@ -144,14 +150,14 @@ def delete_map_endpoint(map_id: UUID,
     if not deleted:
         raise HTTPException(status_code=404, detail="Map not found")
 
-    source_object_key = build_map_source_key(map_id)
-    tiles_prefix = build_map_tiles_prefix(map_id)
-
+    map_prefix = build_map_prefix(map_id)
     try:
-        storage.delete_object(source_object_key)
-        storage.delete_prefix(tiles_prefix)
+        storage.delete_prefix(map_prefix)
     except StorageError as e:
-        raise HTTPException(status_code=500, detail=f"Failed to delete map files from storage: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to delete map files from storage: {str(e)}",
+        )
     return
 
 
@@ -164,15 +170,18 @@ async def upload_image_endpoint(map_id: UUID,
     if not is_map_owned_by_user(db, user_id, map_id):
         raise HTTPException(status_code=403, detail="You do not own this map")
 
-    map_obj = delete_map_tiles_info(db, map_id) # TODO: исправить порядок
-
+    map_obj = get_map_by_id(db, map_id)
     if not map_obj:
         raise HTTPException(status_code=404, detail="Map not found")
 
-    if file.content_type != "image/png":
-        raise HTTPException(status_code=400, detail="Only PNG images are supported")
+    source_ext = SUPPORTED_CONTENT_TYPES.get(file.content_type)
+    if source_ext is None:
+        raise HTTPException(
+            status_code=400,
+            detail="Supported formats: PNG, JPEG/JPG, WEBP",
+        )
 
-    object_key = build_map_source_key(map_id)
+    object_key = build_map_source_key(map_id, source_ext)
 
     try:
         storage.upload_fileobj(
@@ -183,11 +192,16 @@ async def upload_image_endpoint(map_id: UUID,
     except StorageError as e:
         raise HTTPException(status_code=500, detail=f"Failed to upload image to storage: {str(e)}")
 
+    delete_map_tiles_info(db, map_id)
+
     redis_conn = Redis.from_url(REDIS_URL)
     q = Queue(connection=redis_conn)
-    q.enqueue(TILE_SERVICE_TASK, str(map_id))
+    q.enqueue(TILE_SERVICE_TASK, str(map_id), source_ext)
 
-    return {"status": "image uploaded", "task": "tile generation started"}
+    return {
+        "status": "image uploaded",
+        "task": "tile generation started",
+    }
 
 
 @router.post("/{map_id}/tiles_info", status_code=status.HTTP_202_ACCEPTED)
