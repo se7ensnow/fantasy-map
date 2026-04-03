@@ -132,9 +132,9 @@ storage = S3Storage(
 )
 
 
-def build_map_source_key(map_id) -> str:
-    return f"maps/{map_id}/source/source.png"
+def build_map_source_key(map_id, source_ext: str) -> str:
+    return f"maps/{map_id}/source/source.{source_ext}"
 
 
-def build_map_tiles_prefix(map_id) -> str:
-    return f"maps/{map_id}/tiles/"
+def build_map_prefix(map_id) -> str:
+    return f"maps/{map_id}/"
