@@ -1,7 +1,10 @@
+import os
 from dataclasses import dataclass
+from pathlib import Path
 from typing import BinaryIO
 
 import boto3
+import boto3.s3.transfer as s3transfer
 from botocore.client import Config
 from botocore.exceptions import ClientError
 
@@ -40,7 +43,10 @@ class S3Storage:
             aws_access_key_id=config.access_key,
             aws_secret_access_key=config.secret_key,
             use_ssl=config.secure,
-            config=Config(signature_version="s3v4"),
+            config=Config(
+                signature_version="s3v4",
+                max_pool_connections=20,
+            ),
         )
 
     def download_file(self, object_key: str, destination_path: str) -> str:
@@ -68,6 +74,41 @@ class S3Storage:
             return object_key
         except ClientError as e:
             raise StorageError(f"Failed to upload object '{object_key}': {e}") from e
+
+    def upload_directory(
+        self,
+        local_dir: str,
+        object_prefix: str,
+        content_type: str = "image/png",
+        workers: int = 20,
+    ) -> int:
+        file_paths: list[str] = []
+
+        for root, _, files in os.walk(local_dir):
+            for name in files:
+                file_paths.append(os.path.join(root, name))
+
+        if not file_paths:
+            return 0
+
+        transfer_config = s3transfer.TransferConfig(
+            use_threads=True,
+            max_concurrency=workers,
+        )
+        manager = s3transfer.create_transfer_manager(self.client, transfer_config)
+
+        for src in file_paths:
+            rel_path = Path(src).relative_to(local_dir).as_posix()
+            object_key = f"{object_prefix}{rel_path}"
+
+            manager.upload(
+                src,
+                self.config.bucket,
+                object_key,
+                extra_args={"ContentType": content_type},
+            )
+        manager.shutdown()
+        return len(file_paths)
 
     def delete_object(self, object_key: str) -> bool:
         try:

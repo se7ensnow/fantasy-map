@@ -78,6 +78,7 @@ def process_task(map_id: str, source_ext: str, request_id: str | None = None) ->
         uploaded_count = upload_generated_tiles(
             map_id=map_id,
             tiles_local_dir=result["tiles_local_dir"],
+            workers=20,
         )
         upload_ms = round((time.perf_counter() - upload_started) * 1000, 2)
 

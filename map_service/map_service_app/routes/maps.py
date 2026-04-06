@@ -34,7 +34,8 @@ from map_service_app.schemas import (
     TilesInfo,
     ShareIdResponse,
 )
-from map_service_app.storage import storage, StorageError, build_map_source_key, build_map_prefix
+from map_service_app.storage import (storage, StorageError, build_map_source_key, build_map_prefix,
+                                     build_map_source_prefix)
 
 router = APIRouter()
 
@@ -266,9 +267,20 @@ async def upload_image_endpoint(
         )
         raise HTTPException(status_code=400, detail="Supported formats: PNG, JPEG/JPG, WEBP")
 
+    source_prefix = build_map_source_prefix(str(map_id))
     object_key = build_map_source_key(map_id, source_ext)
 
     try:
+        deleted_count = storage.delete_prefix(source_prefix)
+        log(
+            request,
+            logging.INFO,
+            "map_old_source_deleted",
+            map_id=str(map_id),
+            user_id=str(user_uuid),
+            deleted_count=deleted_count,
+        )
+
         storage.upload_fileobj(
             file_obj=file.file,
             object_key=object_key,
