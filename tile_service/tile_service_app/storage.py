@@ -1,12 +1,14 @@
 import os
+import threading
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import BinaryIO
 
 import boto3
 import boto3.s3.transfer as s3transfer
 from botocore.client import Config
 from botocore.exceptions import ClientError
+from s3transfer.subscribers import BaseSubscriber
 
 from tile_service_app.config import (
     S3_ENDPOINT,
@@ -32,6 +34,30 @@ class StorageConfig:
     secret_key: str
     bucket: str
     secure: bool = False
+
+
+class UploadProgressSubscriber(BaseSubscriber):
+    def __init__(
+        self,
+        counter: dict,
+        total_files: int,
+        progress_callback: Callable[[int, int], None] | None = None,
+        progress_every: int = 10,
+    ):
+        self._counter = counter
+        self._total_files = total_files
+        self._progress_callback = progress_callback
+        self._progress_every = progress_every
+
+    def on_done(self, future, **kwargs):
+        with self._counter["lock"]:
+            self._counter["completed"] += 1
+            completed = self._counter["completed"]
+
+        if self._progress_callback and (
+            completed % self._progress_every == 0 or completed == self._total_files
+        ):
+            self._progress_callback(completed, self._total_files)
 
 
 class S3Storage:
@@ -81,6 +107,8 @@ class S3Storage:
         object_prefix: str,
         content_type: str = "image/png",
         workers: int = 20,
+        progress_callback: Callable[[int, int], None] | None = None,
+        progress_every: int = 10,
     ) -> int:
         file_paths: list[str] = []
 
@@ -89,6 +117,8 @@ class S3Storage:
                 file_paths.append(os.path.join(root, name))
 
         if not file_paths:
+            if progress_callback:
+                progress_callback(0, 0)
             return 0
 
         transfer_config = s3transfer.TransferConfig(
@@ -97,18 +127,43 @@ class S3Storage:
         )
         manager = s3transfer.create_transfer_manager(self.client, transfer_config)
 
-        for src in file_paths:
-            rel_path = Path(src).relative_to(local_dir).as_posix()
-            object_key = f"{object_prefix}{rel_path}"
+        total_files = len(file_paths)
+        counter = {
+            "completed": 0,
+            "lock": threading.Lock(),
+        }
+        futures = []
 
-            manager.upload(
-                src,
-                self.config.bucket,
-                object_key,
-                extra_args={"ContentType": content_type},
-            )
-        manager.shutdown()
-        return len(file_paths)
+        if progress_callback:
+            progress_callback(0, total_files)
+
+        try:
+            for src in file_paths:
+                rel_path = Path(src).relative_to(local_dir).as_posix()
+                object_key = f"{object_prefix}{rel_path}"
+
+                subscriber = UploadProgressSubscriber(
+                    counter=counter,
+                    total_files=total_files,
+                    progress_callback=progress_callback,
+                    progress_every=progress_every,
+                )
+
+                future = manager.upload(
+                    src,
+                    self.config.bucket,
+                    object_key,
+                    extra_args={"ContentType": content_type},
+                    subscribers=[subscriber],
+                )
+                futures.append(future)
+
+            for future in futures:
+                future.result()
+
+            return counter["completed"]
+        finally:
+            manager.shutdown()
 
     def delete_object(self, object_key: str) -> bool:
         try:
@@ -161,6 +216,10 @@ storage = S3Storage(
         secure=S3_SECURE,
     )
 )
+
+
+def build_map_source_prefix(map_id: str) -> str:
+    return f"maps/{map_id}/source/"
 
 
 def build_map_source_key(map_id, source_ext: str) -> str:

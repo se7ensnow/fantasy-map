@@ -310,6 +310,7 @@ async def upload_image_endpoint(
     return {
         "status": "image uploaded",
         "task": "tile generation started",
+        "job_id": job.id,
     }
 
 

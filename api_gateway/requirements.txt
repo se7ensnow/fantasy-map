@@ -1,4 +1,4 @@
-fastapi~=0.115.12
+fastapi~=0.135.3
 uvicorn[standard]~=0.34.3
 httpx~=0.28.1
 python-dotenv~=1.1.0
@@ -6,3 +6,4 @@ pydantic~=2.11.5
 pytest~=8.3.5
 python-multipart~=0.0.20
 pydantic[email]~=2.11.5
+redis~=6.2.0

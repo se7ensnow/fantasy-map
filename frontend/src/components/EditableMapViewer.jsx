@@ -49,7 +49,7 @@ export default function EditableMapViewer({
                 <OpenLayersMap
                     mapId={map.id}
                     storageUrl={STORAGE_URL}
-                    tiles_version={map.tiles_version}
+                    tilesVersion={map.tiles_version}
                     width={map.width}
                     height={map.height}
                     maxZoom={map.max_zoom}

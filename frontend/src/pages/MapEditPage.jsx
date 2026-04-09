@@ -1,8 +1,14 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
-import { getMapById, updateMap, createMap, uploadImage } from "../api/maps";
+import {
+    getMapById,
+    updateMap,
+    createMap,
+    uploadImage,
+    subscribeToTileProgress,
+} from "../api/maps";
 import {
     getLocations,
     createLocation,
@@ -26,7 +32,10 @@ export default function MapEditPage() {
     const [loading, setLoading] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
     const [tilesReadyMessage, setTilesReadyMessage] = useState("");
+    const [progressData, setProgressData] = useState(null);
     const [error, setError] = useState("");
+
+    const unsubscribeRef = useRef(null);
 
     useEffect(() => {
         async function fetchData() {
@@ -59,6 +68,24 @@ export default function MapEditPage() {
         fetchData();
     }, [map_id]);
 
+    useEffect(() => {
+        return () => {
+            unsubscribeRef.current?.();
+        };
+    }, []);
+
+    const refreshMapData = async () => {
+        if (!map_id) return;
+
+        const updatedMap = await getMapById(map_id);
+        setMap(updatedMap);
+
+        if (updatedMap.has_tiles) {
+            const locationsData = await getLocations(map_id);
+            setLocations(locationsData);
+        }
+    };
+
     const handleMapSubmit = async (title, description, tags, visibility) => {
         try {
             setLoading(true);
@@ -90,34 +117,48 @@ export default function MapEditPage() {
 
         try {
             setTilesReadyMessage("");
+            setProgressData(null);
             setIsProcessing(true);
-            await uploadImage(map_id, file);
+
+            const result = await uploadImage(map_id, file);
+
+            if (!result?.job_id) {
+                setIsProcessing(false);
+                toast.error("Progress tracking is unavailable: job_id was not returned.");
+                return;
+            }
+
+            unsubscribeRef.current?.();
+
+            unsubscribeRef.current = subscribeToTileProgress(result.job_id, {
+                onProgress: (payload) => {
+                    setProgressData(payload);
+                },
+                onDone: async (payload) => {
+                    setProgressData(payload);
+                    setIsProcessing(false);
+                    setTilesReadyMessage("Tiles are ready.");
+                    unsubscribeRef.current = null;
+
+                    try {
+                        await refreshMapData();
+                    } catch (err) {
+                        console.error(err);
+                    }
+                },
+                onError: (payload) => {
+                    setProgressData(payload);
+                    setIsProcessing(false);
+                    unsubscribeRef.current = null;
+                    toast.error(payload?.message || "Tile processing failed");
+                },
+            });
         } catch (err) {
             setIsProcessing(false);
             toast.error(err.message || "Failed to upload image");
             console.error(err);
         }
     };
-
-    useEffect(() => {
-        if (!isProcessing) return;
-
-        const interval = setInterval(async () => {
-            try {
-                const updatedMap = await getMapById(map_id);
-                setMap(updatedMap);
-
-                if (updatedMap.has_tiles) {
-                    setIsProcessing(false);
-                    setTilesReadyMessage("Tiles are ready.");
-                }
-            } catch (err) {
-                console.error(err);
-            }
-        }, 2000);
-
-        return () => clearInterval(interval);
-    }, [isProcessing, map_id]);
 
     const handleAddLocation = async (newLocation) => {
         if (!map_id) {
@@ -194,6 +235,7 @@ export default function MapEditPage() {
                                 onSubmit={handleUploadImage}
                                 isProcessing={isProcessing}
                                 successMessage={tilesReadyMessage}
+                                progressData={progressData}
                             />
                         </CardContent>
                     </Card>

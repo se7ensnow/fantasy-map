@@ -185,3 +185,42 @@ export async function deleteShareId(mapId) {
         throw toApiError(error, "Failed to disable share link");
     }
 }
+
+export function subscribeToTileProgress(jobId, { onProgress, onDone, onError } = {}) {
+    const eventSource = new EventSource(`${API_URL}/jobs/${jobId}/events`);
+
+    const handleProgress = (event) => {
+        try {
+            const payload = JSON.parse(event.data);
+            onProgress?.(payload);
+
+            if (payload.status === "done") {
+                onDone?.(payload);
+                eventSource.close();
+            }
+
+            if (payload.status === "error") {
+                onError?.(payload);
+                eventSource.close();
+            }
+        } catch (err) {
+            console.error("Failed to parse SSE progress payload:", err);
+        }
+    };
+
+    eventSource.addEventListener("progress", handleProgress);
+
+    eventSource.onerror = (err) => {
+        console.error("SSE connection error:", err);
+        onError?.({
+            status: "error",
+            stage: "failed",
+            message: "Connection to progress stream lost",
+        });
+        eventSource.close();
+    };
+
+    return () => {
+        eventSource.close();
+    };
+}
