@@ -130,7 +130,7 @@ def list_tags_endpoint(
 @router.get("/share/{share_id}", response_model=MapResponse)
 def get_map_by_share_id_endpoint(request: Request, share_id: str, db: Session = Depends(get_db)):
     map_obj = get_map_by_share_id(db, share_id)
-    if not map_obj:
+    if not map_obj or map_obj.status != "ready":
         log(request, logging.INFO, "shared_map_not_found", share_id=share_id)
         raise HTTPException(status_code=404, detail="Shared map not found")
     return map_obj
@@ -154,7 +154,7 @@ def get_map_endpoint(
         if is_map_owned_by_user(db, user_uuid, map_id):
             is_owner = True
 
-    if map_obj.visibility != "public" and not is_owner:
+    if (map_obj.status != "ready" or map_obj.visibility != "public") and not is_owner:
         log(request, logging.INFO, "map_get_forbidden_hidden", map_id=str(map_id))
         raise HTTPException(status_code=404, detail="Map not found")
 
@@ -411,6 +411,15 @@ def create_share_endpoint(
         log(request, logging.WARNING, "share_create_forbidden", map_id=str(map_id), user_id=str(user_uuid))
         raise HTTPException(status_code=403, detail="You do not own this map")
 
+    map_obj = get_map_by_id(db, map_id)
+    if not map_obj:
+        log(request, logging.INFO, "share_create_map_not_found", map_id=str(map_id), user_id=str(user_uuid))
+        raise HTTPException(status_code=404, detail="Map not found")
+
+    if map_obj.status != "ready":
+        log(request, logging.WARNING, "share_create_not_ready", map_id=str(map_id), user_id=str(user_uuid))
+        raise HTTPException(status_code=409, detail="Only ready maps can be shared")
+
     try:
         sid = create_share(db, map_id)
     except RuntimeError as e:
@@ -464,5 +473,8 @@ def get_share_id_endpoint(
     if not map_obj:
         log(request, logging.INFO, "share_get_map_not_found", map_id=str(map_id), user_id=str(user_uuid))
         raise HTTPException(status_code=404, detail="Map not found")
+    if map_obj.status != "ready":
+        log(request, logging.WARNING, "share_get_not_ready", map_id=str(map_id), user_id=str(user_uuid))
+        raise HTTPException(status_code=409, detail="Only ready maps can be shared")
 
     return ShareIdResponse(share_id=map_obj.share_id)

@@ -31,6 +31,7 @@ class UserResponse(BaseModel):
 # ---------- MAPS ----------
 
 Visibility = Literal["private", "public"]
+MapStatus = Literal['draft', 'ready']
 
 
 class MapCreateRequest(BaseModel):
@@ -53,6 +54,7 @@ class MapCardResponse(BaseModel):
     title: str
     tags: List[str] = Field(default_factory=list)
     visibility: Visibility
+    status: MapStatus
     updated_at: datetime
 
 
@@ -69,7 +71,7 @@ class MapResponse(BaseModel):
     description: Optional[str] = None
     tags: List[str] = Field(default_factory=list)
     visibility: Visibility
-    has_tiles: bool
+    status: MapStatus
     tiles_version: int
     width: Optional[int] = None
     height: Optional[int] = None

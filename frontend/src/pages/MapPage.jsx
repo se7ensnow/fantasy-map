@@ -25,8 +25,14 @@ export default function MapPage() {
 
                 const mapData = await getMapById(map_id);
                 if (cancelled) return;
+                            
+                if (mapData.status !== "ready") {
+                    setError("MAP_NOT_FOUND");
+                    return;
+                }
+                
                 setMap(mapData);
-
+                
                 const locationsData = await getLocations(map_id);
                 if (cancelled) return;
                 setLocations(locationsData);

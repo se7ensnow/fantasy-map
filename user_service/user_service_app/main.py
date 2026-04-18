@@ -4,13 +4,10 @@ from uuid import uuid4
 
 from fastapi import FastAPI, Request
 
-from user_service_app.database import engine
 from user_service_app.log_config import log, logger, setup_logging
-from user_service_app.models import Base
 from user_service_app.routes import auth, users
 
 setup_logging()
-Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="User Service",

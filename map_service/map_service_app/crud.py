@@ -47,19 +47,6 @@ def get_map_by_id(db: Session, map_id: UUID) -> Optional[Map]:
     )
 
 
-def delete_map_tiles_info(db: Session, map_id: UUID) -> Optional[Map]:
-    db_map = get_map_by_id(db, map_id)
-    if db_map is None:
-        return None
-    db_map.has_tiles = False
-    db_map.width = None
-    db_map.height = None
-    db_map.max_zoom = None
-    db.commit()
-    db.refresh(db_map)
-    return db_map
-
-
 def update_map_tiles_info(db: Session, map_id: UUID, tiles_info: TilesInfo) -> Optional[Map]:
     db_map = get_map_by_id(db, map_id)
     if db_map is None:
@@ -69,6 +56,7 @@ def update_map_tiles_info(db: Session, map_id: UUID, tiles_info: TilesInfo) -> O
         return db_map
 
     db_map.has_tiles = True
+    db_map.status = "ready"
     db_map.tiles_version = tiles_info.tiles_version
     db_map.width = tiles_info.width
     db_map.height = tiles_info.height
@@ -76,7 +64,6 @@ def update_map_tiles_info(db: Session, map_id: UUID, tiles_info: TilesInfo) -> O
     db.commit()
     db.refresh(db_map)
     return db_map
-
 
 def update_map(db: Session, map_id: UUID, map_in: MapUpdate) -> Optional[Map]:
     db_map = get_map_by_id(db, map_id)
@@ -146,7 +133,11 @@ def list_maps_catalog(
         offset: int = 0,
         limit: int = 10,
 ):
-    query = db.query(Map).options(selectinload(Map.tags)).filter(Map.visibility == 'public')
+    query = (
+        db.query(Map)
+        .options(selectinload(Map.tags))
+        .filter(Map.visibility == "public", Map.status == "ready")
+    )
 
     matched_tags_count = None
 

@@ -81,9 +81,11 @@ export default function MapEditPage() {
         const updatedMap = await getMapById(map_id);
         setMap(updatedMap);
 
-        if (updatedMap.has_tiles) {
+        if (updatedMap.status === "ready") {
             const locationsData = await getLocations(map_id);
             setLocations(locationsData);
+        } else {
+            setLocations([]);
         }
     };
 
@@ -208,8 +210,6 @@ export default function MapEditPage() {
         }
     };
 
-    const hasTiles = !!map?.has_tiles;
-
     if (error) {
         return <p className="text-status-danger p-4">{error}</p>;
     }
@@ -217,6 +217,10 @@ export default function MapEditPage() {
     if (!map) {
         return <p className="p-4 text-text-heading">Loading map...</p>;
     }
+
+    const isReady = map?.status === "ready";
+    const isDraft = map?.status === "draft";
+    const willBePublicWhenReady = isDraft && map?.visibility === "public";
 
     return (
         <div className="space-y-8">
@@ -253,10 +257,28 @@ export default function MapEditPage() {
                                 errorMessage={processingError?.message || ""}
                                 errorDetails={processingError?.details || ""}
                             />
+                            <div className="mt-4 space-y-2">
+                                {isDraft && (
+                                    <div className="max-w-2xl rounded-xl border border-border-default/40 bg-surface-paper/70 p-4">
+                                        <div className="text-sm font-semibold text-text-heading">
+                                            Draft map
+                                        </div>
+                                        <div className="mt-1 text-sm text-text-primary leading-6">
+                                            This map is not visible to other users until tiles are uploaded successfully.
+                                        </div>
+                                
+                                        {willBePublicWhenReady && (
+                                            <div className="mt-2 text-sm text-text-muted leading-6">
+                                                Visibility is already set to public. The map will become public automatically once processing finishes successfully.
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
                         </CardContent>
                     </Card>
 
-                    {hasTiles && (
+                    {isReady && (
                         <Card>
                             <CardHeader>
                                 <CardTitle className="text-text-heading">Edit Locations</CardTitle>
@@ -275,14 +297,26 @@ export default function MapEditPage() {
                 </>
             )}
 
-            <div className="flex justify-end px-8 pb-8">
+            <div className="flex flex-col items-end gap-2 px-8 pb-8">
                 <Button
                     variant="outline"
-                    onClick={() => navigate(map_id ? `/maps/${map_id}` : "/profile")}
+                    onClick={() => {
+                        if (isReady) {
+                            navigate(`/maps/${map_id}`);
+                        }
+                    }}
                     className="w-32"
+                    disabled={!isReady}
+                    title={!isReady ? "The map will become available after tiles are uploaded successfully" : undefined}
                 >
                     View Map
                 </Button>
+                
+                {!isReady && map_id && (
+                    <p className="max-w-xs text-right text-xs text-text-muted">
+                        Available after successful tile upload
+                    </p>
+                )}
             </div>
         </div>
     );
