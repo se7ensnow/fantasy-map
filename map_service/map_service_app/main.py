@@ -7,7 +7,6 @@ from sqlalchemy import text
 
 from map_service_app.database import engine
 from map_service_app.log_config import log, logger, setup_logging
-from map_service_app.models import Base
 from map_service_app.routes import locations, maps
 
 setup_logging()
@@ -72,7 +71,6 @@ async def request_logging_middleware(request: Request, call_next):
 def on_startup() -> None:
     with engine.begin() as conn:
         conn.execute(text("CREATE EXTENSION IF NOT EXISTS pg_trgm"))
-        Base.metadata.create_all(bind=conn)
 
         conn.execute(text("""
             CREATE INDEX IF NOT EXISTS ix_maps_title_trgm

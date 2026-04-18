@@ -24,7 +24,7 @@ class Map(Base):
     owner_username = Column(String, nullable=False)
     title = Column(String, nullable=False)
     description = Column(String, nullable=True)
-    has_tiles = Column(Boolean, nullable=False, default=False)
+    status = Column(String, nullable=False, default="draft", index=True)
     tiles_version = Column(Integer, nullable=False, default=0)
     width = Column(Integer, nullable=True, default=None)
     height = Column(Integer, nullable=True, default=None)

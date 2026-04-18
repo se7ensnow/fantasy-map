@@ -36,6 +36,11 @@ export default function MapListItem({
         inactiveOnCard.length - Math.max(0, visibleCount - mustShowCount)
     );
 
+    const isDraft = map.status === "draft";
+    const isReady = map.status === "ready";
+    const canShare = showShare && isReady;
+    const cardAction = isDraft ? onEdit : onOpen;
+
     const stopCardOpen = (e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -44,7 +49,7 @@ export default function MapListItem({
     const handleCardKeyDown = (e) => {
         if (e.key === "Enter" || e.key === " ") {
             e.preventDefault();
-            onOpen?.();
+            cardAction?.();
         }
     };
 
@@ -85,7 +90,7 @@ export default function MapListItem({
             <div
                 role="button"
                 tabIndex={0}
-                onClick={() => onOpen?.()}
+                onClick={() => cardAction?.()}
                 onKeyDown={handleCardKeyDown}
                 className="
                     rounded-lg border-2 border-border-emphasis bg-surface-panel p-4
@@ -97,9 +102,29 @@ export default function MapListItem({
             >
                 <div className="flex justify-between items-center gap-4">
                     <div className="min-w-0">
-                        <h3 className="mb-1 text-xl font-bold text-accent-text">
-                            {map.title}
-                        </h3>
+                        <div className="mb-1 flex flex-wrap items-center gap-2">
+                            {isDraft && (
+                                <Badge className="border-status-warning-border/60 bg-status-warning-border/10 text-status-warning-ink">
+                                    Draft
+                                </Badge>
+                            )}
+
+                            {isReady && map.visibility === "public" && (
+                                <Badge className="border-accent-primary/40 bg-accent-primary/10 text-accent-text">
+                                    Public
+                                </Badge>
+                            )}
+
+                            {isReady && map.visibility === "private" && (
+                                <Badge className="border-border-default/50 bg-surface-paper/70 text-text-muted">
+                                    Private
+                                </Badge>
+                            )}
+
+                            <h3 className="text-xl font-bold text-accent-text">
+                                {map.title}
+                            </h3>
+                        </div>
 
                         {tags.length > 0 && (
                             <div className="mt-2 flex flex-wrap gap-2">
@@ -139,11 +164,13 @@ export default function MapListItem({
                     </div>
 
                     <div className="flex shrink-0 space-x-2">
-                        <Button onClick={handleActionClick(onOpen)}>
-                            View
-                        </Button>
+                        {isReady ? (
+                            <Button onClick={handleActionClick(onOpen)}>
+                                View
+                            </Button>
+                        ) : null}
 
-                        {showShare && (
+                        {canShare && (
                             <Button variant="secondary" onClick={handleOpenShare}>
                                 Share
                             </Button>
@@ -151,7 +178,7 @@ export default function MapListItem({
 
                         {onEdit && (
                             <Button
-                                variant="secondary"
+                                variant={isDraft ? "default" : "secondary"}
                                 onClick={handleActionClick(onEdit)}
                             >
                                 Edit

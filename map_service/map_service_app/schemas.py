@@ -8,6 +8,7 @@ from map_service_app.config import DESCRIPTION_MAX_LENGTH
 
 
 Visibility = Literal["private", "public"]
+MapStatus = Literal['draft', 'ready']
 
 
 class MapCreate(BaseModel):
@@ -31,6 +32,7 @@ class MapCardResponse(BaseModel):
     title: str
     tags: List[str] = Field(default_factory=list)
     visibility: Visibility
+    status: MapStatus
     updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
@@ -55,7 +57,7 @@ class MapResponse(BaseModel):
     title: str
     description: Optional[str] = None
     tags: List[str] = Field(default_factory=list)
-    has_tiles: bool
+    status: MapStatus
     tiles_version: int
     width: Optional[int] = None
     height: Optional[int] = None
