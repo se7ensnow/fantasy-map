@@ -75,7 +75,7 @@ def test_update_map_replaces_tags_and_cleans_unused(db, map_obj):
 
 
 def test_update_map_tiles_info(db, map_obj):
-    tiles_info = TilesInfo(width=256, height=256, max_zoom=5)
+    tiles_info = TilesInfo(width=256, height=256, max_zoom=5, tiles_version=1)
     updated = update_map_tiles_info(db, map_obj.id, tiles_info)
 
     assert updated is not None
@@ -83,6 +83,7 @@ def test_update_map_tiles_info(db, map_obj):
     assert updated.max_zoom == 5
     assert updated.width == 256
     assert updated.height == 256
+    assert updated.tiles_version == 1
 
 
 def test_delete_map_deletes_and_cleans_tags_when_unused(db, owner_id):
