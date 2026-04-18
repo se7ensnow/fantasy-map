@@ -1,6 +1,6 @@
 import json
 from datetime import datetime, timezone
-from typing import Any
+from typing import Any, Optional
 
 from redis import Redis
 
@@ -53,3 +53,14 @@ def set_tile_progress(
     redis_conn.publish(build_progress_channel(job_id), data)
 
     return payload
+
+
+def set_tile_heartbeat(job_id: str, ttl_seconds: int = 3600) -> None:
+    key = build_progress_key(job_id)
+    data: Optional[str] = redis_conn.get(key)
+    if not data:
+        return
+
+    payload = json.loads(data)
+    payload["updated_at"] = datetime.now(timezone.utc).isoformat()
+    redis_conn.set(key, json.dumps(payload, ensure_ascii=False), ex=ttl_seconds)

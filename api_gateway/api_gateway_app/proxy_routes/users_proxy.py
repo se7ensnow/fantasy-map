@@ -32,6 +32,7 @@ async def get_me(request: Request, user_id: UUID = require_user_id()):
             "user_me_failed",
             user_id=str(user_id),
             status_code=response.status_code,
+            response_error=response.text,
         )
         return forward_error(response)
 
@@ -57,6 +58,7 @@ async def get_user(request: Request, user_id: UUID):
             "user_get_failed",
             user_id=str(user_id),
             status_code=response.status_code,
+            response_error=response.text,
         )
         return forward_error(response)
 

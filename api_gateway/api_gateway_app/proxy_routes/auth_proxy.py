@@ -20,7 +20,7 @@ async def register(request: Request, data: RegisterRequest):
         try:
             response = await client.post(
                 f"{USER_SERVICE_URL}/auth/register",
-                json=data.model_dump(),
+                json=data.model_dump(mode="json"),
                 headers=build_headers(request),
             )
         except httpx.RequestError:
@@ -34,6 +34,7 @@ async def register(request: Request, data: RegisterRequest):
             "register_failed",
             username=data.username,
             status_code=response.status_code,
+            response_error=response.text,
         )
         return forward_error(response)
 
@@ -70,6 +71,7 @@ async def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends
             "login_failed",
             username=form_data.username,
             status_code=response.status_code,
+            response_error=response.text,
         )
         return forward_error(response)
 

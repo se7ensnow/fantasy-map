@@ -21,7 +21,7 @@ async def create_location(
     location_data: LocationCreateRequest,
     user_id: UUID = require_user_id(),
 ):
-    body = location_data.model_dump_json()
+    body = location_data.model_dump(mode="json")
 
     log(request, logging.INFO, "location_create_started", user_id=str(user_id))
 
@@ -29,7 +29,7 @@ async def create_location(
         try:
             response = await client.post(
                 f"{MAP_SERVICE_URL}/locations/create",
-                content=body,
+                json=body,
                 headers=build_headers(request, user_id),
             )
         except httpx.RequestError:
@@ -43,6 +43,7 @@ async def create_location(
             "location_create_failed",
             user_id=str(user_id),
             status_code=response.status_code,
+            response_error=response.text,
         )
         return forward_error(response)
 
@@ -75,7 +76,14 @@ async def list_locations(request: Request, map_id: UUID = Query(...)):
         return []
 
     if response.status_code != 200:
-        log(request, logging.WARNING, "locations_list_failed", map_id=str(map_id), status_code=response.status_code)
+        log(
+            request,
+            logging.WARNING,
+            "locations_list_failed",
+            map_id=str(map_id),
+            status_code=response.status_code,
+            response_error=response.text,
+        )
         return forward_error(response)
 
     return response.json()
@@ -100,6 +108,7 @@ async def get_location(request: Request, location_id: UUID):
             "location_get_failed",
             location_id=str(location_id),
             status_code=response.status_code,
+            response_error=response.text,
         )
         return forward_error(response)
 
@@ -113,7 +122,7 @@ async def update_location(
     location_data: LocationUpdateRequest,
     user_id: UUID = require_user_id(),
 ):
-    body = location_data.model_dump_json()
+    body = location_data.model_dump(mode="json")
 
     log(
         request,
@@ -127,7 +136,7 @@ async def update_location(
         try:
             response = await client.put(
                 f"{MAP_SERVICE_URL}/locations/{location_id}",
-                content=body,
+                json=body,
                 headers=build_headers(request, user_id),
             )
         except httpx.RequestError:
@@ -148,6 +157,7 @@ async def update_location(
             location_id=str(location_id),
             user_id=str(user_id),
             status_code=response.status_code,
+            response_error=response.text,
         )
         return forward_error(response)
 
@@ -195,6 +205,7 @@ async def delete_location(request: Request, location_id: UUID, user_id: UUID = r
             location_id=str(location_id),
             user_id=str(user_id),
             status_code=response.status_code,
+            response_error=response.text,
         )
         return forward_error(response)
 

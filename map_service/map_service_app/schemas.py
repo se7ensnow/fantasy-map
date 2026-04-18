@@ -77,6 +77,7 @@ class TilesInfo(BaseModel):
     width: int
     height: int
     max_zoom: int
+    tiles_version: int
 
 
 class LocationCreate(BaseModel):

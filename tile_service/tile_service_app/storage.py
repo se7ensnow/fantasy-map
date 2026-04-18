@@ -226,9 +226,13 @@ def build_map_source_key(map_id, source_ext: str) -> str:
     return f"maps/{map_id}/source/source.{source_ext}"
 
 
-def build_map_tiles_prefix(map_id: str) -> str:
+def build_map_tiles_root_prefix(map_id: str) -> str:
     return f"maps/{map_id}/tiles/"
 
 
-def build_tile_key(map_id: str, z: int, x: int, y: int) -> str:
-    return f"maps/{map_id}/tiles/{z}/{x}/{y}.png"
+def build_map_tiles_version_prefix(map_id: str, tiles_version: int) -> str:
+    return f"maps/{map_id}/tiles/v{tiles_version}/"
+
+
+def build_tile_key(map_id: str, tiles_version: int, z: int, x: int, y: int) -> str:
+    return f"maps/{map_id}/tiles/v{tiles_version}/{z}/{x}/{y}.png"

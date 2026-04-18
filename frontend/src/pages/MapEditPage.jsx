@@ -33,6 +33,7 @@ export default function MapEditPage() {
     const [isProcessing, setIsProcessing] = useState(false);
     const [tilesReadyMessage, setTilesReadyMessage] = useState("");
     const [progressData, setProgressData] = useState(null);
+    const [processingError, setProcessingError] = useState(null);
     const [error, setError] = useState("");
 
     const unsubscribeRef = useRef(null);
@@ -118,8 +119,8 @@ export default function MapEditPage() {
         try {
             setTilesReadyMessage("");
             setProgressData(null);
+            setProcessingError(null);
             setIsProcessing(true);
-
             const result = await uploadImage(map_id, file);
 
             if (!result?.job_id) {
@@ -136,9 +137,12 @@ export default function MapEditPage() {
                 },
                 onDone: async (payload) => {
                     setProgressData(payload);
+                    setProcessingError(null);
                     setIsProcessing(false);
                     setTilesReadyMessage("Tiles are ready.");
                     unsubscribeRef.current = null;
+
+                    toast.success("Map image processed successfully.");
 
                     try {
                         await refreshMapData();
@@ -149,12 +153,22 @@ export default function MapEditPage() {
                 onError: (payload) => {
                     setProgressData(payload);
                     setIsProcessing(false);
+                    setTilesReadyMessage("");
+                    setProcessingError({
+                        message: payload?.userMessage || "Something went wrong. Please try again.",
+                        details: payload?.errorDetails || null,
+                    });
                     unsubscribeRef.current = null;
-                    toast.error(payload?.message || "Tile processing failed");
+                
+                    toast.error(payload?.userMessage || "Something went wrong. Please try again.");
                 },
             });
         } catch (err) {
             setIsProcessing(false);
+            setProcessingError({
+                message: err.message || "Failed to upload image.",
+                details: null,
+            });
             toast.error(err.message || "Failed to upload image");
             console.error(err);
         }
@@ -236,6 +250,8 @@ export default function MapEditPage() {
                                 isProcessing={isProcessing}
                                 successMessage={tilesReadyMessage}
                                 progressData={progressData}
+                                errorMessage={processingError?.message || ""}
+                                errorDetails={processingError?.details || ""}
                             />
                         </CardContent>
                     </Card>

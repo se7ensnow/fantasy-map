@@ -28,6 +28,8 @@ export default function TilesUploader({
     isProcessing = false,
     successMessage = "",
     progressData = null,
+    errorMessage = "",
+    errorDetails = "",
 }) {
     const [file, setFile] = useState(null);
     const [uploading, setUploading] = useState(false);
@@ -40,21 +42,21 @@ export default function TilesUploader({
 
     const detailsText = useMemo(() => {
         if (!progressData) return "";
-
+        
         if (
             progressData.stage === "generating_tiles" &&
             progressData.total_tiles
         ) {
             return `${progressData.generated_tiles ?? 0} / ${progressData.total_tiles} tiles generated`;
         }
-
+    
         if (
             progressData.stage === "uploading_tiles" &&
             progressData.total_tiles
         ) {
             return `${progressData.uploaded_tiles ?? 0} / ${progressData.total_tiles} tiles uploaded`;
         }
-
+    
         return progressData.message || "";
     }, [progressData]);
 
@@ -128,6 +130,27 @@ export default function TilesUploader({
                     {!isProcessing && successMessage && (
                         <div className="mt-2 text-status-success-ink font-semibold">
                             {successMessage}
+                        </div>
+                    )}
+
+                    {!isProcessing && errorMessage && (
+                        <div className="mt-4 max-w-2xl rounded-xl border border-status-error-border/40 bg-surface-paper/70 p-4">
+                            <div className="flex items-start gap-3">
+                                <div className="mt-0.5 h-10 w-1 shrink-0 rounded-full bg-status-error-border" />
+                                <div className="min-w-0">
+                                    <div className="text-sm font-semibold text-status-error-ink">
+                                        Processing failed
+                                    </div>
+                                    <div className="mt-1 text-sm leading-6 text-status-error-ink">
+                                        {errorMessage}
+                                    </div>
+                                    {errorDetails && (
+                                        <div className="mt-2 text-xs leading-5 break-words text-text-muted">
+                                            Details: {errorDetails}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
                         </div>
                     )}
                 </form>

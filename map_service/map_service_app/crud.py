@@ -64,8 +64,12 @@ def update_map_tiles_info(db: Session, map_id: UUID, tiles_info: TilesInfo) -> O
     db_map = get_map_by_id(db, map_id)
     if db_map is None:
         return None
+
+    if tiles_info.tiles_version < db_map.tiles_version:
+        return db_map
+
     db_map.has_tiles = True
-    db_map.tiles_version += 1
+    db_map.tiles_version = tiles_info.tiles_version
     db_map.width = tiles_info.width
     db_map.height = tiles_info.height
     db_map.max_zoom = tiles_info.max_zoom
@@ -119,6 +123,12 @@ def delete_map(db: Session, map_id: UUID) -> bool:
     db.commit()
     return True
 
+
+def get_map_tiles_version(db: Session, map_id: UUID) -> Optional[int]:
+    db_map = get_map_by_id(db, map_id)
+    if db_map is None:
+        return None
+    return db_map.tiles_version
 
 
 def get_maps_by_owner(db: Session, owner_id: UUID, offset: int = 0, limit: int = 10):

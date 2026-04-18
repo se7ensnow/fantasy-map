@@ -41,11 +41,12 @@ async def create_map(request: Request, map_data: MapCreateRequest, user_id: UUID
                 "map_create_user_lookup_failed",
                 user_id=str(user_id),
                 status_code=user_response.status_code,
+                response_error=user_response.text,
             )
             raise HTTPException(status_code=user_response.status_code, detail=user_response.text)
 
         owner_username = user_response.json()["username"]
-        body = map_data.model_dump()
+        body = map_data.model_dump(mode="json")
         body["owner_username"] = owner_username
 
         try:
@@ -61,6 +62,7 @@ async def create_map(request: Request, map_data: MapCreateRequest, user_id: UUID
             "map_create_failed",
             user_id=str(user_id),
             status_code=response.status_code,
+            response_error=response.text,
         )
         return forward_error(response)
 
@@ -99,6 +101,7 @@ async def get_owned_maps(
             "owned_maps_failed",
             user_id=str(user_id),
             status_code=response.status_code,
+            response_error=response.text,
         )
         return forward_error(response)
 
@@ -134,7 +137,13 @@ async def get_all_maps(
             raise HTTPException(status_code=503, detail="Map Service unavailable")
 
     if response.status_code != 200:
-        log(request, logging.WARNING, "maps_list_failed", status_code=response.status_code)
+        log(
+            request,
+            logging.WARNING,
+            "maps_list_failed",
+            status_code=response.status_code,
+            response_error=response.text,
+        )
         return forward_error(response)
 
     return response.json()
@@ -162,7 +171,13 @@ async def list_tags(
             raise HTTPException(status_code=503, detail="Map Service unavailable")
 
     if response.status_code != 200:
-        log(request, logging.WARNING, "tags_list_failed", status_code=response.status_code)
+        log(
+            request,
+            logging.WARNING,
+            "tags_list_failed",
+            status_code=response.status_code,
+            response_error=response.text,
+        )
         return forward_error(response)
 
     return response.json()
@@ -185,7 +200,14 @@ async def get_map_by_share_id(request: Request, share_id: str):
             log(request, logging.INFO, "shared_map_not_found", share_id=share_id)
             raise HTTPException(status_code=404, detail="Shared map not found or expired")
 
-        log(request, logging.WARNING, "shared_map_failed", share_id=share_id, status_code=response.status_code)
+        log(
+            request,
+            logging.WARNING,
+            "shared_map_failed",
+            share_id=share_id,
+            status_code=response.status_code,
+            response_error=response.text,
+        )
         return forward_error(response)
 
     return response.json()
@@ -204,7 +226,14 @@ async def get_map(request: Request, map_id: UUID, user_id: Optional[UUID] = opti
             raise HTTPException(status_code=503, detail="Map Service unavailable")
 
     if response.status_code != 200:
-        log(request, logging.WARNING, "map_get_failed", map_id=str(map_id), status_code=response.status_code)
+        log(
+            request,
+            logging.WARNING,
+            "map_get_failed",
+            map_id=str(map_id),
+            status_code=response.status_code,
+            response_error=response.text,
+        )
         return forward_error(response)
 
     return response.json()
@@ -217,7 +246,7 @@ async def update_map(
     map_data: MapUpdateRequest,
     user_id: UUID = require_user_id(),
 ):
-    body = map_data.model_dump_json()
+    body = map_data.model_dump(mode="json")
     headers = build_headers(request, user_id)
 
     log(request, logging.INFO, "map_update_started", map_id=str(map_id), user_id=str(user_id))
@@ -226,7 +255,7 @@ async def update_map(
         try:
             response = await client.put(
                 f"{MAP_SERVICE_URL}/maps/{map_id}",
-                content=body,
+                json=body,
                 headers=headers,
             )
         except httpx.RequestError:
@@ -241,6 +270,7 @@ async def update_map(
             map_id=str(map_id),
             user_id=str(user_id),
             status_code=response.status_code,
+            response_error=response.text,
         )
         return forward_error(response)
 
@@ -269,6 +299,7 @@ async def delete_map(request: Request, map_id: UUID, user_id: UUID = require_use
             map_id=str(map_id),
             user_id=str(user_id),
             status_code=response.status_code,
+            response_error=response.text,
         )
         return forward_error(response)
 
@@ -320,6 +351,7 @@ async def upload_image(
             map_id=str(map_id),
             user_id=str(user_id),
             status_code=response.status_code,
+            response_error=response.text,
         )
         return forward_error(response)
 
@@ -348,6 +380,7 @@ async def create_share(request: Request, map_id: UUID, user_id: UUID = require_u
             map_id=str(map_id),
             user_id=str(user_id),
             status_code=response.status_code,
+            response_error=response.text,
         )
         return forward_error(response)
 
@@ -374,6 +407,7 @@ async def get_share_id(request: Request, map_id: UUID, user_id: UUID = require_u
             map_id=str(map_id),
             user_id=str(user_id),
             status_code=response.status_code,
+            response_error=response.text,
         )
         return forward_error(response)
 
@@ -401,6 +435,7 @@ async def delete_share(request: Request, map_id: UUID, user_id: UUID = require_u
             map_id=str(map_id),
             user_id=str(user_id),
             status_code=response.status_code,
+            response_error=response.text,
         )
         return forward_error(response)
 
