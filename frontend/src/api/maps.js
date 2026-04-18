@@ -185,3 +185,91 @@ export async function deleteShareId(mapId) {
         throw toApiError(error, "Failed to disable share link");
     }
 }
+
+function normalizeTileProgressError(payload) {
+    const rawMessage = String(payload?.message || "").toLowerCase();
+
+    if (rawMessage.includes("not found") && rawMessage.includes("source")) {
+        return {
+            userMessage: "Source image was not found. Please upload the image again.",
+            details: payload?.message || null,
+        };
+    }
+
+    if (rawMessage.includes("timed out") || rawMessage.includes("timeout")) {
+        return {
+            userMessage: "Processing took too long and was stopped. Please try again.",
+            details: payload?.message || null,
+        };
+    }
+
+    if (rawMessage.includes("connection")) {
+        return {
+            userMessage: "Connection to processing updates was lost. Please try again.",
+            details: payload?.message || null,
+        };
+    }
+
+    return {
+        userMessage: "Something went wrong. Please try again.",
+        details: payload?.message || null,
+    };
+}
+
+export function subscribeToTileProgress(jobId, { onProgress, onDone, onError } = {}) {
+    const eventSource = new EventSource(`${API_URL}/jobs/${jobId}/events`);
+    let isClosed = false;
+
+    const close = () => {
+        if (isClosed) return;
+        isClosed = true;
+        eventSource.close();
+    };
+
+    const emitNormalizedError = (payload = {}) => {
+        const normalized = normalizeTileProgressError(payload);
+        onError?.({
+            ...payload,
+            status: "error",
+            stage: "failed",
+            userMessage: normalized.userMessage,
+            errorDetails: normalized.details,
+        });
+        close();
+    };
+
+    const handleProgress = (event) => {
+        try {
+            const payload = JSON.parse(event.data);
+            onProgress?.(payload);
+
+            if (payload.status === "done") {
+                onDone?.(payload);
+                close();
+                return;
+            }
+
+            if (payload.status === "error") {
+                emitNormalizedError(payload);
+            }
+        } catch (err) {
+            console.error("Failed to parse SSE progress payload:", err);
+            emitNormalizedError({
+                message: "Invalid progress response received",
+            });
+        }
+    };
+
+    eventSource.addEventListener("progress", handleProgress);
+
+    eventSource.onerror = () => {
+        if (isClosed) return;
+        emitNormalizedError({
+            message: "Connection to progress stream lost",
+        });
+    };
+
+    return () => {
+        close();
+    };
+}

@@ -68,3 +68,4 @@ frontend/dist/
 
 # Other
 *.swp
+.envs/

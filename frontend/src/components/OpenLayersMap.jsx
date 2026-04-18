@@ -237,7 +237,7 @@ export default function OpenLayersMap({
                     const x = tileCoord[1];
                     const y = -tileCoord[2] - 1;
                     if (z < 0 || z > maxZoom || x < 0 || y < 0) return undefined;
-                    return `${storageUrl}/maps/${mapId}/tiles/${z}/${x}/${y}.png?v=${tilesVersion}`;
+                    return `${storageUrl}/maps/${mapId}/tiles/v${tilesVersion}/${z}/${x}/${y}.png`;
                 },
             }),
         });

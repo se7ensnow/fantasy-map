@@ -21,7 +21,6 @@ from map_service_app.crud import (
     update_map_tiles_info,
     create_share,
     delete_share,
-    delete_map_tiles_info,
 )
 from map_service_app.database import get_db
 from map_service_app.log_config import log
@@ -34,7 +33,14 @@ from map_service_app.schemas import (
     TilesInfo,
     ShareIdResponse,
 )
-from map_service_app.storage import storage, StorageError, build_map_source_key, build_map_prefix
+from map_service_app.storage import (
+    storage,
+    StorageError,
+    build_map_source_key,
+    build_map_prefix,
+    build_map_source_prefix,
+    build_map_tiles_version_prefix,
+)
 
 router = APIRouter()
 
@@ -266,9 +272,20 @@ async def upload_image_endpoint(
         )
         raise HTTPException(status_code=400, detail="Supported formats: PNG, JPEG/JPG, WEBP")
 
+    source_prefix = build_map_source_prefix(str(map_id))
     object_key = build_map_source_key(map_id, source_ext)
 
     try:
+        deleted_count = storage.delete_prefix(source_prefix)
+        log(
+            request,
+            logging.INFO,
+            "map_old_source_deleted",
+            map_id=str(map_id),
+            user_id=str(user_uuid),
+            deleted_count=deleted_count,
+        )
+
         storage.upload_fileobj(
             file_obj=file.file,
             object_key=object_key,
@@ -278,12 +295,17 @@ async def upload_image_endpoint(
         log(request, logging.ERROR, "map_upload_storage_failed", map_id=str(map_id), user_id=str(user_uuid))
         raise HTTPException(status_code=500, detail=f"Failed to upload image to storage: {str(e)}")
 
-    delete_map_tiles_info(db, map_id)
-    log(request, logging.INFO, "map_tiles_reset", map_id=str(map_id), user_id=str(user_uuid))
+    next_tiles_version = map_obj.tiles_version + 1
 
     redis_conn = Redis.from_url(REDIS_URL)
     q = Queue(connection=redis_conn)
-    job = q.enqueue(TILE_SERVICE_TASK, str(map_id), source_ext, request.state.request_id)
+    job = q.enqueue(
+        TILE_SERVICE_TASK,
+        str(map_id),
+        source_ext,
+        next_tiles_version,
+        request.state.request_id,
+    )
 
     log(
         request,
@@ -293,11 +315,15 @@ async def upload_image_endpoint(
         user_id=str(user_uuid),
         job_id=job.id,
         source_ext=source_ext,
+        next_tiles_version=next_tiles_version,
+        current_tiles_version=map_obj.tiles_version,
     )
 
     return {
         "status": "image uploaded",
         "task": "tile generation started",
+        "job_id": job.id,
+        "next_tiles_version": next_tiles_version,
     }
 
 
@@ -311,14 +337,64 @@ def tiles_info_endpoint(request: Request, map_id: UUID, info: TilesInfo, db: Ses
         width=info.width,
         height=info.height,
         max_zoom=info.max_zoom,
+        tiles_version=info.tiles_version,
     )
+
+    current_map = get_map_by_id(db, map_id)
+    if not current_map:
+        log(request, logging.WARNING, "tiles_info_map_not_found", map_id=str(map_id))
+        raise HTTPException(status_code=404, detail="Map not found")
+
+    previous_tiles_version = current_map.tiles_version
 
     updated = update_map_tiles_info(db, map_id, info)
     if not updated:
         log(request, logging.WARNING, "tiles_info_map_not_found", map_id=str(map_id))
         raise HTTPException(status_code=404, detail="Map not found")
 
-    log(request, logging.INFO, "tiles_info_applied", map_id=str(map_id))
+    old_version_deleted = 0
+
+    if info.tiles_version > previous_tiles_version > 0:
+        old_tiles_prefix = build_map_tiles_version_prefix(str(map_id), previous_tiles_version)
+        try:
+            old_version_deleted = storage.delete_prefix(old_tiles_prefix)
+            log(
+                request,
+                logging.INFO,
+                "old_tiles_version_deleted",
+                map_id=str(map_id),
+                deleted_tiles_version=previous_tiles_version,
+                deleted_objects=old_version_deleted,
+            )
+        except StorageError as e:
+            log(
+                request,
+                logging.ERROR,
+                "old_tiles_version_delete_failed",
+                map_id=str(map_id),
+                deleted_tiles_version=previous_tiles_version,
+                detail=str(e),
+            )
+
+    if info.tiles_version < previous_tiles_version:
+        log(
+            request,
+            logging.INFO,
+            "tiles_info_ignored_outdated",
+            map_id=str(map_id),
+            callback_tiles_version=info.tiles_version,
+            current_tiles_version=previous_tiles_version,
+        )
+    else:
+        log(
+            request,
+            logging.INFO,
+            "tiles_info_applied",
+            map_id=str(map_id),
+            tiles_version=updated.tiles_version,
+            previous_tiles_version=previous_tiles_version,
+            deleted_old_objects=old_version_deleted,
+        )
     return
 
 

@@ -1,30 +1,21 @@
-import os
+from collections.abc import Callable
 
-from tile_service_app.storage import storage, build_tile_key
+from tile_service_app.storage import storage, build_map_tiles_version_prefix
 
 
-def upload_generated_tiles(map_id: str, tiles_local_dir: str) -> int:
-    uploaded_count = 0
-
-    for root, _, files in os.walk(tiles_local_dir):
-        for filename in files:
-            if not filename.endswith(".png"):
-                continue
-
-            local_path = os.path.join(root, filename)
-            rel_path = os.path.relpath(local_path, tiles_local_dir)
-
-            z_str, x_str, y_file = rel_path.split(os.sep)
-            y_str = os.path.splitext(y_file)[0]
-
-            object_key = build_tile_key(
-                map_id=map_id,
-                z=int(z_str),
-                x=int(x_str),
-                y=int(y_str),
-            )
-
-            storage.upload_file(local_path, object_key, content_type="image/png")
-            uploaded_count += 1
-
-    return uploaded_count
+def upload_generated_tiles(
+    map_id: str,
+    tiles_version: int,
+    tiles_local_dir: str,
+    workers: int = 20,
+    progress_callback: Callable[[int, int], None] | None = None,
+    progress_every: int = 10,
+) -> int:
+    return storage.upload_directory(
+        local_dir=tiles_local_dir,
+        object_prefix=build_map_tiles_version_prefix(map_id, tiles_version),
+        content_type="image/png",
+        workers=workers,
+        progress_callback=progress_callback,
+        progress_every=progress_every,
+    )

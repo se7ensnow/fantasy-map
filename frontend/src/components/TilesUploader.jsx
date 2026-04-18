@@ -1,10 +1,64 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-export default function TilesUploader({ onSubmit, isProcessing = false, successMessage = "" }) {
+function stageToLabel(stage) {
+    switch (stage) {
+        case "queued":
+            return "Task queued";
+        case "downloading_source":
+            return "Downloading source image";
+        case "generating_tiles":
+            return "Generating tiles";
+        case "uploading_tiles":
+            return "Uploading tiles";
+        case "finalizing":
+            return "Finalizing map";
+        case "completed":
+            return "Completed";
+        case "failed":
+            return "Failed";
+        default:
+            return "Processing tiles";
+    }
+}
+
+export default function TilesUploader({
+    onSubmit,
+    isProcessing = false,
+    successMessage = "",
+    progressData = null,
+    errorMessage = "",
+    errorDetails = "",
+}) {
     const [file, setFile] = useState(null);
     const [uploading, setUploading] = useState(false);
+
+    const progressValue = progressData?.progress ?? 0;
+    const stageLabel = useMemo(
+        () => stageToLabel(progressData?.stage),
+        [progressData?.stage]
+    );
+
+    const detailsText = useMemo(() => {
+        if (!progressData) return "";
+        
+        if (
+            progressData.stage === "generating_tiles" &&
+            progressData.total_tiles
+        ) {
+            return `${progressData.generated_tiles ?? 0} / ${progressData.total_tiles} tiles generated`;
+        }
+    
+        if (
+            progressData.stage === "uploading_tiles" &&
+            progressData.total_tiles
+        ) {
+            return `${progressData.uploaded_tiles ?? 0} / ${progressData.total_tiles} tiles uploaded`;
+        }
+    
+        return progressData.message || "";
+    }, [progressData]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -54,34 +108,49 @@ export default function TilesUploader({ onSubmit, isProcessing = false, successM
                     </Button>
 
                     {isProcessing && (
-                        <div className="mt-2 flex items-center gap-2 text-status-warning-ink font-semibold">
-                            <svg
-                                className="animate-spin h-5 w-5"
-                                xmlns="http://www.w3.org/2000/svg"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                            >
-                                <circle
-                                    className="opacity-25"
-                                    cx="12"
-                                    cy="12"
-                                    r="10"
-                                    stroke="currentColor"
-                                    strokeWidth="4"
+                        <div className="mt-4 space-y-3">
+                            <div className="flex items-center justify-between text-sm font-medium text-text-heading">
+                                <span>{stageLabel}</span>
+                                <span>{progressValue}%</span>
+                            </div>
+
+                            <div className="h-3 w-full overflow-hidden rounded-full bg-surface-paper border border-border-default">
+                                <div
+                                    className="h-full bg-accent-primary transition-all duration-300"
+                                    style={{ width: `${progressValue}%` }}
                                 />
-                                <path
-                                    className="opacity-75"
-                                    fill="currentColor"
-                                    d="M4 12a8 8 0 018-8v8H4z"
-                                />
-                            </svg>
-                            <span>Processing tiles... Please wait.</span>
+                            </div>
+
+                            <div className="text-sm text-text-muted">
+                                {detailsText || "Processing tiles... Please wait."}
+                            </div>
                         </div>
                     )}
 
                     {!isProcessing && successMessage && (
                         <div className="mt-2 text-status-success-ink font-semibold">
                             {successMessage}
+                        </div>
+                    )}
+
+                    {!isProcessing && errorMessage && (
+                        <div className="mt-4 max-w-2xl rounded-xl border border-status-error-border/40 bg-surface-paper/70 p-4">
+                            <div className="flex items-start gap-3">
+                                <div className="mt-0.5 h-10 w-1 shrink-0 rounded-full bg-status-error-border" />
+                                <div className="min-w-0">
+                                    <div className="text-sm font-semibold text-status-error-ink">
+                                        Processing failed
+                                    </div>
+                                    <div className="mt-1 text-sm leading-6 text-status-error-ink">
+                                        {errorMessage}
+                                    </div>
+                                    {errorDetails && (
+                                        <div className="mt-2 text-xs leading-5 break-words text-text-muted">
+                                            Details: {errorDetails}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
                         </div>
                     )}
                 </form>

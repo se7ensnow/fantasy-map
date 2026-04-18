@@ -5,7 +5,7 @@ from uuid import uuid4
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
-from api_gateway_app.proxy_routes import users_proxy, maps_proxy, auth_proxy, locations_proxy
+from api_gateway_app.proxy_routes import users_proxy, maps_proxy, auth_proxy, locations_proxy, progress_proxy
 from api_gateway_app.config import FRONTEND_URL
 from api_gateway_app.log_config import setup_logging, logger, log
 
@@ -79,3 +79,4 @@ app.include_router(auth_proxy.router, prefix="/auth", tags=["auth"])
 app.include_router(users_proxy.router, prefix="/users", tags=["users"])
 app.include_router(maps_proxy.router, prefix="/maps", tags=["maps"])
 app.include_router(locations_proxy.router, prefix="/locations", tags=["locations"])
+app.include_router(progress_proxy.router, prefix="/jobs", tags=["progress"])
