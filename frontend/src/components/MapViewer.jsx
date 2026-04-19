@@ -1,10 +1,12 @@
 import React, { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { ChevronUp } from "lucide-react";
 import LocationDetails from "./LocationDetails";
 import OpenLayersMap from "./OpenLayersMap";
 import { STORAGE_URL } from "@/config";
 
 export default function MapViewer({ map, locations }) {
+    const { t } = useTranslation();
     const [selectedLocation, setSelectedLocation] = useState(null);
     const [showTopFade, setShowTopFade] = useState(false);
     const [showBottomFade, setShowBottomFade] = useState(false);
@@ -63,7 +65,7 @@ export default function MapViewer({ map, locations }) {
                         <LocationDetails location={selectedLocation} />
                     ) : (
                         <p className="text-text-heading">
-                            Select a location on the map to view details.
+                            {t("mapViewer.selectLocation")}
                         </p>
                     )}
                 </div>
@@ -71,7 +73,8 @@ export default function MapViewer({ map, locations }) {
                 <button
                     type="button"
                     onClick={scrollToTop}
-                    aria-label="Scroll to top"
+                    aria-label={t("mapViewer.scrollToTop")}
+                    title={t("mapViewer.scrollToTop")}
                     className={`
                         absolute top-3 left-1/2 -translate-x-1/2 z-10
                         flex h-9 w-9 items-center justify-center

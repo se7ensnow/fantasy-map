@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import ShareMapModal from "@/components/ShareMapModal";
@@ -11,8 +12,9 @@ export default function MapListItem({
     onOpen,
     onTagClick,
     activeTags = [],
-    showShare = false,
+    isProfileView = false,
 }) {
+    const { t } = useTranslation();
     const [shareOpen, setShareOpen] = useState(false);
     const [deleteOpen, setDeleteOpen] = useState(false);
 
@@ -22,8 +24,8 @@ export default function MapListItem({
     const sortTags = (a, b) =>
         a.localeCompare(b, undefined, { sensitivity: "base" });
 
-    const activeOnCard = tags.filter((t) => activeSet.has(t)).sort(sortTags);
-    const inactiveOnCard = tags.filter((t) => !activeSet.has(t)).sort(sortTags);
+    const activeOnCard = tags.filter((tag) => activeSet.has(tag)).sort(sortTags);
+    const inactiveOnCard = tags.filter((tag) => !activeSet.has(tag)).sort(sortTags);
     const ordered = [...activeOnCard, ...inactiveOnCard];
 
     const MAX_VISIBLE = 5;
@@ -38,8 +40,16 @@ export default function MapListItem({
 
     const isDraft = map.status === "draft";
     const isReady = map.status === "ready";
-    const canShare = showShare && isReady;
-    const cardAction = isDraft ? onEdit : onOpen;
+
+    const canShowStatus = isProfileView;
+    const canShare = isProfileView && isReady;
+    const canEdit = isProfileView && !!onEdit;
+    const canDelete = isProfileView && !!onDelete;
+    const canView = isReady && !!onOpen;
+
+    const cardAction = isProfileView
+        ? (isDraft ? onEdit : onOpen)
+        : onOpen;
 
     const stopCardOpen = (e) => {
         e.preventDefault();
@@ -103,21 +113,21 @@ export default function MapListItem({
                 <div className="flex justify-between items-center gap-4">
                     <div className="min-w-0">
                         <div className="mb-1 flex flex-wrap items-center gap-2">
-                            {isDraft && (
+                            {canShowStatus && isDraft && (
                                 <Badge className="border-status-warning-border/60 bg-status-warning-border/10 text-status-warning-ink">
-                                    Draft
+                                    {t("mapCard.status.draft")}
                                 </Badge>
                             )}
 
-                            {isReady && map.visibility === "public" && (
+                            {canShowStatus && isReady && map.visibility === "public" && (
                                 <Badge className="border-accent-primary/40 bg-accent-primary/10 text-accent-text">
-                                    Public
+                                    {t("mapCard.status.public")}
                                 </Badge>
                             )}
 
-                            {isReady && map.visibility === "private" && (
+                            {canShowStatus && isReady && map.visibility === "private" && (
                                 <Badge className="border-border-default/50 bg-surface-paper/70 text-text-muted">
-                                    Private
+                                    {t("mapCard.status.private")}
                                 </Badge>
                             )}
 
@@ -128,12 +138,12 @@ export default function MapListItem({
 
                         {tags.length > 0 && (
                             <div className="mt-2 flex flex-wrap gap-2">
-                                {visible.map((t) => {
-                                    const isActive = activeSet.has(t);
+                                {visible.map((tag) => {
+                                    const isActive = activeSet.has(tag);
 
                                     return (
                                         <Badge
-                                            key={t}
+                                            key={tag}
                                             role="button"
                                             tabIndex={0}
                                             className={
@@ -141,15 +151,15 @@ export default function MapListItem({
                                                     ? "cursor-pointer select-none border-accent-primary bg-accent-primary/15"
                                                     : "cursor-pointer select-none"
                                             }
-                                            onClick={handleTagActivate(t)}
-                                            onKeyDown={handleTagKeyDown(t)}
+                                            onClick={handleTagActivate(tag)}
+                                            onKeyDown={handleTagKeyDown(tag)}
                                             title={
                                                 isActive
-                                                    ? "Active filter (click to remove)"
-                                                    : "Click to filter by this tag"
+                                                    ? t("mapCard.tagTitles.activeFilter")
+                                                    : t("mapCard.tagTitles.filterByTag")
                                             }
                                         >
-                                            <span className="tag-font">{t}</span>
+                                            <span className="tag-font">{tag}</span>
                                         </Badge>
                                     );
                                 })}
@@ -164,33 +174,33 @@ export default function MapListItem({
                     </div>
 
                     <div className="flex shrink-0 space-x-2">
-                        {isReady ? (
+                        {canView && (
                             <Button onClick={handleActionClick(onOpen)}>
-                                View
-                            </Button>
-                        ) : null}
-
-                        {canShare && (
-                            <Button variant="secondary" onClick={handleOpenShare}>
-                                Share
+                                {t("actions.view")}
                             </Button>
                         )}
 
-                        {onEdit && (
+                        {canShare && (
+                            <Button variant="secondary" onClick={handleOpenShare}>
+                                {t("actions.share")}
+                            </Button>
+                        )}
+
+                        {canEdit && (
                             <Button
                                 variant={isDraft ? "default" : "secondary"}
                                 onClick={handleActionClick(onEdit)}
                             >
-                                Edit
+                                {t("actions.edit")}
                             </Button>
                         )}
 
-                        {onDelete && (
+                        {canDelete && (
                             <Button
                                 variant="destructive"
                                 onClick={handleOpenDelete}
                             >
-                                Delete
+                                {t("actions.delete")}
                             </Button>
                         )}
                     </div>

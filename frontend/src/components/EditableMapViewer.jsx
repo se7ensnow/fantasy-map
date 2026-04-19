@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import LocationEditor from "./LocationEditor";
 import OpenLayersMap from "./OpenLayersMap";
 import { STORAGE_URL } from "@/config";
@@ -11,6 +12,7 @@ export default function EditableMapViewer({
     onDeleteLocation,
     onUpdateLocation,
 }) {
+    const { t } = useTranslation();
     const [selectedLocation, setSelectedLocation] = useState(null);
     const [addMode, setAddMode] = useState(false);
     const [newLocationCoords, setNewLocationCoords] = useState(null);
@@ -44,7 +46,6 @@ export default function EditableMapViewer({
 
     return (
         <div className="flex h-[80vh] gap-4">
-            {/* Map */}
             <div className="flex-1 rounded overflow-hidden relative">
                 <OpenLayersMap
                     mapId={map.id}
@@ -76,10 +77,11 @@ export default function EditableMapViewer({
                 />
             </div>
 
-            {/* Right panel */}
             <div className="w-1/3 p-4 rounded bg-surface-panel/95 overflow-y-auto flex flex-col gap-4">
                 <div className="flex justify-between items-center mb-2">
-                    <h2 className="text-xl font-bold text-text-heading">Locations</h2>
+                    <h2 className="text-xl font-bold text-text-heading">
+                        {t("editableMapViewer.title")}
+                    </h2>
 
                     <Button
                         onClick={() => {
@@ -88,7 +90,9 @@ export default function EditableMapViewer({
                             setNewLocationCoords(null);
                         }}
                     >
-                        {addMode ? "Cancel Add" : "Add Location"}
+                        {addMode
+                            ? t("editableMapViewer.actions.cancelAdd")
+                            : t("editableMapViewer.actions.addLocation")}
                     </Button>
                 </div>
 
@@ -117,14 +121,13 @@ export default function EditableMapViewer({
                                     setSelectedLocation(null);
                                 }}
                             >
-                                Delete Location
+                                {t("editableMapViewer.actions.deleteLocation")}
                             </Button>
                         </div>
                     </>
                 ) : (
                     <p className="text-text-heading">
-                        Select a location on the map or click "Add Location" to create a new
-                        one.
+                        {t("editableMapViewer.emptyState")}
                     </p>
                 )}
             </div>

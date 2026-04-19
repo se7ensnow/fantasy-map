@@ -1,13 +1,16 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 
 export default function Footer() {
+    const { t } = useTranslation();
+
     return (
         <footer className="border-t border-border-default/30 bg-surface-panel/70">
             <div className="mx-auto flex max-w-7xl items-center justify-center px-6 py-3 text-xs text-text-muted">
                 <p className="text-center">
-                    Fantasy Maps © 2026
+                    {t("footer.brand")} © 2026
                     <span className="mx-1"> | </span>
-                    Contact:{" "}
+                    {t("footer.contactLabel")}{" "}
                     <a
                         href="mailto:art.lazar.ig@gmail.com"
                         className="transition-colors duration-200 hover:text-text-heading underline-offset-2 hover:underline"

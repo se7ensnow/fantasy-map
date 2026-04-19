@@ -1,10 +1,12 @@
 import { Link, useNavigate } from "react-router-dom";
-// import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 import { getToken, clearToken } from "../api/auth";
-import logo from "../assets/fantasy_maps_logo.png";
+import logo from "../assets/fantasy_maps_logo_2.png";
 import ThemeToggle from "./ThemeToggle";
+import LanguageToggle from "./LanguageToggle";
 
 export default function Navbar() {
+    const { t } = useTranslation();
     const navigate = useNavigate();
     const token = getToken();
 
@@ -12,30 +14,6 @@ export default function Navbar() {
         clearToken();
         navigate("/");
     };
-
-//    const handleTestToasts = () => {
-//        toast.success("Success toast", {
-//            description: "This is how a success notification looks in the current theme.",
-//        });
-//
-//        setTimeout(() => {
-//            toast.error("Error toast", {
-//                description: "This is how an error notification looks in the current theme.",
-//            });
-//        }, 250);
-//
-//        setTimeout(() => {
-//            toast.warning("Warning toast", {
-//                description: "This is how a warning notification looks in the current theme.",
-//            });
-//        }, 500);
-//
-//        setTimeout(() => {
-//            toast.info("Info toast", {
-//                description: "This is how an info notification looks in the current theme.",
-//            });
-//        }, 750);
-//    };
 
     return (
         <nav className="fixed top-0 left-0 w-full z-50 bg-surface-panel/90 border-b border-border-default shadow-md">
@@ -54,36 +32,31 @@ export default function Navbar() {
                                 to="/profile"
                                 className="hover:text-accent-primary hover:underline transition duration-200"
                             >
-                                Profile
+                                {t("navbar.profile")}
                             </Link>
                         )}
                     </div>
                 </div>
 
                 <div className="flex items-center space-x-2 text-lg font-semibold text-text-heading">
-                    {/* <button
-                        type="button"
-                        onClick={handleTestToasts}
-                        className="rounded-md border border-border-default px-3 py-1.5 text-base text-text-heading transition duration-200 hover:text-accent-primary hover:border-accent-primary hover:bg-state-hover"
-                    >
-                        Test Toasts
-                    </button> */}
-
+                    <LanguageToggle />
+                    <div className="h-6 w-px bg-border-default/40" />
                     <ThemeToggle />
                     <div className="h-6 w-px bg-border-default/40" />
+
                     {!token ? (
                         <>
                             <Link
                                 to="/login"
                                 className="hover:text-accent-primary hover:underline transition duration-200"
                             >
-                                Login
+                                {t("navbar.login")}
                             </Link>
                             <Link
                                 to="/register"
                                 className="hover:text-accent-primary hover:underline transition duration-200"
                             >
-                                Register
+                                {t("navbar.register")}
                             </Link>
                         </>
                     ) : (
@@ -91,7 +64,7 @@ export default function Navbar() {
                             onClick={handleLogout}
                             className="hover:text-accent-primary hover:underline transition duration-200"
                         >
-                            Logout
+                            {t("navbar.logout")}
                         </button>
                     )}
                 </div>

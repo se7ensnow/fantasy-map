@@ -1,17 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Monitor, Sun, Moon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { applyTheme, loadTheme, saveTheme, watchSystemTheme } from "@/lib/theme";
 
 const ORDER = ["system", "light", "dark"];
 
-function labelFor(theme) {
-    if (theme === "light") return "Light";
-    if (theme === "dark") return "Dark";
-    return "System";
-}
-
 export default function ThemeToggle() {
+    const { t } = useTranslation();
     const [theme, setTheme] = useState(() => loadTheme());
 
     useEffect(() => {
@@ -30,15 +26,20 @@ export default function ThemeToggle() {
         setTheme(ORDER[(idx + 1) % ORDER.length]);
     };
 
-    const { Icon, title } = useMemo(() => {
-        const l = labelFor(theme);
+    const { Icon, title, label } = useMemo(() => {
+        const label =
+            theme === "light"
+                ? t("themeToggle.light")
+                : theme === "dark"
+                  ? t("themeToggle.dark")
+                  : t("themeToggle.system");
+
         return {
             Icon: theme === "light" ? Sun : theme === "dark" ? Moon : Monitor,
-            title: `Theme: ${l} (click to switch)`,
+            title: t("themeToggle.title", { theme: label }),
+            label,
         };
-    }, [theme]);
-
-    const label = labelFor(theme);
+    }, [theme, t]);
 
     return (
         <div className="flex items-center">
@@ -47,7 +48,6 @@ export default function ThemeToggle() {
                 variant="ghost"
                 onClick={nextTheme}
                 className={[
-                    // выглядит как “контрол”
                     "h-9 px-2 rounded-xl border",
                     "bg-surface-page/30 hover:bg-surface-page/50",
                     "border-border-default/40 hover:border-border-emphasis/60",
@@ -58,7 +58,6 @@ export default function ThemeToggle() {
                 aria-label={title}
             >
                 <Icon className="mr-1" />
-                {/* На мобиле можно скрыть текст, на md+ показать */}
                 <span className="hidden md:inline text-sm font-semibold">
                     {label}
                 </span>

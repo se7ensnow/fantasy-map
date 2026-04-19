@@ -1,8 +1,10 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 
 export default function NotFoundPage() {
+    const { t } = useTranslation();
     const navigate = useNavigate();
 
     return (
@@ -13,23 +15,24 @@ export default function NotFoundPage() {
                 </p>
 
                 <h1 className="text-5xl font-bold text-text-heading">
-                    Here be missing pages!
+                    {t("notFound.title")}
                 </h1>
 
                 <div className="mx-auto mt-5 max-w-4xl space-y-4">
                     <p className="text-lg leading-relaxed text-text-primary">
-                        It seems this path leads nowhere.<br />
-                        The page may have been moved, removed, or perhaps it was never on the map to begin with.
+                        {t("notFound.descriptionLine1")}
+                        <br />
+                        {t("notFound.descriptionLine2")}
                     </p>
 
                     <p className="text-text-muted italic">
-                        Even the finest cartographers lose a trail from time to time.
+                        {t("notFound.footerNote")}
                     </p>
                 </div>
 
                 <div className="mt-8 flex justify-center">
                     <Button onClick={() => navigate("/")}>
-                        Return to Catalog
+                        {t("notFound.returnToCatalog")}
                     </Button>
                 </div>
             </div>

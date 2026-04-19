@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 
 export default function DeleteMapModal({
@@ -8,6 +9,7 @@ export default function DeleteMapModal({
     mapTitle,
     loading = false,
 }) {
+    const { t } = useTranslation();
     const [value, setValue] = useState("");
 
     useEffect(() => {
@@ -53,16 +55,17 @@ export default function DeleteMapModal({
                 <div className="space-y-4">
                     <div>
                         <h2 className="text-2xl font-bold text-text-heading">
-                            Delete map
+                            {t("deleteMapModal.title")}
                         </h2>
                         <p className="mt-2 text-text-primary leading-relaxed">
-                            This action cannot be undone. To confirm deletion,
-                            type the map title exactly as shown below.
+                            {t("deleteMapModal.description")}
                         </p>
                     </div>
 
                     <div className="rounded-lg border border-border-default/60 bg-surface-paper/60 p-3">
-                        <p className="text-sm text-text-muted mb-1">Map title</p>
+                        <p className="text-sm text-text-muted mb-1">
+                            {t("deleteMapModal.mapTitleLabel")}
+                        </p>
                         <p className="font-semibold text-text-heading break-words">
                             {mapTitle}
                         </p>
@@ -73,7 +76,7 @@ export default function DeleteMapModal({
                             htmlFor="delete-map-confirmation"
                             className="block text-sm font-medium text-text-heading"
                         >
-                            Type map title to confirm
+                            {t("deleteMapModal.confirmationLabel")}
                         </label>
                         <input
                             id="delete-map-confirmation"
@@ -94,7 +97,7 @@ export default function DeleteMapModal({
 
                     {!isMatch && value.length > 0 && (
                         <p className="text-sm text-status-warning-ink font-medium">
-                            The entered title does not match.
+                            {t("deleteMapModal.mismatch")}
                         </p>
                     )}
 
@@ -104,14 +107,16 @@ export default function DeleteMapModal({
                             onClick={onClose}
                             disabled={loading}
                         >
-                            Cancel
+                            {t("actions.cancel")}
                         </Button>
                         <Button
                             variant="destructive"
                             onClick={onConfirm}
                             disabled={!isMatch || loading}
                         >
-                            {loading ? "Deleting..." : "Delete Map"}
+                            {loading
+                                ? t("deleteMapModal.deleting")
+                                : t("deleteMapModal.deleteMap")}
                         </Button>
                     </div>
                 </div>

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useParams } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -9,6 +10,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
 export default function SharedMapPage() {
+    const { t } = useTranslation();
     const { share_id } = useParams();
 
     const [map, setMap] = useState(null);
@@ -29,7 +31,7 @@ export default function SharedMapPage() {
                 if (cancelled) return;
                 setLocations(locationsData);
             } catch (e) {
-                const msg = e.message || "Failed to load shared map";
+                const msg = e.message || t("mapPage.errors.failedToLoadMap");
                 setError(msg);
                 toast.error(msg);
             }
@@ -40,21 +42,20 @@ export default function SharedMapPage() {
         return () => {
             cancelled = true;
         };
-    }, [share_id]);
+    }, [share_id, t]);
 
     if (error) {
         return <p className="text-status-danger p-4">{error}</p>;
     }
 
     if (!map) {
-        return <p className="p-4">Loading map...</p>;
+        return <p className="p-4">{t("mapPage.loading")}</p>;
     }
 
     const tagNames = (map.tags || []).filter(Boolean);
 
     return (
         <div className="space-y-8 p-8">
-            {/* Map info */}
             <Card className="relative bg-surface-panel/80 border border-border-emphasis rounded-lg shadow-md">
                 <CardHeader>
                     <CardTitle className="text-4xl font-bold text-text-heading">
@@ -63,7 +64,7 @@ export default function SharedMapPage() {
                 </CardHeader>
 
                 <CardContent className="prose text-text-heading">
-                    {map.description || "No description provided."}
+                    {map.description || t("mapPage.noDescription")}
 
                     {tagNames.length > 0 && (
                         <div className="mt-4 flex flex-wrap gap-2">
@@ -75,14 +76,15 @@ export default function SharedMapPage() {
                 </CardContent>
 
                 <div className="absolute bottom-2 right-4 text-sm text-text-link/80 italic">
-                    Author: {map.owner_username || "Unknown"}
+                    {t("mapPage.author")}: {map.owner_username || t("mapPage.unknown")}
                 </div>
             </Card>
 
-            {/* Map viewer */}
             <Card>
                 <CardHeader>
-                    <CardTitle className="text-text-heading">Map</CardTitle>
+                    <CardTitle className="text-text-heading">
+                        {t("mapPage.mapSectionTitle")}
+                    </CardTitle>
                 </CardHeader>
                 <CardContent>
                     <MapViewer map={map} locations={locations} />

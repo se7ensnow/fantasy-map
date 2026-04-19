@@ -4,6 +4,7 @@ import "./index.css";
 import App from "./App.jsx";
 import AppToaster from "@/components/AppToaster";
 import { applyTheme, loadTheme } from "./lib/theme";
+import "./i18n";
 
 applyTheme(loadTheme());
 

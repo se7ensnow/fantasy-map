@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -38,6 +39,7 @@ export default function CatalogFilters({
 
     onClear,
 }) {
+    const { t } = useTranslation();
     const boxRef = useRef(null);
 
     const [open, setOpen] = useState(false);
@@ -81,7 +83,7 @@ export default function CatalogFilters({
                 setSuggestions(Array.from(new Set(items)).slice(0, 10));
             } catch (e) {
                 if (!cancelled) {
-                    console.error("tag suggestions failed", e);
+                    console.error(t("catalogFilters.errors.tagSuggestionsFailed"), e);
                     setSuggestions([]);
                 }
             } finally {
@@ -93,39 +95,37 @@ export default function CatalogFilters({
             cancelled = true;
             clearTimeout(id);
         };
-    }, [normalizedTagQuery, selectedTags]);
+    }, [normalizedTagQuery, selectedTags, t]);
 
     function addTag(raw) {
-        const t = normalizeForTag(raw);
-        if (!t) return;
-        if (selectedTags.includes(t)) return;
+        const tag = normalizeForTag(raw);
+        if (!tag) return;
+        if (selectedTags.includes(tag)) return;
 
-        onToggleTag(t);
+        onToggleTag(tag);
         onTagQueryChange("");
         setOpen(false);
     }
 
     return (
         <div className="rounded-lg border border-border-default/30 bg-md-code-bg/60 p-4 space-y-3">
-            {/* Row 1: title search + clear */}
             <div className="flex items-end justify-between gap-3">
                 <div className="flex-1">
                     <label className="block mb-1 font-medium text-text-heading">
-                        Search
+                        {t("catalogFilters.searchLabel")}
                     </label>
                     <Input
                         value={query}
                         onChange={(e) => onQueryChange(e.target.value)}
-                        placeholder="Search by title…"
+                        placeholder={t("catalogFilters.searchPlaceholder")}
                     />
                 </div>
 
                 <Button type="button" variant="outline" onClick={onClear}>
-                    Clear
+                    {t("catalogFilters.clear")}
                 </Button>
             </div>
 
-            {/* Row 2: tag search + toggle right (single line, no separate title) */}
             <div ref={boxRef} className="relative">
                 <div className="flex items-center justify-between gap-3">
                     <div className="flex items-center gap-2">
@@ -144,7 +144,7 @@ export default function CatalogFilters({
                                     }
                                     if (e.key === "Escape") setOpen(false);
                                 }}
-                                placeholder="Filter by tag…"
+                                placeholder={t("catalogFilters.tagPlaceholder")}
                             />
                         </div>
 
@@ -156,31 +156,30 @@ export default function CatalogFilters({
                     <TagsModeToggle value={tagsMode} onChange={onTagsModeChange} />
                 </div>
 
-                {/* dropdown */}
                 {open && normalizedTagQuery && (loadingSug || suggestions.length > 0) && (
                     <div className="absolute z-20 mt-1 w-72 max-w-full rounded-md border border-border-default/30 bg-surface-input shadow-md overflow-hidden">
                         <div className="max-h-48 overflow-y-auto">
                             {loadingSug && (
                                 <div className="px-3 py-2 text-sm text-text-heading/70">
-                                    Loading…
+                                    {t("catalogFilters.loading")}
                                 </div>
                             )}
 
                             {!loadingSug && suggestions.length === 0 && (
                                 <div className="px-3 py-2 text-sm text-text-heading/70">
-                                    No suggestions
+                                    {t("catalogFilters.noSuggestions")}
                                 </div>
                             )}
 
                             {!loadingSug &&
-                                suggestions.map((s) => (
+                                suggestions.map((suggestion) => (
                                     <button
-                                        key={s}
+                                        key={suggestion}
                                         type="button"
                                         className="w-full text-left px-3 py-2 text-sm hover:bg-md-code-bg border-b border-border-default/20 last:border-b-0"
-                                        onClick={() => addTag(s)}
+                                        onClick={() => addTag(suggestion)}
                                     >
-                                        <span className="tag-font">{s}</span>
+                                        <span className="tag-font">{suggestion}</span>
                                     </button>
                                 ))}
                         </div>
@@ -189,12 +188,11 @@ export default function CatalogFilters({
 
                 {open && normalizedTagQuery && !loadingSug && suggestions.length === 0 && (
                     <div className="mt-1 text-xs text-text-heading/60">
-                        Press Enter to add “{normalizedTagQuery}”
+                        {t("catalogFilters.pressEnterToAdd", { tag: normalizedTagQuery })}
                     </div>
                 )}
             </div>
 
-            {/* Selected tags */}
             {selectedTags.length > 0 && (
                 <div className="flex flex-wrap gap-2">
                     {selectedTags.map((name) => (
@@ -202,7 +200,7 @@ export default function CatalogFilters({
                             key={name}
                             className="cursor-pointer bg-accent-primary text-text-on-accent hover:bg-accent-primary-hover"
                             onClick={() => onToggleTag(name)}
-                            title="Click to remove"
+                            title={t("catalogFilters.removeTagTitle")}
                         >
                             <span className="tag-font">{name}</span>
                             <span className="ml-1">✕</span>

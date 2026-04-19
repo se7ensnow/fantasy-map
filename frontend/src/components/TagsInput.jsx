@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { listTags } from "@/api/maps";
 
 const MAX_TAGS = 10;
@@ -35,8 +37,9 @@ function normalizeForTag(raw) {
 export default function TagsInput({
     value = [],
     onChange,
-    helperText = `Up to ${MAX_TAGS} tags, ${MAX_LEN} chars each. lowercase, no special symbols.`,
+    helperText,
 }) {
+    const { t } = useTranslation();
     const [text, setText] = useState("");
     const [suggestions, setSuggestions] = useState([]);
     const [open, setOpen] = useState(false);
@@ -45,6 +48,9 @@ export default function TagsInput({
     const boxRef = useRef(null);
 
     const tags = useMemo(() => (Array.isArray(value) ? value.filter(Boolean) : []), [value]);
+
+    const resolvedHelperText =
+        helperText || t("tagsInput.helperText", { maxTags: MAX_TAGS, maxLen: MAX_LEN });
 
     useEffect(() => {
         function onDocClick(e) {
@@ -74,7 +80,7 @@ export default function TagsInput({
 
                 if (!cancelled) {
                     const items = (res || [])
-                        .map((t) => normalizeForTag(t.name))
+                        .map((tag) => normalizeForTag(tag.name))
                         .filter(Boolean)
                         .filter((name) => !tags.includes(name));
 
@@ -82,7 +88,7 @@ export default function TagsInput({
                 }
             } catch (e) {
                 if (!cancelled) {
-                    console.error("tag suggestions failed", e);
+                    console.error(t("tagsInput.errors.tagSuggestionsFailed"), e);
                     setSuggestions([]);
                 }
             } finally {
@@ -96,18 +102,20 @@ export default function TagsInput({
             cancelled = true;
             clearTimeout(id);
         };
-    }, [text, tags]);
+    }, [text, tags, t]);
 
     const canAddMore = tags.length < MAX_TAGS;
+    const normalizedText = normalizeForTag(text);
+    const canSubmitTag = canAddMore && !!normalizedText && !tags.includes(normalizedText);
 
     function addTag(raw) {
         if (!canAddMore) return;
 
-        const t = normalizeForTag(raw);
-        if (!t) return;
-        if (tags.includes(t)) return;
+        const tag = normalizeForTag(raw);
+        if (!tag) return;
+        if (tags.includes(tag)) return;
 
-        onChange([...tags, t]);
+        onChange([...tags, tag]);
         setText("");
         setOpen(false);
     }
@@ -148,15 +156,15 @@ export default function TagsInput({
 
             {tags.length > 0 && (
                 <div className="flex flex-wrap gap-2">
-                    {tags.map((t) => (
-                        <Badge key={t} className="flex items-center gap-2">
-                            <span className="tag-font">{t}</span>
+                    {tags.map((tag) => (
+                        <Badge key={tag} className="flex items-center gap-2">
+                            <span className="tag-font">{tag}</span>
                             <button
                                 type="button"
                                 className="opacity-70 hover:opacity-100"
-                                onClick={() => removeTag(t)}
-                                aria-label={`Remove tag ${t}`}
-                                title="Remove"
+                                onClick={() => removeTag(tag)}
+                                aria-label={t("tagsInput.removeTagAria", { tag })}
+                                title={t("tagsInput.remove")}
                             >
                                 ✕
                             </button>
@@ -172,10 +180,23 @@ export default function TagsInput({
                             value={text}
                             onChange={handleInputChange}
                             onKeyDown={handleKeyDown}
-                            placeholder={canAddMore ? "add tag…" : "limit reached"}
+                            placeholder={
+                                canAddMore
+                                    ? t("tagsInput.placeholder")
+                                    : t("tagsInput.limitReachedPlaceholder")
+                            }
                             disabled={!canAddMore}
                         />
                     </div>
+
+                    <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => addTag(text)}
+                        disabled={!canSubmitTag}
+                    >
+                        {t("tagsInput.add")}
+                    </Button>
 
                     <span className="text-xs text-text-heading/70 tabular-nums">
                         {text.length}/{MAX_LEN}
@@ -186,22 +207,26 @@ export default function TagsInput({
                     <div className="absolute z-20 mt-1 w-72 max-w-full rounded-md border border-border-default bg-surface-paper shadow-md overflow-hidden">
                         <div className="max-h-48 overflow-y-auto">
                             {loadingSug && (
-                                <div className="px-3 py-2 text-sm text-text-heading/70">Loading…</div>
+                                <div className="px-3 py-2 text-sm text-text-heading/70">
+                                    {t("tagsInput.loading")}
+                                </div>
                             )}
 
                             {!loadingSug && suggestions.length === 0 && (
-                                <div className="px-3 py-2 text-sm text-text-heading/70">No suggestions</div>
+                                <div className="px-3 py-2 text-sm text-text-heading/70">
+                                    {t("tagsInput.noSuggestions")}
+                                </div>
                             )}
 
                             {!loadingSug &&
-                                suggestions.map((s) => (
+                                suggestions.map((suggestion) => (
                                     <button
                                         type="button"
-                                        key={s}
+                                        key={suggestion}
                                         className="w-full text-left px-3 py-2 text-sm hover:bg-surface-panel border-b border-border-default/30 last:border-b-0"
-                                        onClick={() => addTag(s)}
+                                        onClick={() => addTag(suggestion)}
                                     >
-                                        <span className="tag-font">{s}</span>
+                                        <span className="tag-font">{suggestion}</span>
                                     </button>
                                 ))}
                         </div>
@@ -209,11 +234,11 @@ export default function TagsInput({
                 )}
             </div>
 
-            <div className="text-xs text-text-heading/70">{helperText}</div>
+            <div className="text-xs text-text-heading/70">{resolvedHelperText}</div>
 
             {!canAddMore && (
                 <div className="text-xs text-status-danger">
-                    Tag limit reached ({MAX_TAGS}). Remove a tag to add another.
+                    {t("tagsInput.limitReachedMessage", { maxTags: MAX_TAGS })}
                 </div>
             )}
         </div>
