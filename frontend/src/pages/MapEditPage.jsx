@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useParams, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -24,6 +25,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import { Button } from "../components/ui/button";
 
 export default function MapEditPage() {
+    const { t } = useTranslation();
     const { map_id } = useParams();
     const navigate = useNavigate();
 
@@ -59,7 +61,7 @@ export default function MapEditPage() {
                     setLocations([]);
                 }
             } catch (err) {
-                setError(err.message || "Failed to load map");
+                setError(err.message || t("mapEdit.errors.failedToLoadMap"));
                 console.error(err);
             } finally {
                 setLoading(false);
@@ -67,7 +69,7 @@ export default function MapEditPage() {
         }
 
         fetchData();
-    }, [map_id]);
+    }, [map_id, t]);
 
     useEffect(() => {
         return () => {
@@ -95,17 +97,17 @@ export default function MapEditPage() {
 
             if (map_id) {
                 await updateMap(map_id, title, description, tags, visibility);
-                toast.success("Map updated successfully");
+                toast.success(t("mapEdit.toasts.updated"));
 
                 const updatedMap = await getMapById(map_id);
                 setMap(updatedMap);
             } else {
                 const newMap = await createMap(title, description, tags, visibility);
-                toast.success("Map created successfully");
+                toast.success(t("mapEdit.toasts.created"));
                 navigate(`/maps/${newMap.id}/edit`);
             }
         } catch (err) {
-            toast.error(err.message || "Failed to save map");
+            toast.error(err.message || t("mapEdit.errors.failedToSaveMap"));
             console.error(err);
         } finally {
             setLoading(false);
@@ -114,7 +116,7 @@ export default function MapEditPage() {
 
     const handleUploadImage = async (file) => {
         if (!map_id) {
-            toast.error("You must create the map first before uploading image.");
+            toast.error(t("mapEdit.errors.createMapBeforeUpload"));
             return;
         }
 
@@ -123,11 +125,12 @@ export default function MapEditPage() {
             setProgressData(null);
             setProcessingError(null);
             setIsProcessing(true);
+
             const result = await uploadImage(map_id, file);
 
             if (!result?.job_id) {
                 setIsProcessing(false);
-                toast.error("Progress tracking is unavailable: job_id was not returned.");
+                toast.error(t("mapEdit.errors.progressUnavailable"));
                 return;
             }
 
@@ -141,10 +144,10 @@ export default function MapEditPage() {
                     setProgressData(payload);
                     setProcessingError(null);
                     setIsProcessing(false);
-                    setTilesReadyMessage("Tiles are ready.");
+                    setTilesReadyMessage(t("mapEdit.tiles.readyMessage"));
                     unsubscribeRef.current = null;
 
-                    toast.success("Map image processed successfully.");
+                    toast.success(t("mapEdit.toasts.imageProcessed"));
 
                     try {
                         await refreshMapData();
@@ -157,35 +160,35 @@ export default function MapEditPage() {
                     setIsProcessing(false);
                     setTilesReadyMessage("");
                     setProcessingError({
-                        message: payload?.userMessage || "Something went wrong. Please try again.",
+                        message: payload?.userMessage || t("mapEdit.errors.processingFailed"),
                         details: payload?.errorDetails || null,
                     });
                     unsubscribeRef.current = null;
-                
-                    toast.error(payload?.userMessage || "Something went wrong. Please try again.");
+
+                    toast.error(payload?.userMessage || t("mapEdit.errors.processingFailed"));
                 },
             });
         } catch (err) {
             setIsProcessing(false);
             setProcessingError({
-                message: err.message || "Failed to upload image.",
+                message: err.message || t("mapEdit.errors.failedToUploadImage"),
                 details: null,
             });
-            toast.error(err.message || "Failed to upload image");
+            toast.error(err.message || t("mapEdit.errors.failedToUploadImage"));
             console.error(err);
         }
     };
 
     const handleAddLocation = async (newLocation) => {
         if (!map_id) {
-            toast.error("You must save the map first.");
+            toast.error(t("mapEdit.errors.saveMapBeforeAddLocation"));
             return;
         }
         try {
             const created = await createLocation(newLocation);
             setLocations([...locations, created]);
         } catch (err) {
-            toast.error(err.message || "Failed to add location");
+            toast.error(err.message || t("mapEdit.errors.failedToAddLocation"));
             console.error(err);
         }
     };
@@ -195,7 +198,7 @@ export default function MapEditPage() {
             await deleteLocation(locationId);
             setLocations(locations.filter((loc) => loc.id !== locationId));
         } catch (err) {
-            toast.error(err.message || "Failed to delete location");
+            toast.error(err.message || t("mapEdit.errors.failedToDeleteLocation"));
             console.error(err);
         }
     };
@@ -205,7 +208,7 @@ export default function MapEditPage() {
             const saved = await updateLocation(locationId, updatedLocation);
             setLocations(locations.map((loc) => (loc.id === saved.id ? saved : loc)));
         } catch (err) {
-            toast.error(err.message || "Failed to update location");
+            toast.error(err.message || t("mapEdit.errors.failedToUpdateLocation"));
             console.error(err);
         }
     };
@@ -215,7 +218,7 @@ export default function MapEditPage() {
     }
 
     if (!map) {
-        return <p className="p-4 text-text-heading">Loading map...</p>;
+        return <p className="p-4 text-text-heading">{t("mapEdit.loading")}</p>;
     }
 
     const isReady = map?.status === "ready";
@@ -227,7 +230,7 @@ export default function MapEditPage() {
             <Card>
                 <CardHeader>
                     <CardTitle className="text-text-heading">
-                        {map_id ? "Edit Map" : "Create Map"}
+                        {map_id ? t("mapEdit.titles.editMap") : t("mapEdit.titles.createMap")}
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -246,7 +249,9 @@ export default function MapEditPage() {
                 <>
                     <Card>
                         <CardHeader>
-                            <CardTitle className="text-text-heading">Upload Tiles</CardTitle>
+                            <CardTitle className="text-text-heading">
+                                {t("mapEdit.titles.uploadTiles")}
+                            </CardTitle>
                         </CardHeader>
                         <CardContent>
                             <TilesUploader
@@ -261,15 +266,15 @@ export default function MapEditPage() {
                                 {isDraft && (
                                     <div className="max-w-2xl rounded-xl border border-border-default/40 bg-surface-paper/70 p-4">
                                         <div className="text-sm font-semibold text-text-heading">
-                                            Draft map
+                                            {t("mapEdit.draft.title")}
                                         </div>
                                         <div className="mt-1 text-sm text-text-primary leading-6">
-                                            This map is not visible to other users until tiles are uploaded successfully.
+                                            {t("mapEdit.draft.description")}
                                         </div>
-                                
+
                                         {willBePublicWhenReady && (
                                             <div className="mt-2 text-sm text-text-muted leading-6">
-                                                Visibility is already set to public. The map will become public automatically once processing finishes successfully.
+                                                {t("mapEdit.draft.publicWhenReady")}
                                             </div>
                                         )}
                                     </div>
@@ -281,7 +286,9 @@ export default function MapEditPage() {
                     {isReady && (
                         <Card>
                             <CardHeader>
-                                <CardTitle className="text-text-heading">Edit Locations</CardTitle>
+                                <CardTitle className="text-text-heading">
+                                    {t("mapEdit.titles.editLocations")}
+                                </CardTitle>
                             </CardHeader>
                             <CardContent>
                                 <EditableMapViewer
@@ -307,14 +314,14 @@ export default function MapEditPage() {
                     }}
                     className="w-32"
                     disabled={!isReady}
-                    title={!isReady ? "The map will become available after tiles are uploaded successfully" : undefined}
+                    title={!isReady ? t("mapEdit.viewMap.availableAfterUpload") : undefined}
                 >
-                    View Map
+                    {t("mapEdit.viewMap.button")}
                 </Button>
-                
+
                 {!isReady && map_id && (
                     <p className="max-w-xs text-right text-xs text-text-muted">
-                        Available after successful tile upload
+                        {t("mapEdit.viewMap.availableAfterUpload")}
                     </p>
                 )}
             </div>

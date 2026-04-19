@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { Input } from "./ui/input";
 import { Textarea } from "./ui/textarea";
 import { Button } from "./ui/button";
@@ -13,6 +14,7 @@ export default function MapForm({
     onSubmit,
     loading,
 }) {
+    const { t } = useTranslation();
     const [title, setTitle] = useState(initialTitle);
     const [description, setDescription] = useState(initialDescription);
     const [tags, setTags] = useState(() => initialTags || []);
@@ -28,7 +30,7 @@ export default function MapForm({
     const handleSubmit = (e) => {
         e.preventDefault();
         if (!title.trim()) {
-            setError("Title is required");
+            setError(t("mapForm.errors.titleRequired"));
             return;
         }
         setError("");
@@ -39,7 +41,7 @@ export default function MapForm({
         <Card className="bg-surface-panel border-border-default mb-6">
             <CardHeader>
                 <CardTitle className="text-xl text-text-heading">
-                    {initialTitle ? "Edit Map Info" : "Create New Map"}
+                    {initialTitle ? t("mapForm.title.edit") : t("mapForm.title.create")}
                 </CardTitle>
             </CardHeader>
 
@@ -47,21 +49,21 @@ export default function MapForm({
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
                         <label className="block mb-1 font-medium text-text-heading">
-                            Title:
+                            {t("mapForm.fields.title")}
                         </label>
                         <Input value={title} onChange={(e) => setTitle(e.target.value)} required />
                     </div>
 
                     <div>
                         <label className="block mb-1 font-medium text-text-heading">
-                            Description:
+                            {t("mapForm.fields.description")}
                         </label>
                         <Textarea value={description} onChange={(e) => setDescription(e.target.value)} />
                     </div>
 
                     <div>
                         <label className="block mb-1 font-medium text-text-heading">
-                            Visibility:
+                            {t("mapForm.fields.visibility")}
                         </label>
 
                         <div className="flex items-center gap-2">
@@ -76,7 +78,7 @@ export default function MapForm({
                                 ].join(" ")}
                                 aria-pressed={visibility === "private"}
                             >
-                                Private
+                                {t("mapForm.visibility.private")}
                             </button>
 
                             <button
@@ -90,35 +92,37 @@ export default function MapForm({
                                 ].join(" ")}
                                 aria-pressed={visibility === "public"}
                             >
-                                Public
+                                {t("mapForm.visibility.public")}
                             </button>
 
                             <span className="text-xs text-text-heading/60 ml-2">
-                                {visibility === "private" ? "Visible only to you." : "Visible in the catalog."}
+                                {visibility === "private"
+                                    ? t("mapForm.visibility.privateHint")
+                                    : t("mapForm.visibility.publicHint")}
                             </span>
                         </div>
                     </div>
 
                     <div>
                         <label className="block mb-1 font-medium text-text-heading">
-                            Tags:
+                            {t("mapForm.fields.tags")}
                         </label>
 
                         <TagsInput
                             value={tags}
                             onChange={setTags}
-                            placeholder="Add tags (Enter / comma)…"
+                            placeholder={t("mapForm.tags.placeholder")}
                         />
 
                         <p className="text-xs text-text-heading/60 mt-1">
-                            Press Enter or comma to add a tag.
+                            {t("mapForm.tags.hint")}
                         </p>
                     </div>
 
                     {error && <p className="text-status-danger">{error}</p>}
 
                     <Button type="submit" disabled={loading}>
-                        {loading ? "Saving..." : "Save Map"}
+                        {loading ? t("mapForm.actions.saving") : t("mapForm.actions.save")}
                     </Button>
                 </form>
             </CardContent>

@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,6 +11,7 @@ function buildShareUrl(shareId) {
 }
 
 export default function ShareMapModal({ open, onClose, mapId, mapTitle }) {
+    const { t } = useTranslation();
     const [loading, setLoading] = useState(false);
     const [shareId, setShareId] = useState(null);
 
@@ -26,7 +28,7 @@ export default function ShareMapModal({ open, onClose, mapId, mapTitle }) {
                 const data = await getShareId(mapId);
                 if (!cancelled) setShareId(data?.share_id ?? null);
             } catch (e) {
-                toast.error(e.message || "Failed to load share link");
+                toast.error(e.message || t("shareModal.errors.failedToLoad"));
             } finally {
                 if (!cancelled) setLoading(false);
             }
@@ -37,7 +39,7 @@ export default function ShareMapModal({ open, onClose, mapId, mapTitle }) {
         return () => {
             cancelled = true;
         };
-    }, [open, mapId]);
+    }, [open, mapId, t]);
 
     useEffect(() => {
         if (!open) return;
@@ -54,9 +56,9 @@ export default function ShareMapModal({ open, onClose, mapId, mapTitle }) {
             const data = await createShareId(mapId);
             const id = data?.share_id ?? null;
             setShareId(id);
-            if (id) toast.success("Share link created");
+            if (id) toast.success(t("shareModal.toasts.created"));
         } catch (e) {
-            toast.error(e.message || "Failed to create share link");
+            toast.error(e.message || t("shareModal.errors.failedToCreate"));
         } finally {
             setLoading(false);
         }
@@ -68,12 +70,12 @@ export default function ShareMapModal({ open, onClose, mapId, mapTitle }) {
             const ok = await deleteShareId(mapId);
             if (ok) {
                 setShareId(null);
-                toast.success("Share link disabled");
+                toast.success(t("shareModal.toasts.disabled"));
             } else {
-                toast.error("Failed to disable share link");
+                toast.error(t("shareModal.errors.failedToDisable"));
             }
         } catch (e) {
-            toast.error(e.message || "Failed to disable share link");
+            toast.error(e.message || t("shareModal.errors.failedToDisable"));
         } finally {
             setLoading(false);
         }
@@ -83,7 +85,7 @@ export default function ShareMapModal({ open, onClose, mapId, mapTitle }) {
         if (!shareUrl) return;
         try {
             await navigator.clipboard.writeText(shareUrl);
-            toast.success("Link copied");
+            toast.success(t("shareModal.toasts.copied"));
         } catch {
             try {
                 const el = document.createElement("textarea");
@@ -92,9 +94,9 @@ export default function ShareMapModal({ open, onClose, mapId, mapTitle }) {
                 el.select();
                 document.execCommand("copy");
                 document.body.removeChild(el);
-                toast.success("Link copied");
+                toast.success(t("shareModal.toasts.copied"));
             } catch {
-                toast.error("Failed to copy");
+                toast.error(t("shareModal.errors.failedToCopy"));
             }
         }
     }
@@ -103,39 +105,40 @@ export default function ShareMapModal({ open, onClose, mapId, mapTitle }) {
 
     return (
         <div className="fixed inset-0 z-50">
-            {/* Overlay */}
             <div
                 className="absolute inset-0 bg-overlay-backdrop/40"
                 onClick={onClose}
                 aria-hidden="true"
             />
 
-            {/* Modal */}
             <div className="absolute inset-0 flex items-center justify-center p-4">
-                {/* Тут это именно "surface", поэтому используем вариант карточки, а не кастомные bg/border */}
                 <Card variant="surface" className="w-full max-w-lg shadow-lg bg-surface-panel/95">
                     <CardHeader className="flex flex-row items-center justify-between gap-3">
                         <CardTitle className="text-xl">
-                            Share map{mapTitle ? `: ${mapTitle}` : ""}
+                            {mapTitle
+                                ? t("shareModal.titleWithName", { name: mapTitle })
+                                : t("shareModal.title")}
                         </CardTitle>
 
                         <Button variant="outline" onClick={onClose}>
-                            Close
+                            {t("actions.close")}
                         </Button>
                     </CardHeader>
 
                     <CardContent className="space-y-4">
                         {loading && (
-                            <div className="text-sm text-text-heading/70">Loading…</div>
+                            <div className="text-sm text-text-heading/70">
+                                {t("shareModal.loading")}
+                            </div>
                         )}
 
                         {!loading && !shareId && (
                             <div className="space-y-3">
                                 <div className="text-sm text-text-heading/80">
-                                    No share link yet. Create one to share with friends.
+                                    {t("shareModal.noLink")}
                                 </div>
                                 <Button onClick={handleCreate} disabled={loading}>
-                                    Create share link
+                                    {t("shareModal.createLink")}
                                 </Button>
                             </div>
                         )}
@@ -143,7 +146,7 @@ export default function ShareMapModal({ open, onClose, mapId, mapTitle }) {
                         {!loading && shareId && (
                             <div className="space-y-3">
                                 <div className="text-sm text-text-heading/80">
-                                    Anyone with this link can open the map:
+                                    {t("shareModal.linkDescription")}
                                 </div>
 
                                 <div className="flex items-center gap-2">
@@ -153,16 +156,16 @@ export default function ShareMapModal({ open, onClose, mapId, mapTitle }) {
                                         readOnly
                                     />
                                     <Button onClick={handleCopy} disabled={!shareUrl}>
-                                        Copy
+                                        {t("actions.copy")}
                                     </Button>
                                 </div>
 
                                 <div className="flex items-center gap-2">
                                     <Button variant="destructive" onClick={handleDisable} disabled={loading}>
-                                        Disable link
+                                        {t("shareModal.disableLink")}
                                     </Button>
                                     <div className="text-xs text-text-heading/60">
-                                        Disabling invalidates the link.
+                                        {t("shareModal.disableHint")}
                                     </div>
                                 </div>
                             </div>

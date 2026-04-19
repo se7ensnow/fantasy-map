@@ -1,25 +1,88 @@
 import React, { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-function stageToLabel(stage) {
+function getStageLabel(t, stage) {
     switch (stage) {
         case "queued":
-            return "Task queued";
+            return t("tilesUploader.stages.queued");
         case "downloading_source":
-            return "Downloading source image";
+            return t("tilesUploader.stages.downloadingSource");
         case "generating_tiles":
-            return "Generating tiles";
+            return t("tilesUploader.stages.generatingTiles");
         case "uploading_tiles":
-            return "Uploading tiles";
+            return t("tilesUploader.stages.uploadingTiles");
         case "finalizing":
-            return "Finalizing map";
+            return t("tilesUploader.stages.finalizing");
         case "completed":
-            return "Completed";
+            return t("tilesUploader.stages.completed");
         case "failed":
-            return "Failed";
+            return t("tilesUploader.stages.failed");
         default:
-            return "Processing tiles";
+            return t("tilesUploader.stages.processing");
+    }
+}
+
+function getErrorMessage(t, errorCode) {
+    switch (errorCode) {
+        case "SOURCE_NOT_FOUND":
+            return t("tilesUploader.errors.sourceNotFound");
+        case "SOURCE_DOWNLOAD_FAILED":
+            return t("tilesUploader.errors.sourceDownloadFailed");
+        case "IMAGE_DECODE_FAILED":
+            return t("tilesUploader.errors.imageDecodeFailed");
+        case "TILE_GENERATION_FAILED":
+            return t("tilesUploader.errors.tileGenerationFailed");
+        case "TILE_UPLOAD_FAILED":
+            return t("tilesUploader.errors.tileUploadFailed");
+        case "CALLBACK_FAILED":
+            return t("tilesUploader.errors.callbackFailed");
+        case "PROCESSING_TIMEOUT":
+            return t("tilesUploader.errors.processingTimeout");
+        default:
+            return t("tilesUploader.errors.processingFailed");
+    }
+}
+
+function getProgressDetails(t, payload) {
+    if (!payload) return "";
+
+    if (
+        payload.stage === "generating_tiles" &&
+        payload.total_tiles
+    ) {
+        return t("tilesUploader.progress.generatedCount", {
+            generated: payload.generated_tiles ?? 0,
+            total: payload.total_tiles,
+        });
+    }
+
+    if (
+        payload.stage === "uploading_tiles" &&
+        payload.total_tiles
+    ) {
+        return t("tilesUploader.progress.uploadedCount", {
+            uploaded: payload.uploaded_tiles ?? 0,
+            total: payload.total_tiles,
+        });
+    }
+
+    switch (payload.stage) {
+        case "queued":
+            return t("tilesUploader.progress.queued");
+        case "downloading_source":
+            return t("tilesUploader.progress.downloadingSource");
+        case "generating_tiles":
+            return t("tilesUploader.progress.generatingTiles");
+        case "uploading_tiles":
+            return t("tilesUploader.progress.uploadingTiles");
+        case "finalizing":
+            return t("tilesUploader.progress.finalizing");
+        case "completed":
+            return t("tilesUploader.progress.completed");
+        default:
+            return t("tilesUploader.progress.pleaseWait");
     }
 }
 
@@ -31,34 +94,57 @@ export default function TilesUploader({
     errorMessage = "",
     errorDetails = "",
 }) {
+    const { t } = useTranslation();
     const [file, setFile] = useState(null);
     const [uploading, setUploading] = useState(false);
 
     const progressValue = progressData?.progress ?? 0;
+
     const stageLabel = useMemo(
-        () => stageToLabel(progressData?.stage),
-        [progressData?.stage]
+        () => getStageLabel(t, progressData?.stage),
+        [progressData?.stage, t]
     );
 
-    const detailsText = useMemo(() => {
-        if (!progressData) return "";
+    const detailsText = useMemo(
+        () => getProgressDetails(t, progressData),
+        [progressData, t]
+    );
+
+    const resolvedErrorMessage = useMemo(() => {
+        const hasExplicitError = Boolean(errorMessage);
+        const hasProgressError = progressData?.status === "error";
+
+        if (!hasExplicitError && !hasProgressError) {
+            return "";
+        }
+
+        if (hasExplicitError) {
+            return errorMessage;
+        }
+
+        const errorCode =
+            progressData?.error_code ??
+            progressData?.errorCode ??
+            null;
+
+        return getErrorMessage(t, errorCode);
+    }, [errorMessage, progressData, t]);
+
+    const resolvedErrorDetails = useMemo(() => {
+        const hasExplicitError = Boolean(errorMessage);
+        const hasProgressError = progressData?.status === "error";
         
-        if (
-            progressData.stage === "generating_tiles" &&
-            progressData.total_tiles
-        ) {
-            return `${progressData.generated_tiles ?? 0} / ${progressData.total_tiles} tiles generated`;
+        if (!hasExplicitError && !hasProgressError) {
+            return "";
         }
     
-        if (
-            progressData.stage === "uploading_tiles" &&
-            progressData.total_tiles
-        ) {
-            return `${progressData.uploaded_tiles ?? 0} / ${progressData.total_tiles} tiles uploaded`;
-        }
-    
-        return progressData.message || "";
-    }, [progressData]);
+        return (
+            errorDetails ||
+            progressData?.error_details ||
+            progressData?.errorDetails ||
+            ""
+        );
+    }, [errorMessage, errorDetails, progressData]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -70,7 +156,7 @@ export default function TilesUploader({
             setFile(null);
             e.target.reset();
         } catch (err) {
-            console.error("Upload failed:", err);
+            console.error(t("tilesUploader.errors.uploadFailedConsole"), err);
         } finally {
             setUploading(false);
         }
@@ -80,7 +166,7 @@ export default function TilesUploader({
         <Card className="bg-surface-panel border-border-default mb-6">
             <CardHeader>
                 <CardTitle className="text-xl text-text-heading">
-                    Upload Map Image
+                    {t("tilesUploader.title")}
                 </CardTitle>
             </CardHeader>
 
@@ -88,7 +174,7 @@ export default function TilesUploader({
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
                         <label className="block mb-1 font-medium text-text-heading">
-                            Upload Image (.png, .jpg, .jpeg, .webp):
+                            {t("tilesUploader.fileLabel")}
                         </label>
 
                         <input
@@ -104,7 +190,9 @@ export default function TilesUploader({
                     </div>
 
                     <Button type="submit" disabled={!file || uploading || isProcessing}>
-                        {uploading ? "Uploading..." : "Upload Image"}
+                        {uploading
+                            ? t("tilesUploader.actions.uploading")
+                            : t("tilesUploader.actions.upload")}
                     </Button>
 
                     {isProcessing && (
@@ -122,7 +210,7 @@ export default function TilesUploader({
                             </div>
 
                             <div className="text-sm text-text-muted">
-                                {detailsText || "Processing tiles... Please wait."}
+                                {detailsText || t("tilesUploader.progress.pleaseWait")}
                             </div>
                         </div>
                     )}
@@ -133,20 +221,21 @@ export default function TilesUploader({
                         </div>
                     )}
 
-                    {!isProcessing && errorMessage && (
+                    {!isProcessing && resolvedErrorMessage && (
                         <div className="mt-4 max-w-2xl rounded-xl border border-status-error-border/40 bg-surface-paper/70 p-4">
                             <div className="flex items-start gap-3">
                                 <div className="mt-0.5 h-10 w-1 shrink-0 rounded-full bg-status-error-border" />
                                 <div className="min-w-0">
                                     <div className="text-sm font-semibold text-status-error-ink">
-                                        Processing failed
+                                        {t("tilesUploader.errorBlock.title")}
                                     </div>
                                     <div className="mt-1 text-sm leading-6 text-status-error-ink">
-                                        {errorMessage}
+                                        {resolvedErrorMessage}
                                     </div>
-                                    {errorDetails && (
+
+                                    {resolvedErrorDetails && (
                                         <div className="mt-2 text-xs leading-5 break-words text-text-muted">
-                                            Details: {errorDetails}
+                                            {t("tilesUploader.errorBlock.details")}: {resolvedErrorDetails}
                                         </div>
                                     )}
                                 </div>

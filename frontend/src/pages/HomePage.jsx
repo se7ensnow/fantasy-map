@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { getAllMaps, listTags } from "../api/maps";
 import { useNavigate } from "react-router-dom";
 import MapList from "../components/MapList";
@@ -8,6 +9,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 
 export default function HomePage() {
+    const { t } = useTranslation();
     const navigate = useNavigate();
     const [mapsData, setMapsData] = useState({ items: [], total: 0 });
     const [page, setPage] = useState(1);
@@ -39,19 +41,18 @@ export default function HomePage() {
         setPage(1);
     };
 
-
     useEffect(() => {
         async function fetchTags() {
             try {
                 const tags = await listTags("", 20);
                 setAvailableTags(tags);
             } catch (err) {
-                console.error("Failed to load tags", err);
+                console.error(t("home.errors.failedToLoadTags"), err);
             }
         }
 
         fetchTags();
-    }, []);
+    }, [t]);
 
     useEffect(() => {
         async function fetchMaps() {
@@ -63,13 +64,13 @@ export default function HomePage() {
                 });
                 setMapsData(mapsData);
             } catch (err) {
-                setError(err.message || "Failed to load maps");
+                setError(err.message || t("home.errors.failedToLoadMaps"));
                 console.error(err);
             }
         }
 
         fetchMaps();
-    }, [page, debouncedQuery, selectedTags, tagsMode]);
+    }, [page, debouncedQuery, selectedTags, tagsMode, t]);
 
     useEffect(() => {
         setPage(1);
@@ -91,22 +92,21 @@ export default function HomePage() {
 
     return (
         <div className="space-y-8 px-8 py-6">
-            {/* Hero Section */}
             <div className="bg-surface-panel/95 border border-border-default/40 rounded-lg shadow-md p-8 text-center space-y-4">
-                <h1 className="text-5xl font-bold text-text-heading">Fantasy Maps</h1>
+                <h1 className="text-5xl font-bold text-text-heading">
+                    {t("home.hero.title")}
+                </h1>
                 <p className="text-xl text-text-heading/80">
-                    Explore a world of fantasy maps created by the community — or create
-                    your own!
+                    {t("home.hero.subtitle")}
                 </p>
                 <Button onClick={handleCreateMap} className="mt-4">
-                    Create New Map
+                    {t("home.hero.createMap")}
                 </Button>
             </div>
 
-            {/* Maps Catalog */}
             <Card>
                 <CardHeader>
-                    <CardTitle>Maps Catalog</CardTitle>
+                    <CardTitle>{t("home.catalog.title")}</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <CatalogFilters
@@ -127,29 +127,29 @@ export default function HomePage() {
                             onOpen={handleOpenMap}
                             onTagClick={handleTagClick}
                             activeTags={selectedTags}
+                            isProfileView={false}
                         />
                     </div>
                 </CardContent>
             </Card>
 
-            {/* Pagination */}
             <div className="flex justify-center items-center gap-4 mt-4">
                 <Button
                     variant="outline"
                     onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
                     disabled={page === 1}
                 >
-                    Previous
+                    {t("pagination.previous")}
                 </Button>
                 <span className="text-lg text-text-primary">
-                    Page {page} of {totalPages || 1}
+                    {t("pagination.pageOf", { page, total: totalPages || 1 })}
                 </span>
                 <Button
                     variant="outline"
                     onClick={() => setPage((prev) => (prev < totalPages ? prev + 1 : prev))}
                     disabled={page >= totalPages}
                 >
-                    Next
+                    {t("pagination.next")}
                 </Button>
             </div>
         </div>

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { getMe } from "../api/users";
@@ -6,10 +7,11 @@ import { getMyMaps, deleteMap } from "../api/maps";
 import { Button } from "../components/ui/button";
 import MapList from "../components/MapList";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
-import { isInvalidAuthError  } from "@/api/errors";
-import { handleInvalidAuth  } from "@/lib/auth_session";
+import { isInvalidAuthError } from "@/api/errors";
+import { handleInvalidAuth } from "@/lib/auth_session";
 
 export default function ProfilePage() {
+    const { t } = useTranslation();
     const navigate = useNavigate();
     const [user, setUser] = useState(null);
     const [mapsData, setMapsData] = useState({ items: [], total: 0 });
@@ -41,7 +43,7 @@ export default function ProfilePage() {
                     return;
                 }
 
-                setError(err.message || "Failed to load profile");
+                setError(err.message || t("profile.errors.failedToLoadProfile"));
                 console.error(err);
             }
         }
@@ -51,7 +53,7 @@ export default function ProfilePage() {
         return () => {
             cancelled = true;
         };
-    }, [page, navigate]);
+    }, [page, navigate, t]);
 
     const totalPages = Math.ceil(mapsData.total / size);
 
@@ -62,14 +64,14 @@ export default function ProfilePage() {
                 items: prev.items.filter((map) => map.id !== mapId),
                 total: prev.total,
             }));
-            toast.success("Map deleted successfully");
+            toast.success(t("profile.toasts.mapDeleted"));
         } catch (err) {
             if (isInvalidAuthError(err)) {
                 handleInvalidAuth(navigate, toast);
                 return;
             }
 
-            toast.error(err.message || "Failed to delete map");
+            toast.error(err.message || t("profile.errors.failedToDeleteMap"));
             console.error(err);
         }
     }
@@ -92,7 +94,7 @@ export default function ProfilePage() {
                 <Card className="max-w-xl border-status-error-border bg-status-error-border/10">
                     <CardHeader>
                         <CardTitle className="text-status-error-ink">
-                            Failed to load profile
+                            {t("profile.errors.failedToLoadProfile")}
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="text-status-error-ink">
@@ -104,38 +106,42 @@ export default function ProfilePage() {
     }
 
     if (!user) {
-        return <p className="p-4 text-text-primary">Loading profile...</p>;
+        return <p className="p-4 text-text-primary">{t("profile.loading")}</p>;
     }
 
     return (
         <div className="space-y-8 px-8 py-6">
-            <h1 className="text-3xl font-bold mb-4 text-text-heading">Profile</h1>
+            <h1 className="text-3xl font-bold mb-4 text-text-heading">
+                {t("profile.title")}
+            </h1>
 
             <Card
                 variant="surface"
                 className="max-w-md text-left mr-auto shadow-md bg-surface-panel/80"
             >
                 <CardHeader>
-                    <CardTitle>User Information</CardTitle>
+                    <CardTitle>{t("profile.userInformation")}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2 text-text-heading">
                     <p>
-                        <strong>Username:</strong> {user.username}
+                        <strong>{t("profile.fields.username")}:</strong> {user.username}
                     </p>
                     <p>
-                        <strong>Email:</strong> {user.email}
+                        <strong>{t("profile.fields.email")}:</strong> {user.email}
                     </p>
                     <p>
-                        <strong>Created at:</strong>{" "}
+                        <strong>{t("profile.fields.createdAt")}:</strong>{" "}
                         {new Date(user.created_at).toLocaleString()}
                     </p>
                 </CardContent>
             </Card>
 
-            <h2 className="text-2xl font-bold mb-4 text-accent-primary">My Maps</h2>
+            <h2 className="text-2xl font-bold mb-4 text-accent-primary">
+                {t("profile.myMaps")}
+            </h2>
 
             <Button onClick={handleCreateMap} className="mb-4">
-                Create New Map
+                {t("profile.createNewMap")}
             </Button>
 
             <MapList
@@ -143,7 +149,7 @@ export default function ProfilePage() {
                 onDelete={handleDeleteMap}
                 onEdit={handleEditMap}
                 onOpen={handleOpenMap}
-                showShare={true}
+                isProfileView={true}
             />
 
             <div className="flex justify-center items-center gap-4 mt-4">
@@ -152,10 +158,10 @@ export default function ProfilePage() {
                     onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
                     disabled={page === 1}
                 >
-                    Previous
+                    {t("pagination.previous")}
                 </Button>
                 <span className="text-lg text-text-primary">
-                    Page {page} of {totalPages || 1}
+                    {t("pagination.pageOf", { page, total: totalPages || 1 })}
                 </span>
                 <Button
                     variant="outline"
@@ -164,7 +170,7 @@ export default function ProfilePage() {
                     }
                     disabled={page >= totalPages}
                 >
-                    Next
+                    {t("pagination.next")}
                 </Button>
             </div>
         </div>

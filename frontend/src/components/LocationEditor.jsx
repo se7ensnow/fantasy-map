@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import MarkdownRenderer from "@/components/MarkdownRenderer";
 
 export default function LocationEditor({ location, coords, onSave, onCancel }) {
+    const { t } = useTranslation();
+
     const [type, setType] = useState("");
     const [name, setName] = useState("");
     const [descriptionMd, setDescriptionMd] = useState("");
@@ -46,24 +49,31 @@ export default function LocationEditor({ location, coords, onSave, onCancel }) {
     return (
         <div className="bg-surface-paper/85 border border-border-default backdrop-blur-sm rounded p-4 space-y-3 shadow text-text-primary">
             <h2 className="text-xl font-bold mb-2 text-text-heading">
-                {location ? "Edit Location" : "Add Location"}
+                {location
+                    ? t("locationEditor.title.edit")
+                    : t("locationEditor.title.add")}
             </h2>
 
             <form onSubmit={handleSubmit} className="space-y-3">
                 <div>
-                    <label className="block mb-1 font-medium text-text-heading">Name:</label>
+                    <label className="block mb-1 font-medium text-text-heading">
+                        {t("locationEditor.fields.name")}
+                    </label>
                     <Input value={name} onChange={(e) => setName(e.target.value)} required />
                 </div>
 
                 <div>
-                    <label className="block mb-1 font-medium text-text-heading">Type:</label>
+                    <label className="block mb-1 font-medium text-text-heading">
+                        {t("locationEditor.fields.type")}
+                    </label>
                     <Input value={type} onChange={(e) => setType(e.target.value)} required />
                 </div>
 
-                {/* Markdown editor */}
                 <div>
                     <div className="flex items-center justify-between mb-1">
-                        <label className="block font-medium text-text-heading">Article (Markdown):</label>
+                        <label className="block font-medium text-text-heading">
+                            {t("locationEditor.fields.article")}
+                        </label>
                         <div className="inline-flex rounded border border-border-default overflow-hidden">
                             <button
                                 type="button"
@@ -75,7 +85,7 @@ export default function LocationEditor({ location, coords, onSave, onCancel }) {
                                         : "bg-surface-paper/60 hover:bg-state-hover",
                                 ].join(" ")}
                             >
-                                Edit
+                                {t("locationEditor.tabs.edit")}
                             </button>
 
                             <button
@@ -88,7 +98,7 @@ export default function LocationEditor({ location, coords, onSave, onCancel }) {
                                         : "bg-surface-paper/60 hover:bg-state-hover",
                                 ].join(" ")}
                             >
-                                Preview
+                                {t("locationEditor.tabs.preview")}
                             </button>
                         </div>
                     </div>
@@ -98,7 +108,7 @@ export default function LocationEditor({ location, coords, onSave, onCancel }) {
                             value={descriptionMd}
                             onChange={(e) => setDescriptionMd(e.target.value)}
                             rows={12}
-                            placeholder={`# Title\n\nWrite your location article...\n\n- lists\n- **bold**\n- [link](https://...)`}
+                            placeholder={t("locationEditor.placeholders.article")}
                         />
                     ) : (
                         <div className="border border-border-default rounded p-3 bg-surface-panel/60">
@@ -109,7 +119,9 @@ export default function LocationEditor({ location, coords, onSave, onCancel }) {
 
                 <div className="flex space-x-2">
                     <div className="flex-1">
-                        <label className="block mb-1 font-medium text-text-heading">X:</label>
+                        <label className="block mb-1 font-medium text-text-heading">
+                            {t("locationEditor.fields.x")}
+                        </label>
                         <Input
                             type="number"
                             value={x}
@@ -117,7 +129,9 @@ export default function LocationEditor({ location, coords, onSave, onCancel }) {
                         />
                     </div>
                     <div className="flex-1">
-                        <label className="block mb-1 font-medium text-text-heading">Y:</label>
+                        <label className="block mb-1 font-medium text-text-heading">
+                            {t("locationEditor.fields.y")}
+                        </label>
                         <Input
                             type="number"
                             value={y}
@@ -128,10 +142,12 @@ export default function LocationEditor({ location, coords, onSave, onCancel }) {
 
                 <div className="flex justify-between mt-4">
                     <Button type="submit">
-                        {location ? "Save Changes" : "Add Location"}
+                        {location
+                            ? t("locationEditor.actions.saveChanges")
+                            : t("locationEditor.actions.addLocation")}
                     </Button>
                     <Button type="button" variant="outline" onClick={onCancel}>
-                        Cancel
+                        {t("actions.cancel")}
                     </Button>
                 </div>
             </form>

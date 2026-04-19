@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
 import { getMapById } from "@/api/maps";
 import { getLocations } from "@/api/locations";
@@ -9,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
 export default function MapPage() {
+    const { t } = useTranslation();
     const { map_id } = useParams();
     const navigate = useNavigate();
 
@@ -25,14 +27,14 @@ export default function MapPage() {
 
                 const mapData = await getMapById(map_id);
                 if (cancelled) return;
-                            
+
                 if (mapData.status !== "ready") {
                     setError("MAP_NOT_FOUND");
                     return;
                 }
-                
+
                 setMap(mapData);
-                
+
                 const locationsData = await getLocations(map_id);
                 if (cancelled) return;
                 setLocations(locationsData);
@@ -46,7 +48,7 @@ export default function MapPage() {
                     }
                 }
 
-                setError(err.message || "Failed to load map");
+                setError(err.message || t("mapPage.errors.failedToLoadMap"));
                 console.error(err);
             }
         }
@@ -56,29 +58,29 @@ export default function MapPage() {
         return () => {
             cancelled = true;
         };
-    }, [map_id]);
+    }, [map_id, t]);
 
     if (error === "MAP_NOT_FOUND") {
         return (
             <div className="flex min-h-[70vh] items-center justify-center px-6 py-12">
                 <div className="w-full max-w-3xl rounded-2xl border border-border-emphasis bg-surface-panel/85 p-10 text-center shadow-card backdrop-blur-sm">
                     <h1 className="text-4xl font-bold text-text-heading">
-                        We couldn’t find this map
+                        {t("mapPage.notFound.title")}
                     </h1>
-                    
+
                     <div className="mx-auto mt-5 max-w-3xl space-y-3">
                         <p className="text-lg leading-relaxed text-text-primary">
-                            It seems this map does not exist, the link is invalid, or it is no longer available.
+                            {t("mapPage.notFound.description")}
                         </p>
 
                         <p className="text-text-muted italic">
-                            It may have been lost, removed, or never charted at all.
+                            {t("mapPage.notFound.note")}
                         </p>
                     </div>
-        
+
                     <div className="mt-8">
                         <Button onClick={() => navigate("/")}>
-                            Return to Catalog
+                            {t("mapPage.notFound.returnToCatalog")}
                         </Button>
                     </div>
                 </div>
@@ -92,7 +94,7 @@ export default function MapPage() {
                 <Card className="max-w-2xl border-status-error-border bg-status-error-border/10">
                     <CardHeader>
                         <CardTitle className="text-status-error-ink">
-                            Unable to open map
+                            {t("mapPage.errors.unableToOpen")}
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="text-status-error-ink">
@@ -104,7 +106,7 @@ export default function MapPage() {
     }
 
     if (!map) {
-        return <p className="p-4 text-text-primary">Loading map...</p>;
+        return <p className="p-4 text-text-primary">{t("mapPage.loading")}</p>;
     }
 
     const tagNames = (map.tags || [])
@@ -121,7 +123,7 @@ export default function MapPage() {
                 </CardHeader>
 
                 <CardContent className="prose text-text-heading">
-                    {map.description || "No description provided."}
+                    {map.description || t("mapPage.noDescription")}
 
                     {tagNames.length > 0 && (
                         <div className="mt-4 flex flex-wrap gap-2">
@@ -133,13 +135,15 @@ export default function MapPage() {
                 </CardContent>
 
                 <div className="absolute bottom-2 right-4 text-sm italic text-text-muted/80">
-                    Author: {map.owner_username || "Unknown"}
+                    {t("mapPage.author")}: {map.owner_username || t("mapPage.unknown")}
                 </div>
             </Card>
 
             <Card>
                 <CardHeader>
-                    <CardTitle className="text-text-heading">Map</CardTitle>
+                    <CardTitle className="text-text-heading">
+                        {t("mapPage.mapSectionTitle")}
+                    </CardTitle>
                 </CardHeader>
                 <CardContent>
                     <MapViewer map={map} locations={locations} />

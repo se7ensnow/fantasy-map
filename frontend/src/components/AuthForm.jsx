@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
@@ -9,6 +10,7 @@ export default function AuthForm({
     submitLabel = "Submit",
     errorMessage = "",
 }) {
+    const { t } = useTranslation();
     const [username, setUsername] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -40,7 +42,7 @@ export default function AuthForm({
         >
             <div>
                 <Label className="block mb-1 font-semibold">
-                    Username
+                    {t("authForm.username")}
                 </Label>
                 <Input
                     className="!text-text-heading"
@@ -54,7 +56,7 @@ export default function AuthForm({
             {showEmail && (
                 <div>
                     <Label className="block mb-1 font-semibold">
-                        Email
+                        {t("authForm.email")}
                     </Label>
                     <Input
                         className="!text-text-heading"
@@ -68,7 +70,7 @@ export default function AuthForm({
 
             <div>
                 <Label className="block mb-1 font-semibold">
-                    Password
+                    {t("authForm.password")}
                 </Label>
                 <Input
                     className="!text-text-heading"

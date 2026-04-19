@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import MapListItem from "./MapListItem";
 
 export default function MapList({
@@ -8,12 +9,14 @@ export default function MapList({
     onOpen,
     onTagClick,
     activeTags = [],
-    showShare = false,
+    isProfileView = false,
 }) {
+    const { t } = useTranslation();
+
     if (!maps || maps.length === 0) {
         return (
             <p className="text-center text-text-heading">
-                No maps found.
+                {t("mapList.empty")}
             </p>
         );
     }
@@ -27,9 +30,9 @@ export default function MapList({
                     onOpen={() => onOpen(map.id)}
                     onDelete={onDelete ? () => onDelete(map.id) : undefined}
                     onEdit={onEdit ? () => onEdit(map.id) : undefined}
-                    showShare={showShare}
                     onTagClick={onTagClick}
                     activeTags={activeTags}
+                    isProfileView={isProfileView}
                 />
             ))}
         </div>

@@ -1,0 +1,348 @@
+{
+    "navbar": {
+        "profile": "Profile",
+        "login": "Login",
+        "register": "Register",
+        "logout": "Logout"
+    },
+    "home": {
+        "hero": {
+            "title": "Fantasy Maps",
+            "subtitle": "Explore a world of fantasy maps created by the community — or create your own!",
+            "createMap": "Create New Map"
+        },
+        "catalog": {
+            "title": "Maps Catalog"
+        },
+        "errors": {
+            "failedToLoadMaps": "Failed to load maps",
+            "failedToLoadTags": "Failed to load tags"
+        }
+    },
+    "pagination": {
+        "previous": "Previous",
+        "next": "Next",
+        "pageOf": "Page {{page}} of {{total}}"
+    },
+    "profile": {
+        "title": "Profile",
+        "loading": "Loading profile...",
+        "userInformation": "User Information",
+        "myMaps": "My Maps",
+        "createNewMap": "Create New Map",
+        "fields": {
+            "username": "Username",
+            "email": "Email",
+            "createdAt": "Created at"
+        },
+        "errors": {
+            "failedToLoadProfile": "Failed to load profile",
+            "failedToDeleteMap": "Failed to delete map"
+        },
+        "toasts": {
+            "mapDeleted": "Map deleted successfully"
+        }
+    },
+    "catalogFilters": {
+        "searchLabel": "Search",
+        "searchPlaceholder": "Search by title…",
+        "tagPlaceholder": "Filter by tag…",
+        "clear": "Clear",
+        "loading": "Loading…",
+        "noSuggestions": "No suggestions",
+        "pressEnterToAdd": "Press Enter to add “{{tag}}”",
+        "removeTagTitle": "Click to remove",
+        "errors": {
+            "tagSuggestionsFailed": "Tag suggestions failed"
+        }
+    },
+    "mapCard": {
+        "status": {
+            "draft": "Draft",
+            "public": "Public",
+            "private": "Private"
+        },
+        "tagTitles": {
+            "activeFilter": "Active filter (click to remove)",
+            "filterByTag": "Click to filter by this tag"
+        }
+    },
+    "actions": {
+        "view": "View",
+        "share": "Share",
+        "edit": "Edit",
+        "delete": "Delete",
+        "cancel": "Cancel",
+        "close": "Close",
+        "copy": "Copy"
+    },
+    "mapList": {
+        "empty": "No maps found."
+    },
+    "login": {
+        "title": "Login",
+        "submit": "Login",
+        "noAccount": "Don’t have an account?",
+        "createOne": "Create one",
+        "errors": {
+            "failed": "Login failed. Please try again."
+        },
+        "toasts": {
+            "success": "Logged in successfully!"
+        }
+    },
+    "register": {
+        "title": "Register",
+        "submit": "Register",
+        "alreadyHaveAccount": "Already have an account?",
+        "logIn": "Log in",
+        "errors": {
+            "failed": "Registration failed. Please try again."
+        },
+        "toasts": {
+            "success": "Registration successful! Please log in."
+        }
+    },
+    "authForm": {
+        "username": "Username",
+        "email": "Email",
+        "password": "Password"
+    },
+    "themeToggle": {
+        "light": "Light",
+        "dark": "Dark",
+        "system": "System",
+        "title": "Theme: {{theme}} (click to switch)"
+    },
+    "deleteMapModal": {
+        "title": "Delete map",
+        "description": "This action cannot be undone. To confirm deletion, type the map title exactly as shown below.",
+        "mapTitleLabel": "Map title",
+        "confirmationLabel": "Type map title to confirm",
+        "mismatch": "The entered title does not match.",
+        "deleting": "Deleting...",
+        "deleteMap": "Delete Map"
+    },
+    "shareModal": {
+        "title": "Share map",
+        "titleWithName": "Share map: {{name}}",
+        "loading": "Loading…",
+        "noLink": "No share link yet. Create one to share with friends.",
+        "createLink": "Create share link",
+        "linkDescription": "Anyone with this link can open the map:",
+        "disableLink": "Disable link",
+        "disableHint": "Disabling invalidates the link.",
+        "errors": {
+            "failedToLoad": "Failed to load share link",
+            "failedToCreate": "Failed to create share link",
+            "failedToDisable": "Failed to disable share link",
+            "failedToCopy": "Failed to copy"
+        },
+        "toasts": {
+            "created": "Share link created",
+            "disabled": "Share link disabled",
+            "copied": "Link copied"
+        }
+    },
+    "tagsModeToggle": {
+        "any": "any",
+        "all": "all",
+        "matchAny": "Match any selected tag",
+        "matchAll": "Match all selected tags"
+    },
+    "footer": {
+        "brand": "Fantasy Maps",
+        "contactLabel": "Contact:"
+    },
+    "notFound": {
+        "title": "Here be missing pages!",
+        "descriptionLine1": "It seems this path leads nowhere.",
+        "descriptionLine2": "The page may have been moved, removed, or perhaps it was never on the map to begin with.",
+        "footerNote": "Even the finest cartographers lose a trail from time to time.",
+        "returnToCatalog": "Return to Catalog"
+    },
+    "mapPage": {
+        "loading": "Loading map...",
+        "noDescription": "No description provided.",
+        "author": "Author",
+        "unknown": "Unknown",
+        "mapSectionTitle": "Map",
+        "errors": {
+            "failedToLoadMap": "Failed to load map",
+            "unableToOpen": "Unable to open map"
+        },
+        "notFound": {
+            "title": "We couldn’t find this map",
+            "description": "It seems this map does not exist, the link is invalid, or it is no longer available.",
+            "note": "It may have been lost, removed, or never charted at all.",
+            "returnToCatalog": "Return to Catalog"
+        }
+    },
+    "mapViewer": {
+        "selectLocation": "Select a location on the map to view details.",
+        "scrollToTop": "Scroll to top"
+    },
+    "mapEdit": {
+        "loading": "Loading map...",
+        "titles": {
+            "editMap": "Edit Map",
+            "createMap": "Create Map",
+            "uploadTiles": "Upload Tiles",
+            "editLocations": "Edit Locations"
+        },
+        "draft": {
+            "title": "Draft map",
+            "description": "This map is not visible to other users until tiles are uploaded successfully.",
+            "publicWhenReady": "Visibility is already set to public. The map will become public automatically once processing finishes successfully."
+        },
+        "tiles": {
+            "readyMessage": "Tiles are ready."
+        },
+        "viewMap": {
+            "button": "View Map",
+            "availableAfterUpload": "The map will become available after tiles are uploaded successfully"
+        },
+        "errors": {
+            "failedToLoadMap": "Failed to load map",
+            "failedToSaveMap": "Failed to save map",
+            "createMapBeforeUpload": "You must create the map first before uploading image.",
+            "progressUnavailable": "Progress tracking is unavailable: job_id was not returned.",
+            "processingFailed": "Something went wrong. Please try again.",
+            "failedToUploadImage": "Failed to upload image.",
+            "saveMapBeforeAddLocation": "You must save the map first.",
+            "failedToAddLocation": "Failed to add location",
+            "failedToDeleteLocation": "Failed to delete location",
+            "failedToUpdateLocation": "Failed to update location"
+        },
+        "toasts": {
+            "updated": "Map updated successfully",
+            "created": "Map created successfully",
+            "imageProcessed": "Map image processed successfully."
+        }
+    },
+    "mapForm": {
+        "title": {
+          "edit": "Edit Map Info",
+          "create": "Create New Map"
+        },
+        "fields": {
+            "title": "Title:",
+            "description": "Description:",
+            "visibility": "Visibility:",
+            "tags": "Tags:"
+        },
+        "visibility": {
+            "private": "Private",
+            "public": "Public",
+            "privateHint": "Visible only to you.",
+            "publicHint": "Visible in the catalog once the map is ready."
+        },
+        "tags": {
+            "placeholder": "Add tags (Enter)…",
+            "hint": "Press Enter to add a tag."
+        },
+        "actions": {
+            "saving": "Saving...",
+            "save": "Save Map"
+        },
+        "errors": {
+            "titleRequired": "Title is required"
+        }
+    },
+    "tagsInput": {
+        "helperText": "Up to {{maxTags}} tags, {{maxLen}} chars each. lowercase, no special symbols.",
+        "remove": "Remove",
+        "removeTagAria": "Remove tag {{tag}}",
+        "placeholder": "add tag…",
+        "limitReachedPlaceholder": "limit reached",
+        "loading": "Loading…",
+        "noSuggestions": "No suggestions",
+        "limitReachedMessage": "Tag limit reached ({{maxTags}}). Remove a tag to add another.",
+        "errors": {
+            "tagSuggestionsFailed": "Tag suggestions failed"
+        },
+        "add": "Add"
+    },
+    "tilesUploader": {
+      "title": "Upload Map Image",
+      "fileLabel": "Upload Image (.png, .jpg, .jpeg, .webp):",
+      "actions": {
+            "upload": "Upload Image",
+            "uploading": "Uploading..."
+      },
+      "stages": {
+            "queued": "Task queued",
+            "downloadingSource": "Downloading source image",
+            "generatingTiles": "Generating tiles",
+            "uploadingTiles": "Uploading tiles",
+            "finalizing": "Finalizing map",
+            "completed": "Completed",
+            "failed": "Failed",
+            "processing": "Processing tiles"
+      },
+      "progress": {
+            "queued": "Task queued",
+            "downloadingSource": "Downloading source image",
+            "generatingTiles": "Generating tiles",
+            "uploadingTiles": "Uploading tiles",
+            "finalizing": "Finalizing map",
+            "completed": "Completed",
+            "generatedCount": "{{generated}} / {{total}} tiles generated",
+            "uploadedCount": "{{uploaded}} / {{total}} tiles uploaded",
+            "pleaseWait": "Processing tiles... Please wait."
+      },
+      "errorBlock": {
+            "title": "Processing failed",
+            "details": "Details"
+      },
+      "errors": {
+            "uploadFailedConsole": "Upload failed:",
+            "processingFailed": "Something went wrong. Please try again.",
+            "sourceNotFound": "Source image was not found. Please upload the image again.",
+            "sourceDownloadFailed": "Failed to download the source image. Please try again.",
+            "imageDecodeFailed": "The image could not be processed. Please upload another file.",
+            "tileGenerationFailed": "Failed to generate tiles. Please try again.",
+            "tileUploadFailed": "Failed to upload generated tiles. Please try again.",
+            "callbackFailed": "The map could not be finalized. Please try again.",
+            "processingTimeout": "Processing took too long or stopped unexpectedly. Please try again."
+      }
+    },
+    "editableMapViewer": {
+        "title": "Locations",
+        "emptyState": "Select a location on the map or click “Add Location” to create a new one.",
+        "actions": {
+            "addLocation": "Add Location",
+            "cancelAdd": "Cancel Add",
+            "deleteLocation": "Delete Location"
+        }
+    },
+    "locationEditor": {
+        "title": {
+            "edit": "Edit Location",
+            "add": "Add Location"
+        },
+        "fields": {
+            "name": "Name:",
+            "type": "Type:",
+            "article": "Article (Markdown):",
+            "x": "X:",
+            "y": "Y:"
+        },
+        "tabs": {
+            "edit": "Edit",
+            "preview": "Preview"
+        },
+        "actions": {
+            "saveChanges": "Save Changes",
+            "addLocation": "Add Location"
+        },
+        "placeholders": {
+            "article": "# Title\n\nWrite your location article...\n\n- lists\n- **bold**\n- [link](https://...)"
+        }
+    },
+    "language": {
+        "switchLanguage": "Switch language",
+        "english": "English",
+        "russian": "Русский"
+    }
+}
