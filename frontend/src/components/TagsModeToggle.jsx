@@ -11,10 +11,9 @@ export default function TagsModeToggle({ value, onChange }) {
             type="button"
             onClick={() => onChange(isAll ? "any" : "all")}
             className={cn(
-                "h-10 px-3 rounded-md border text-sm font-medium transition-colors",
+                "flex h-9 w-full items-center justify-center gap-1 rounded-md border px-2 text-xs font-medium transition-colors md:h-10 md:w-auto md:px-3 md:text-sm",
                 "border-border-default/40 bg-surface-panel hover:bg-surface-muted",
-                "text-text-primary",
-                "flex items-center gap-1"
+                "text-text-primary"
             )}
             title={
                 isAll
@@ -24,7 +23,7 @@ export default function TagsModeToggle({ value, onChange }) {
         >
             <span
                 className={cn(
-                    "px-2 py-1 rounded-md transition-colors",
+                    "rounded-md px-2 py-1 transition-colors",
                     !isAll
                         ? "bg-accent-primary text-text-on-accent"
                         : "text-text-heading/80"
@@ -37,7 +36,7 @@ export default function TagsModeToggle({ value, onChange }) {
 
             <span
                 className={cn(
-                    "px-2 py-1 rounded-md transition-colors",
+                    "rounded-md px-2 py-1 transition-colors",
                     isAll
                         ? "bg-accent-primary text-text-on-accent"
                         : "text-text-heading/80"

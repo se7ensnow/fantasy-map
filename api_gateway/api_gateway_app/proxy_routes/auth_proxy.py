@@ -1,34 +1,34 @@
 import logging
 
 import httpx
-from fastapi import APIRouter, Depends, HTTPException, Request
-from fastapi.security import OAuth2PasswordRequestForm
+import fastapi
+from fastapi import security
 
-from api_gateway_app.config import USER_SERVICE_URL
-from api_gateway_app.log_config import log
-from api_gateway_app.schemas import RegisterRequest, TokenResponse, UserResponse
-from api_gateway_app.utils import forward_error, build_headers
+from api_gateway_app import config
+from api_gateway_app import log_config
+from api_gateway_app import schemas
+from api_gateway_app import utils
 
-router = APIRouter()
+router = fastapi.APIRouter()
 
 
-@router.post("/register", response_model=UserResponse)
-async def register(request: Request, data: RegisterRequest):
-    log(request, logging.INFO, "register_started", username=data.username)
+@router.post("/register", response_model=schemas.UserResponse)
+async def register(request: fastapi.Request, data: schemas.RegisterRequest):
+    log_config.log(request, logging.INFO, "register_started", username=data.username)
 
     async with httpx.AsyncClient() as client:
         try:
             response = await client.post(
-                f"{USER_SERVICE_URL}/auth/register",
+                f"{config.USER_SERVICE_URL}/auth/register",
                 json=data.model_dump(mode="json"),
-                headers=build_headers(request),
+                headers=utils.build_headers(request),
             )
         except httpx.RequestError:
-            log(request, logging.ERROR, "register_user_service_unavailable", username=data.username)
-            raise HTTPException(status_code=503, detail="User service unavailable.")
+            log_config.log(request, logging.ERROR, "register_user_service_unavailable", username=data.username)
+            raise fastapi.HTTPException(status_code=503, detail="User service unavailable.")
 
     if response.status_code != 200:
-        log(
+        log_config.log(
             request,
             logging.WARNING,
             "register_failed",
@@ -36,21 +36,27 @@ async def register(request: Request, data: RegisterRequest):
             status_code=response.status_code,
             response_error=response.text,
         )
-        return forward_error(response)
+        return utils.forward_error(response)
 
     result = response.json()
-    log(request, logging.INFO, "register_finished", user_id=result.get("id"), username=result.get("username"))
+    log_config.log(
+        request,
+        logging.INFO,
+        "register_finished",
+        user_id=result.get("id"),
+        username=result.get("username")
+    )
     return result
 
 
-@router.post("/login", response_model=TokenResponse)
-async def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends()):
-    log(request, logging.INFO, "login_started", username=form_data.username)
+@router.post("/login", response_model=schemas.TokenResponse)
+async def login(request: fastapi.Request, form_data: security.OAuth2PasswordRequestForm = fastapi.Depends()):
+    log_config.log(request, logging.INFO, "login_started", username=form_data.username)
 
     async with httpx.AsyncClient() as client:
         try:
             response = await client.post(
-                f"{USER_SERVICE_URL}/auth/login",
+                f"{config.USER_SERVICE_URL}/auth/login",
                 data={
                     "username": form_data.username,
                     "password": form_data.password,
@@ -61,11 +67,11 @@ async def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends
                 },
             )
         except httpx.RequestError:
-            log(request, logging.ERROR, "login_user_service_unavailable", username=form_data.username)
-            raise HTTPException(status_code=503, detail="User service unavailable.")
+            log_config.log(request, logging.ERROR, "login_user_service_unavailable", username=form_data.username)
+            raise fastapi.HTTPException(status_code=503, detail="User service unavailable.")
 
     if response.status_code != 200:
-        log(
+        log_config.log(
             request,
             logging.WARNING,
             "login_failed",
@@ -73,7 +79,7 @@ async def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends
             status_code=response.status_code,
             response_error=response.text,
         )
-        return forward_error(response)
+        return utils.forward_error(response)
 
-    log(request, logging.INFO, "login_finished", username=form_data.username)
+    log_config.log(request, logging.INFO, "login_finished", username=form_data.username)
     return response.json()

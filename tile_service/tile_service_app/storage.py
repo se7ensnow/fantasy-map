@@ -1,22 +1,16 @@
+import dataclasses
 import os
+import pathlib
 import threading
-from collections.abc import Callable
-from dataclasses import dataclass
-from pathlib import Path
+from collections import abc
 
 import boto3
 import boto3.s3.transfer as s3transfer
-from botocore.client import Config
-from botocore.exceptions import ClientError
-from s3transfer.subscribers import BaseSubscriber
+from botocore import client
+from botocore import exceptions
+from s3transfer import subscribers
 
-from tile_service_app.config import (
-    S3_ENDPOINT,
-    S3_ACCESS_KEY,
-    S3_SECRET_KEY,
-    S3_BUCKET,
-    S3_SECURE,
-)
+from tile_service_app import config
 
 
 class StorageError(Exception):
@@ -27,7 +21,7 @@ class ObjectNotFoundError(StorageError):
     pass
 
 
-@dataclass
+@dataclasses.dataclass
 class StorageConfig:
     endpoint: str
     access_key: str
@@ -36,12 +30,12 @@ class StorageConfig:
     secure: bool = False
 
 
-class UploadProgressSubscriber(BaseSubscriber):
+class UploadProgressSubscriber(subscribers.BaseSubscriber):
     def __init__(
         self,
         counter: dict,
         total_files: int,
-        progress_callback: Callable[[int, int], None] | None = None,
+        progress_callback: abc.Callable[[int, int], None] | None = None,
         progress_every: int = 10,
     ):
         self._counter = counter
@@ -69,7 +63,7 @@ class S3Storage:
             aws_access_key_id=config.access_key,
             aws_secret_access_key=config.secret_key,
             use_ssl=config.secure,
-            config=Config(
+            config=client.Config(
                 signature_version="s3v4",
                 max_pool_connections=20,
             ),
@@ -83,7 +77,7 @@ class S3Storage:
                 Filename=destination_path,
             )
             return destination_path
-        except ClientError as e:
+        except exceptions.ClientError as e:
             error_code = e.response.get("Error", {}).get("Code")
             if error_code in ("404", "NoSuchKey", "NotFound"):
                 raise ObjectNotFoundError(f"Object '{object_key}' not found") from e
@@ -98,7 +92,7 @@ class S3Storage:
                 ExtraArgs={"ContentType": content_type},
             )
             return object_key
-        except ClientError as e:
+        except exceptions.ClientError as e:
             raise StorageError(f"Failed to upload object '{object_key}': {e}") from e
 
     def upload_directory(
@@ -107,7 +101,7 @@ class S3Storage:
         object_prefix: str,
         content_type: str = "image/png",
         workers: int = 20,
-        progress_callback: Callable[[int, int], None] | None = None,
+        progress_callback: abc.Callable[[int, int], None] | None = None,
         progress_every: int = 10,
     ) -> int:
         file_paths: list[str] = []
@@ -139,7 +133,7 @@ class S3Storage:
 
         try:
             for src in file_paths:
-                rel_path = Path(src).relative_to(local_dir).as_posix()
+                rel_path = pathlib.Path(src).relative_to(local_dir).as_posix()
                 object_key = f"{object_prefix}{rel_path}"
 
                 subscriber = UploadProgressSubscriber(
@@ -169,7 +163,7 @@ class S3Storage:
         try:
             self.client.delete_object(Bucket=self.config.bucket, Key=object_key)
             return True
-        except ClientError as e:
+        except exceptions.ClientError as e:
             raise StorageError(f"Failed to delete object '{object_key}': {e}") from e
 
     def delete_prefix(self, prefix: str) -> int:
@@ -203,17 +197,17 @@ class S3Storage:
                 continuation_token = response.get("NextContinuationToken")
 
             return deleted_count
-        except ClientError as e:
+        except exceptions.ClientError as e:
             raise StorageError(f"Failed to delete prefix '{prefix}': {e}") from e
 
 
 storage = S3Storage(
     StorageConfig(
-        endpoint=S3_ENDPOINT,
-        access_key=S3_ACCESS_KEY,
-        secret_key=S3_SECRET_KEY,
-        bucket=S3_BUCKET,
-        secure=S3_SECURE,
+        endpoint=config.S3_ENDPOINT,
+        access_key=config.S3_ACCESS_KEY,
+        secret_key=config.S3_SECRET_KEY,
+        bucket=config.S3_BUCKET,
+        secure=config.S3_SECURE,
     )
 )
 

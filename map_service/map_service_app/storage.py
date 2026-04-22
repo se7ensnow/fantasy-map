@@ -1,11 +1,11 @@
-from dataclasses import dataclass
-from typing import BinaryIO
+import dataclasses
+import typing
 
 import boto3
-from botocore.client import Config
-from botocore.exceptions import ClientError
+from botocore import client
+from botocore import exceptions
 
-from map_service_app.config import S3_ENDPOINT, S3_ACCESS_KEY, S3_SECRET_KEY, S3_BUCKET, S3_SECURE
+from map_service_app import config
 
 
 class StorageError(Exception):
@@ -16,7 +16,7 @@ class ObjectNotFoundError(StorageError):
     pass
 
 
-@dataclass
+@dataclasses.dataclass
 class StorageConfig:
     endpoint: str
     access_key: str
@@ -34,20 +34,20 @@ class S3Storage:
             aws_access_key_id=config.access_key,
             aws_secret_access_key=config.secret_key,
             use_ssl=config.secure,
-            config=Config(signature_version="s3v4"),
+            config=client.Config(signature_version="s3v4"),
         )
 
     def ensure_bucket_exists(self) -> None:
         try:
             self.client.head_bucket(Bucket=self.config.bucket)
-        except ClientError as e:
+        except exceptions.ClientError as e:
             error_code = e.response.get("Error", {}).get("Code")
             if error_code in ("404", "NoSuchBucket"):
                 self.client.create_bucket(Bucket=self.config.bucket)
                 return
             raise StorageError(f"Failed to check/create bucket: {e}") from e
 
-    def upload_fileobj(self, file_obj: BinaryIO, object_key: str, content_type: str) -> str:
+    def upload_fileobj(self, file_obj: typing.BinaryIO, object_key: str, content_type: str) -> str:
         try:
             self.client.upload_fileobj(
                 Fileobj=file_obj,
@@ -56,14 +56,14 @@ class S3Storage:
                 ExtraArgs={"ContentType": content_type},
             )
             return object_key
-        except ClientError as e:
+        except exceptions.ClientError as e:
             raise StorageError(f"Failed to upload object '{object_key}': {e}") from e
 
     def download_bytes(self, object_key: str) -> bytes:
         try:
             response = self.client.get_object(Bucket=self.config.bucket, Key=object_key)
             return response["Body"].read()
-        except ClientError as e:
+        except exceptions.ClientError as e:
             error_code = e.response.get("Error", {}).get("Code")
             if error_code in ("404", "NoSuchKey", "NotFound"):
                 raise ObjectNotFoundError(f"Object '{object_key}' not found") from e
@@ -73,14 +73,14 @@ class S3Storage:
         try:
             self.client.delete_object(Bucket=self.config.bucket, Key=object_key)
             return True
-        except ClientError as e:
+        except exceptions.ClientError as e:
             raise StorageError(f"Failed to delete object '{object_key}': {e}") from e
 
     def object_exists(self, object_key: str) -> bool:
         try:
             self.client.head_object(Bucket=self.config.bucket, Key=object_key)
             return True
-        except ClientError as e:
+        except exceptions.ClientError as e:
             error_code = e.response.get("Error", {}).get("Code")
             if error_code in ("404", "NoSuchKey", "NotFound"):
                 return False
@@ -117,17 +117,17 @@ class S3Storage:
                 continuation_token = response.get("NextContinuationToken")
 
             return deleted_count
-        except ClientError as e:
+        except exceptions.ClientError as e:
             raise StorageError(f"Failed to delete prefix '{prefix}': {e}") from e
 
 
 storage = S3Storage(
     StorageConfig(
-        endpoint=S3_ENDPOINT,
-        access_key=S3_ACCESS_KEY,
-        secret_key=S3_SECRET_KEY,
-        bucket=S3_BUCKET,
-        secure=S3_SECURE,
+        endpoint=config.S3_ENDPOINT,
+        access_key=config.S3_ACCESS_KEY,
+        secret_key=config.S3_SECRET_KEY,
+        bucket=config.S3_BUCKET,
+        secure=config.S3_SECURE,
     )
 )
 

@@ -1,20 +1,21 @@
 import pytest
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+import sqlalchemy
+from sqlalchemy import orm
 
-from user_service_app.models import Base
+from user_service_app import models
 
 SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
 
-engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
-TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+engine = sqlalchemy.create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
+TestingSessionLocal = orm.sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
 
 @pytest.fixture(scope="function")
 def db():
-    Base.metadata.create_all(bind=engine)
+    models.Base.metadata.create_all(bind=engine)
     db = TestingSessionLocal()
     try:
         yield db
     finally:
         db.close()
-        Base.metadata.drop_all(bind=engine)
+        models.Base.metadata.drop_all(bind=engine)

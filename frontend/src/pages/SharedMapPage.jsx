@@ -23,6 +23,7 @@ export default function SharedMapPage() {
         async function fetchData() {
             try {
                 setError("");
+
                 const mapData = await getMapByShareId(share_id);
                 if (cancelled) return;
                 setMap(mapData);
@@ -31,6 +32,8 @@ export default function SharedMapPage() {
                 if (cancelled) return;
                 setLocations(locationsData);
             } catch (e) {
+                if (cancelled) return;
+
                 const msg = e.message || t("mapPage.errors.failedToLoadMap");
                 setError(msg);
                 toast.error(msg);
@@ -45,25 +48,40 @@ export default function SharedMapPage() {
     }, [share_id, t]);
 
     if (error) {
-        return <p className="text-status-danger p-4">{error}</p>;
+        return (
+            <div className="p-2 md:p-8">
+                <Card className="max-w-2xl border-status-error-border bg-status-error-border/10">
+                    <CardHeader>
+                        <CardTitle className="text-status-error-ink">
+                            {t("mapPage.errors.unableToOpen")}
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="text-status-error-ink">
+                        {error}
+                    </CardContent>
+                </Card>
+            </div>
+        );
     }
 
     if (!map) {
-        return <p className="p-4">{t("mapPage.loading")}</p>;
+        return <p className="p-2 text-text-primary md:p-4">{t("mapPage.loading")}</p>;
     }
 
-    const tagNames = (map.tags || []).filter(Boolean);
+    const tagNames = (map.tags || [])
+        .filter(Boolean)
+        .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
 
     return (
-        <div className="space-y-8 p-8">
-            <Card className="relative bg-surface-panel/80 border border-border-emphasis rounded-lg shadow-md">
-                <CardHeader>
-                    <CardTitle className="text-4xl font-bold text-text-heading">
+        <div className="space-y-3 p-2 md:space-y-8 md:p-8">
+            <Card className="relative rounded-lg border border-border-emphasis bg-surface-panel/80 shadow-md">
+                <CardHeader className="px-3 pb-2 pt-3 md:px-6 md:pb-6 md:pt-6">
+                    <CardTitle className="text-2xl font-bold text-text-heading md:text-4xl">
                         {map.title}
                     </CardTitle>
                 </CardHeader>
 
-                <CardContent className="prose text-text-heading">
+                <CardContent className="px-3 pb-3 prose max-w-none text-sm text-text-heading md:px-6 md:pb-6 md:text-base">
                     {map.description || t("mapPage.noDescription")}
 
                     {tagNames.length > 0 && (
@@ -75,18 +93,18 @@ export default function SharedMapPage() {
                     )}
                 </CardContent>
 
-                <div className="absolute bottom-2 right-4 text-sm text-text-link/80 italic">
+                <div className="px-3 pb-3 pt-1 text-xs italic text-text-muted/80 md:absolute md:bottom-2 md:right-4 md:px-0 md:pb-0 md:text-sm">
                     {t("mapPage.author")}: {map.owner_username || t("mapPage.unknown")}
                 </div>
             </Card>
 
-            <Card>
-                <CardHeader>
+            <Card className="overflow-hidden">
+                <CardHeader className="px-2 pb-2 pt-2 md:px-6 md:pb-6 md:pt-6">
                     <CardTitle className="text-text-heading">
                         {t("mapPage.mapSectionTitle")}
                     </CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-1 md:p-6">
                     <MapViewer map={map} locations={locations} />
                 </CardContent>
             </Card>

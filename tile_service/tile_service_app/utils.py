@@ -1,6 +1,6 @@
-from collections.abc import Callable
+from collections import abc
 
-from tile_service_app.storage import storage, build_map_tiles_version_prefix
+from tile_service_app import storage
 
 
 def upload_generated_tiles(
@@ -8,12 +8,12 @@ def upload_generated_tiles(
     tiles_version: int,
     tiles_local_dir: str,
     workers: int = 20,
-    progress_callback: Callable[[int, int], None] | None = None,
+    progress_callback: abc.Callable[[int, int], None] | None = None,
     progress_every: int = 10,
 ) -> int:
-    return storage.upload_directory(
+    return storage.storage.upload_directory(
         local_dir=tiles_local_dir,
-        object_prefix=build_map_tiles_version_prefix(map_id, tiles_version),
+        object_prefix=storage.build_map_tiles_version_prefix(map_id, tiles_version),
         content_type="image/png",
         workers=workers,
         progress_callback=progress_callback,

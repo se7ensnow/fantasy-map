@@ -1,21 +1,26 @@
-from datetime import datetime, timedelta, timezone
-from jose import jwt, JWTError
-from uuid import UUID
-from user_service_app.config import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
+import datetime
+import uuid
 
-def create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:
+from jose import jwt
+from jose import exceptions
+
+from user_service_app import config
+
+
+def create_access_token(data: dict, expires_delta: datetime.timedelta | None = None) -> str:
     to_encode = data.copy()
-    now = datetime.now(timezone.utc)
-    expire = now + (expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
+    now = datetime.datetime.now(datetime.timezone.utc)
+    expire = now + (expires_delta or datetime.timedelta(minutes=config.ACCESS_TOKEN_EXPIRE_MINUTES))
     to_encode.update({"iat": int(now.timestamp()), "exp": expire})
-    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return jwt.encode(to_encode, config.SECRET_KEY, algorithm=config.ALGORITHM)
 
-def verify_jwt_token(token: str) -> UUID | None:
+
+def verify_jwt_token(token: str) -> uuid.UUID | None:
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(token, config.SECRET_KEY, algorithms=[config.ALGORITHM])
         sub = payload.get("sub")
         if not sub:
             return None
-        return UUID(sub)
-    except (JWTError, ValueError):
+        return uuid.UUID(sub)
+    except (exceptions.JWTError, ValueError):
         return None

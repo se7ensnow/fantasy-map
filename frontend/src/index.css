@@ -277,43 +277,43 @@
    ========================================================= */
 @layer components {
   .markdown-body {
-    @apply leading-relaxed;
+    @apply text-sm leading-6 md:text-base md:leading-relaxed;
     color: rgb(var(--md-text) / 1);
   }
 
   .markdown-body h1 {
-    @apply text-3xl font-extrabold mt-4 mb-3;
+    @apply text-2xl font-extrabold mt-4 mb-3 md:text-3xl;
     color: rgb(var(--md-heading) / 1);
   }
 
   .markdown-body h2 {
-    @apply text-2xl font-bold mt-4 mb-2;
+    @apply text-xl font-bold mt-4 mb-2 md:text-2xl;
     color: rgb(var(--md-heading) / 1);
   }
 
   .markdown-body h3 {
-    @apply text-xl font-semibold mt-3 mb-2;
+    @apply text-lg font-semibold mt-3 mb-2 md:text-xl;
     color: rgb(var(--md-heading) / 1);
   }
 
   .markdown-body p {
-    @apply leading-7 my-2;
+    @apply my-2 leading-6 md:leading-7;
   }
 
   .markdown-body ul {
-    @apply list-disc pl-6 my-2;
+    @apply list-disc pl-5 my-2 md:pl-6;
   }
 
   .markdown-body ol {
-    @apply list-decimal pl-6 my-2;
+    @apply list-decimal pl-5 my-2 md:pl-6;
   }
 
   .markdown-body li {
-    @apply my-1 leading-7;
+    @apply my-1 leading-6 md:leading-7;
   }
 
   .markdown-body blockquote {
-    @apply border-l-4 pl-4 italic my-3;
+    @apply border-l-4 pl-3 italic my-3 md:pl-4;
     border-left-color: rgb(var(--md-quote-border) / 1);
     color: rgb(var(--md-quote-text) / 1);
   }
@@ -337,20 +337,20 @@
   }
 
   .markdown-body code {
-    @apply px-1 py-0.5 rounded border;
+    @apply rounded border px-1 py-0.5 text-[0.9em];
     background-color: rgb(var(--md-code-bg) / 1);
     border-color: rgb(var(--md-code-border) / 1);
     color: rgb(var(--md-code-text) / 1);
   }
 
   .markdown-body pre {
-    @apply p-3 rounded border overflow-x-auto my-3;
+    @apply my-3 overflow-x-auto rounded border p-2 text-xs md:p-3 md:text-sm;
     background-color: rgb(var(--md-pre-bg) / 1);
     border-color: rgb(var(--md-pre-border) / 1);
   }
 
   .markdown-body table {
-    @apply w-full border-collapse my-3;
+    @apply my-3 w-full border-collapse text-sm;
   }
 
   .markdown-body th,

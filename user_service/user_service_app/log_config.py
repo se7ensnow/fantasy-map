@@ -1,16 +1,16 @@
+import datetime
 import json
 import logging
 import sys
-from datetime import datetime, timezone
-from typing import Any
+import typing
 
-from fastapi import Request
+import fastapi
 
 
 class JsonFormatter(logging.Formatter):
     def format(self, record: logging.LogRecord) -> str:
-        data: dict[str, Any] = {
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+        data: dict[str, typing.Any] = {
+            "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
             "level": record.levelname,
             "service": "user-service",
             "logger": record.name,
@@ -42,7 +42,7 @@ def setup_logging() -> None:
 logger = logging.getLogger("user-service")
 
 
-def log(request: Request, level: int, event: str, **fields: Any) -> None:
+def log(request: fastapi.Request, level: int, event: str, **fields: typing.Any) -> None:
     logger.log(
         level,
         event,

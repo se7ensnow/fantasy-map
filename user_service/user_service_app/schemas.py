@@ -1,27 +1,32 @@
-from pydantic import BaseModel, EmailStr
-from datetime import datetime
-from uuid import UUID
+import datetime
+import uuid
 
-class UserCreate(BaseModel):
+import pydantic
+
+
+class UserCreate(pydantic.BaseModel):
     username: str
-    email: EmailStr
+    email: pydantic.EmailStr
     password: str
 
-class UserOut(BaseModel):
-    id: UUID
+
+class UserOut(pydantic.BaseModel):
+    id: uuid.UUID
     username: str
-    email: EmailStr
-    created_at: datetime
+    email: pydantic.EmailStr
+    created_at: datetime.datetime
 
-    class ConfigDict:
-        from_attributes = True
+    model_config = pydantic.ConfigDict(from_attributes=True)
 
-class Token(BaseModel):
+
+class Token(pydantic.BaseModel):
     access_token: str
     token_type: str
 
-class TokenVerifyRequest(BaseModel):
+
+class TokenVerifyRequest(pydantic.BaseModel):
     access_token: str
 
-class TokenVerifyResponse(BaseModel):
-    user_id: UUID
+
+class TokenVerifyResponse(pydantic.BaseModel):
+    user_id: uuid.UUID

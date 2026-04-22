@@ -179,8 +179,12 @@
         }
     },
     "mapViewer": {
-        "selectLocation": "Select a location on the map to view details.",
-        "scrollToTop": "Scroll to top"
+        "selectLocation": "Select a location on the map",
+        "scrollToTop": "Scroll to top",
+        "hidePanel": "Hide details panel",
+        "showPanel": "Show details panel",
+        "enterFullscreen": "Open fullscreen",
+        "exitFullscreen": "Exit fullscreen"
     },
     "mapEdit": {
         "loading": "Loading map...",
@@ -308,12 +312,16 @@
       }
     },
     "editableMapViewer": {
-        "title": "Locations",
-        "emptyState": "Select a location on the map or click “Add Location” to create a new one.",
+        "title": "Location editor",
+        "emptyState": "Select a location on the map to edit it.",
+        "emptyStateAddMode": "Click on the map to choose a place for the new location.",
+        "hints": {
+            "clickMapToPlace": "Click on the map to place a new location"
+        },
         "actions": {
-            "addLocation": "Add Location",
-            "cancelAdd": "Cancel Add",
-            "deleteLocation": "Delete Location"
+            "addLocation": "Add location",
+            "cancelAdd": "Cancel add mode",
+            "deleteLocation": "Delete location"
         }
     },
     "locationEditor": {

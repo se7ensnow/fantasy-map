@@ -1,6 +1,11 @@
 import pytest
 import pytest_asyncio
-from httpx import AsyncClient, ASGITransport
+import httpx
+
+from api_gateway_app import config
+from api_gateway_app import main
+from api_gateway_app import security
+from api_gateway_app.proxy_routes import maps_proxy
 
 USER = "http://user-service"
 MAP = "http://map-service"
@@ -18,16 +23,13 @@ def map_base_url():
 
 @pytest.fixture(autouse=True)
 def patch_service_urls(monkeypatch, user_base_url, map_base_url):
-    import api_gateway_app.config as cfg
-    monkeypatch.setattr(cfg, "USER_SERVICE_URL", user_base_url, raising=False)
-    monkeypatch.setattr(cfg, "MAP_SERVICE_URL", map_base_url, raising=False)
+    monkeypatch.setattr(config, "USER_SERVICE_URL", user_base_url, raising=False)
+    monkeypatch.setattr(config, "MAP_SERVICE_URL", map_base_url, raising=False)
 
-    import api_gateway_app.security as sec
-    monkeypatch.setattr(sec, "USER_SERVICE_URL", user_base_url, raising=False)
+    monkeypatch.setattr(security, "USER_SERVICE_URL", user_base_url, raising=False)
 
-    import api_gateway_app.proxy_routes.maps_proxy as mp
-    monkeypatch.setattr(mp, "USER_SERVICE_URL", user_base_url, raising=False)
-    monkeypatch.setattr(mp, "MAP_SERVICE_URL", map_base_url, raising=False)
+    monkeypatch.setattr(maps_proxy, "USER_SERVICE_URL", user_base_url, raising=False)
+    monkeypatch.setattr(maps_proxy, "MAP_SERVICE_URL", map_base_url, raising=False)
 
 
 @pytest.fixture
@@ -47,7 +49,6 @@ def test_loc_id():
 
 @pytest_asyncio.fixture
 async def async_client():
-    from api_gateway_app.main import app
-    transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url="http://test") as ac:
+    transport = httpx.ASGITransport(app=main.app)
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as ac:
         yield ac

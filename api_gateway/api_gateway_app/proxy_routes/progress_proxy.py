@@ -1,17 +1,17 @@
 import asyncio
 import json
-from collections.abc import AsyncIterable
-from datetime import datetime, timezone
+from collections import abc
+import datetime
 
 import redis.asyncio as redis
-from fastapi import APIRouter, Request
-from fastapi.sse import EventSourceResponse, ServerSentEvent
+import fastapi
+from fastapi import sse
 
-from api_gateway_app.config import REDIS_URL
+from api_gateway_app import config
 
-router = APIRouter()
+router = fastapi.APIRouter()
 
-redis_client = redis.from_url(REDIS_URL, decode_responses=True)
+redis_client = redis.from_url(config.REDIS_URL, decode_responses=True)
 
 INITIAL_SNAPSHOT_GRACE_SECONDS = 15
 PROGRESS_STALE_TIMEOUT_SECONDS = 12
@@ -27,11 +27,11 @@ def build_progress_channel(job_id: str) -> str:
     return f"tile_progress_events:{job_id}"
 
 
-def parse_updated_at(value: str | None) -> datetime | None:
+def parse_updated_at(value: str | None) -> datetime.datetime | None:
     if not value:
         return None
     try:
-        return datetime.fromisoformat(value)
+        return datetime.datetime.fromisoformat(value)
     except ValueError:
         return None
 
@@ -51,13 +51,13 @@ def build_timeout_error_payload(job_id: str) -> dict:
     }
 
 
-@router.get("/{job_id}/events", response_class=EventSourceResponse)
-async def stream_job_progress(request: Request, job_id: str) -> AsyncIterable[ServerSentEvent]:
+@router.get("/{job_id}/events", response_class=sse.EventSourceResponse)
+async def stream_job_progress(request: fastapi.Request, job_id: str) -> abc.AsyncIterable[sse.ServerSentEvent]:
     key = build_progress_key(job_id)
     channel = build_progress_channel(job_id)
 
     event_id = 0
-    stream_started_at = datetime.now(timezone.utc)
+    stream_started_at = datetime.datetime.now(datetime.timezone.utc)
     has_seen_snapshot = False
 
     snapshot = await redis_client.get(key)
@@ -65,7 +65,7 @@ async def stream_job_progress(request: Request, job_id: str) -> AsyncIterable[Se
         payload = json.loads(snapshot)
         has_seen_snapshot = True
         event_id += 1
-        yield ServerSentEvent(
+        yield sse.ServerSentEvent(
             data=payload,
             event="progress",
             id=str(event_id),
@@ -91,7 +91,7 @@ async def stream_job_progress(request: Request, job_id: str) -> AsyncIterable[Se
                 has_seen_snapshot = True
                 event_id += 1
 
-                yield ServerSentEvent(
+                yield sse.ServerSentEvent(
                     data=payload,
                     event="progress",
                     id=str(event_id),
@@ -108,19 +108,19 @@ async def stream_job_progress(request: Request, job_id: str) -> AsyncIterable[Se
                 updated_at = parse_updated_at(payload.get("updated_at"))
 
                 if not is_payload_terminal(payload) and updated_at is not None:
-                    age_seconds = (datetime.now(timezone.utc) - updated_at).total_seconds()
+                    age_seconds = (datetime.datetime.now(datetime.timezone.utc) - updated_at).total_seconds()
 
                     if age_seconds > PROGRESS_STALE_TIMEOUT_SECONDS:
                         timeout_payload = build_timeout_error_payload(job_id)
                         event_id += 1
-                        yield ServerSentEvent(
+                        yield sse.ServerSentEvent(
                             data=timeout_payload,
                             event="progress",
                             id=str(event_id),
                         )
                         break
             else:
-                now = datetime.now(timezone.utc)
+                now = datetime.datetime.now(datetime.timezone.utc)
 
                 if not has_seen_snapshot:
                     startup_age_seconds = (now - stream_started_at).total_seconds()
@@ -130,7 +130,7 @@ async def stream_job_progress(request: Request, job_id: str) -> AsyncIterable[Se
 
                 timeout_payload = build_timeout_error_payload(job_id)
                 event_id += 1
-                yield ServerSentEvent(
+                yield sse.ServerSentEvent(
                     data=timeout_payload,
                     event="progress",
                     id=str(event_id),

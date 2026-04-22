@@ -40,33 +40,30 @@ export default function DeleteMapModal({
 
     return (
         <div
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-overlay-backdrop/50 px-4"
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-overlay-backdrop/50 px-4 py-4 md:px-4"
             onClick={() => {
                 if (!loading) onClose?.();
             }}
         >
             <div
-                className="
-                    w-full max-w-lg rounded-2xl border border-border-emphasis
-                    bg-surface-panel shadow-card p-6
-                "
+                className="w-full max-w-lg rounded-2xl border border-border-emphasis bg-surface-panel p-4 shadow-card md:p-6"
                 onClick={(e) => e.stopPropagation()}
             >
                 <div className="space-y-4">
                     <div>
-                        <h2 className="text-2xl font-bold text-text-heading">
+                        <h2 className="text-xl font-bold text-text-heading md:text-2xl">
                             {t("deleteMapModal.title")}
                         </h2>
-                        <p className="mt-2 text-text-primary leading-relaxed">
+                        <p className="mt-2 text-sm leading-relaxed text-text-primary md:text-base">
                             {t("deleteMapModal.description")}
                         </p>
                     </div>
 
                     <div className="rounded-lg border border-border-default/60 bg-surface-paper/60 p-3">
-                        <p className="text-sm text-text-muted mb-1">
+                        <p className="mb-1 text-xs text-text-muted md:text-sm">
                             {t("deleteMapModal.mapTitleLabel")}
                         </p>
-                        <p className="font-semibold text-text-heading break-words">
+                        <p className="break-words font-semibold text-text-heading">
                             {mapTitle}
                         </p>
                     </div>
@@ -88,24 +85,25 @@ export default function DeleteMapModal({
                             className="
                                 w-full rounded-md border border-border-default
                                 bg-surface-input px-3 py-2
-                                text-text-primary outline-none
-                                focus:border-border-emphasis
+                                text-sm text-text-primary outline-none
+                                focus:border-border-emphasis md:text-base
                             "
                             placeholder={mapTitle}
                         />
                     </div>
 
                     {!isMatch && value.length > 0 && (
-                        <p className="text-sm text-status-warning-ink font-medium">
+                        <p className="text-sm font-medium text-status-warning-ink">
                             {t("deleteMapModal.mismatch")}
                         </p>
                     )}
 
-                    <div className="flex justify-end gap-3 pt-2">
+                    <div className="flex flex-col gap-2 pt-2 sm:flex-row sm:justify-end">
                         <Button
                             variant="outline"
                             onClick={onClose}
                             disabled={loading}
+                            className="w-full sm:w-auto"
                         >
                             {t("actions.cancel")}
                         </Button>
@@ -113,6 +111,7 @@ export default function DeleteMapModal({
                             variant="destructive"
                             onClick={onConfirm}
                             disabled={!isMatch || loading}
+                            className="w-full sm:w-auto"
                         >
                             {loading
                                 ? t("deleteMapModal.deleting")

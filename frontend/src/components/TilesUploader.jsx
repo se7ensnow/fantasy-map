@@ -48,20 +48,14 @@ function getErrorMessage(t, errorCode) {
 function getProgressDetails(t, payload) {
     if (!payload) return "";
 
-    if (
-        payload.stage === "generating_tiles" &&
-        payload.total_tiles
-    ) {
+    if (payload.stage === "generating_tiles" && payload.total_tiles) {
         return t("tilesUploader.progress.generatedCount", {
             generated: payload.generated_tiles ?? 0,
             total: payload.total_tiles,
         });
     }
 
-    if (
-        payload.stage === "uploading_tiles" &&
-        payload.total_tiles
-    ) {
+    if (payload.stage === "uploading_tiles" && payload.total_tiles) {
         return t("tilesUploader.progress.uploadedCount", {
             uploaded: payload.uploaded_tiles ?? 0,
             total: payload.total_tiles,
@@ -133,11 +127,11 @@ export default function TilesUploader({
     const resolvedErrorDetails = useMemo(() => {
         const hasExplicitError = Boolean(errorMessage);
         const hasProgressError = progressData?.status === "error";
-        
+
         if (!hasExplicitError && !hasProgressError) {
             return "";
         }
-    
+
         return (
             errorDetails ||
             progressData?.error_details ||
@@ -163,17 +157,17 @@ export default function TilesUploader({
     };
 
     return (
-        <Card className="bg-surface-panel border-border-default mb-6">
-            <CardHeader>
-                <CardTitle className="text-xl text-text-heading">
+        <Card className="bg-surface-panel border-border-default">
+            <CardHeader className="px-3 pb-2 pt-3 md:px-6 md:pb-6 md:pt-6">
+                <CardTitle className="text-lg text-text-heading md:text-xl">
                     {t("tilesUploader.title")}
                 </CardTitle>
             </CardHeader>
 
-            <CardContent>
+            <CardContent className="px-3 pb-3 md:px-6 md:pb-6">
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
-                        <label className="block mb-1 font-medium text-text-heading">
+                        <label className="mb-1 block font-medium text-text-heading">
                             {t("tilesUploader.fileLabel")}
                         </label>
 
@@ -182,14 +176,15 @@ export default function TilesUploader({
                             accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp"
                             onChange={(e) => setFile(e.target.files[0] || null)}
                             required
-                            className="block w-full text-sm text-text-heading file:mr-4 file:py-2 file:px-4
-                         file:rounded-md file:border file:border-border-default
-                         file:bg-surface-paper file:text-text-heading
-                         hover:file:bg-surface-panel/60 transition-colors"
+                            className="block w-full text-sm text-text-heading file:mr-3 file:rounded-md file:border file:border-border-default file:bg-surface-paper file:px-3 file:py-2 file:text-text-heading hover:file:bg-surface-panel/60 transition-colors"
                         />
                     </div>
 
-                    <Button type="submit" disabled={!file || uploading || isProcessing}>
+                    <Button
+                        type="submit"
+                        disabled={!file || uploading || isProcessing}
+                        className="w-full sm:w-auto"
+                    >
                         {uploading
                             ? t("tilesUploader.actions.uploading")
                             : t("tilesUploader.actions.upload")}
@@ -202,7 +197,7 @@ export default function TilesUploader({
                                 <span>{progressValue}%</span>
                             </div>
 
-                            <div className="h-3 w-full overflow-hidden rounded-full bg-surface-paper border border-border-default">
+                            <div className="h-3 w-full overflow-hidden rounded-full border border-border-default bg-surface-paper">
                                 <div
                                     className="h-full bg-accent-primary transition-all duration-300"
                                     style={{ width: `${progressValue}%` }}
@@ -216,7 +211,7 @@ export default function TilesUploader({
                     )}
 
                     {!isProcessing && successMessage && (
-                        <div className="mt-2 text-status-success-ink font-semibold">
+                        <div className="mt-2 font-semibold text-status-success-ink">
                             {successMessage}
                         </div>
                     )}
@@ -234,7 +229,7 @@ export default function TilesUploader({
                                     </div>
 
                                     {resolvedErrorDetails && (
-                                        <div className="mt-2 text-xs leading-5 break-words text-text-muted">
+                                        <div className="mt-2 break-words text-xs leading-5 text-text-muted">
                                             {t("tilesUploader.errorBlock.details")}: {resolvedErrorDetails}
                                         </div>
                                     )}

@@ -603,6 +603,38 @@ export default function OpenLayersMap({
     }, [selectedLocationId, editMode, addMode]);
 
     /** ---------------------------
+     * Keep OL size in sync with layout changes
+     * -------------------------- */
+    useEffect(() => {
+        const el = elRef.current;
+        if (!el) return;
+
+        const resizeMap = () => {
+            const olMap = mapRef.current;
+            if (!olMap) return;
+            olMap.updateSize();
+        };
+
+        const observer = new ResizeObserver(() => {
+            resizeMap();
+        });
+
+        observer.observe(el);
+
+        const timeoutId = window.setTimeout(() => {
+            resizeMap();
+        }, 0);
+
+        window.addEventListener("resize", resizeMap);
+
+        return () => {
+            observer.disconnect();
+            window.removeEventListener("resize", resizeMap);
+            window.clearTimeout(timeoutId);
+        };
+    }, []);
+
+    /** ---------------------------
      * Zoom controls
      * -------------------------- */
     const clampZoom = (z) => Math.max(0, Math.min(maxZoom, z));

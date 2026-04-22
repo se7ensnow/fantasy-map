@@ -22,7 +22,7 @@ export default function MapList({
     }
 
     return (
-        <div className="space-y-4">
+        <div className="space-y-3 md:space-y-4">
             {maps.map((map) => (
                 <MapListItem
                     key={map.id}

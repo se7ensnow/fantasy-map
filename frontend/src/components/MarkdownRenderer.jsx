@@ -12,10 +12,10 @@ export default function MarkdownRenderer({ content }) {
                 remarkPlugins={[remarkGfm]}
                 rehypePlugins={[rehypeSanitize]}
                 components={{
-                    a: ({ node, ...props }) => (
+                    a: (props) => (
                         <a {...props} target="_blank" rel="noopener noreferrer nofollow" />
                     ),
-                    img: ({ node, ...props }) => {
+                    img: (props) => {
                         const src = (props.src || "").toString();
                         if (!src.startsWith("https://")) return null;
 

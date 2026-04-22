@@ -2,11 +2,11 @@ import logging
 import math
 import os
 import time
-from collections.abc import Callable
+from collections import abc
 
 from PIL import Image, ImageOps
 
-from tile_service_app.log_config import log
+from tile_service_app import log_config
 
 TILE_SIZE = 256
 
@@ -29,7 +29,7 @@ def generate_tile_pyramid(
     map_id: str,
     source_image_path: str,
     output_base_path: str,
-    progress_callback: Callable[[int, int], None] | None = None,
+    progress_callback: abc.Callable[[int, int], None] | None = None,
     progress_every: int = 10,
 ):
     total_started = time.perf_counter()
@@ -47,7 +47,7 @@ def generate_tile_pyramid(
         total_tiles = _count_total_tiles(width, height, max_zoom)
         total_written_tiles = 0
 
-        log(
+        log_config.log(
             logging.INFO,
             "tiler_started",
             map_id=map_id,
@@ -115,7 +115,7 @@ def generate_tile_pyramid(
             write_ms = round((time.perf_counter() - write_started) * 1000, 2)
             level_total_ms = round((time.perf_counter() - level_started) * 1000, 2)
 
-            log(
+            log_config.log(
                 logging.INFO,
                 "tiler_level_finished",
                 map_id=map_id,
@@ -135,7 +135,7 @@ def generate_tile_pyramid(
 
         total_ms = round((time.perf_counter() - total_started) * 1000, 2)
 
-        log(
+        log_config.log(
             logging.INFO,
             "tiler_finished",
             map_id=map_id,

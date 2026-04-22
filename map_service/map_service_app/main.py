@@ -1,31 +1,32 @@
 import logging
 import time
-from uuid import uuid4
+import uuid
 
-from fastapi import FastAPI, Request
-from sqlalchemy import text
+import fastapi
+import sqlalchemy
 
-from map_service_app.database import engine
-from map_service_app.log_config import log, logger, setup_logging
-from map_service_app.routes import locations, maps
+from map_service_app import database
+from map_service_app import log_config
+from map_service_app.routes import locations
+from map_service_app.routes import maps
 
-setup_logging()
+log_config.setup_logging()
 
-app = FastAPI(
+app = fastapi.FastAPI(
     title="Map Service",
     description="Сервис управления картами и локациями",
-    version="1.0"
+    version="1.0",
 )
 
 
 @app.middleware("http")
-async def request_logging_middleware(request: Request, call_next):
-    request_id = request.headers.get("X-Request-ID", str(uuid4()))
+async def request_logging_middleware(request: fastapi.Request, call_next):
+    request_id = request.headers.get("X-Request-ID", str(uuid.uuid4()))
     request.state.request_id = request_id
 
     start = time.perf_counter()
 
-    log(
+    log_config.log(
         request,
         logging.INFO,
         "request_started",
@@ -37,7 +38,7 @@ async def request_logging_middleware(request: Request, call_next):
         response = await call_next(request)
     except Exception:
         duration_ms = round((time.perf_counter() - start) * 1000, 2)
-        logger.exception(
+        log_config.logger.exception(
             "request_unhandled_error",
             extra={
                 "extra_fields": {
@@ -54,7 +55,7 @@ async def request_logging_middleware(request: Request, call_next):
     duration_ms = round((time.perf_counter() - start) * 1000, 2)
     response.headers["X-Request-ID"] = request_id
 
-    log(
+    log_config.log(
         request,
         logging.INFO,
         "request_finished",
@@ -69,23 +70,31 @@ async def request_logging_middleware(request: Request, call_next):
 
 @app.on_event("startup")
 def on_startup() -> None:
-    with engine.begin() as conn:
-        conn.execute(text("CREATE EXTENSION IF NOT EXISTS pg_trgm"))
+    with database.engine.begin() as conn:
+        conn.execute(sqlalchemy.text("CREATE EXTENSION IF NOT EXISTS pg_trgm"))
 
-        conn.execute(text("""
+        conn.execute(
+            sqlalchemy.text(
+                """
             CREATE INDEX IF NOT EXISTS ix_maps_title_trgm
             ON maps
             USING GIN (title gin_trgm_ops)
-        """))
+        """
+            )
+        )
 
-        conn.execute(text("""
+        conn.execute(
+            sqlalchemy.text(
+                """
             CREATE INDEX IF NOT EXISTS ix_tags_name_trgm
             ON tags
             USING GIN (name gin_trgm_ops)
-        """))
+        """
+            )
+        )
 
-        sim = conn.execute(text("SELECT similarity('wizard tower','wziard towr')")).scalar_one()
-        logger.info(
+        sim = conn.execute(sqlalchemy.text("SELECT similarity('wizard tower','wziard towr')")).scalar_one()
+        log_config.logger.info(
             "startup_pg_trgm_ready",
             extra={"extra_fields": {"event": "startup_pg_trgm_ready", "similarity": sim}},
         )

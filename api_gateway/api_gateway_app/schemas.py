@@ -1,90 +1,90 @@
-from datetime import datetime
-from pydantic import BaseModel, EmailStr, ConfigDict, Field
-from uuid import UUID
-from typing import Optional, Dict, Any, List, Literal
+import datetime
+import pydantic
+import uuid
+import typing
 
 
 # ---------- AUTH ----------
 
-class RegisterRequest(BaseModel):
+class RegisterRequest(pydantic.BaseModel):
     username: str
-    email: EmailStr
+    email: pydantic.EmailStr
     password: str
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = pydantic.ConfigDict(from_attributes=True)
 
 
-class TokenResponse(BaseModel):
+class TokenResponse(pydantic.BaseModel):
     access_token: str
     token_type: str
 
 
 # ---------- USERS ----------
 
-class UserResponse(BaseModel):
-    id: UUID
+class UserResponse(pydantic.BaseModel):
+    id: uuid.UUID
     username: str
-    email: EmailStr
-    created_at: datetime
+    email: pydantic.EmailStr
+    created_at: datetime.datetime
 
 
 # ---------- MAPS ----------
 
-Visibility = Literal["private", "public"]
-MapStatus = Literal['draft', 'ready']
+Visibility = typing.Literal["private", "public"]
+MapStatus = typing.Literal['draft', 'ready']
 
 
-class MapCreateRequest(BaseModel):
+class MapCreateRequest(pydantic.BaseModel):
     title: str
-    description: Optional[str] = None
-    tags: List[str] = Field(default_factory=list)
+    description: typing.Optional[str] = None
+    tags: typing.List[str] = pydantic.Field(default_factory=list)
     visibility: Visibility
 
 
-class MapUpdateRequest(BaseModel):
-    title: Optional[str] = None
-    description: Optional[str] = None
-    tags: Optional[List[str]] = None
-    visibility: Optional[Visibility] = None
+class MapUpdateRequest(pydantic.BaseModel):
+    title: typing.Optional[str] = None
+    description: typing.Optional[str] = None
+    tags: typing.Optional[typing.List[str]] = None
+    visibility: typing.Optional[Visibility] = None
 
 
-class MapCardResponse(BaseModel):
-    id: UUID
+class MapCardResponse(pydantic.BaseModel):
+    id: uuid.UUID
     owner_username: str
     title: str
-    tags: List[str] = Field(default_factory=list)
+    tags: typing.List[str] = pydantic.Field(default_factory=list)
     visibility: Visibility
     status: MapStatus
-    updated_at: datetime
+    updated_at: datetime.datetime
 
 
-class ListMapCardResponse(BaseModel):
-    items: List[MapCardResponse]
+class ListMapCardResponse(pydantic.BaseModel):
+    items: typing.List[MapCardResponse]
     total: int
 
 
-class MapResponse(BaseModel):
-    id: UUID
-    owner_id: UUID
+class MapResponse(pydantic.BaseModel):
+    id: uuid.UUID
+    owner_id: uuid.UUID
     owner_username: str
     title: str
-    description: Optional[str] = None
-    tags: List[str] = Field(default_factory=list)
+    description: typing.Optional[str] = None
+    tags: typing.List[str] = pydantic.Field(default_factory=list)
     visibility: Visibility
     status: MapStatus
     tiles_version: int
-    width: Optional[int] = None
-    height: Optional[int] = None
-    max_zoom: Optional[int] = None
-    created_at: datetime
-    updated_at: datetime
-    share_id: Optional[str] = None
+    width: typing.Optional[int] = None
+    height: typing.Optional[int] = None
+    max_zoom: typing.Optional[int] = None
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
+    share_id: typing.Optional[str] = None
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = pydantic.ConfigDict(from_attributes=True)
 
 
-class LocationCreateRequest(BaseModel):
-    map_id: UUID
+class LocationCreateRequest(pydantic.BaseModel):
+    map_id: uuid.UUID
     type: str
     name: str
     description_md: str = ""
@@ -92,32 +92,32 @@ class LocationCreateRequest(BaseModel):
     y: float
 
 
-class LocationUpdateRequest(BaseModel):
-    type: Optional[str] = None
-    name: Optional[str] = None
-    description_md: Optional[str] = None
-    x: Optional[float] = None
-    y: Optional[float] = None
+class LocationUpdateRequest(pydantic.BaseModel):
+    type: typing.Optional[str] = None
+    name: typing.Optional[str] = None
+    description_md: typing.Optional[str] = None
+    x: typing.Optional[float] = None
+    y: typing.Optional[float] = None
 
 
-class LocationResponse(BaseModel):
-    id: UUID
-    map_id: UUID
+class LocationResponse(pydantic.BaseModel):
+    id: uuid.UUID
+    map_id: uuid.UUID
     type: str
     name: str
     description_md: str = ""
     x: float
     y: float
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = pydantic.ConfigDict(from_attributes=True)
 
 
-class TagStatResponse(BaseModel):
+class TagStatResponse(pydantic.BaseModel):
     name: str
     count: int
 
 
-class ShareIdResponse(BaseModel):
-    share_id: Optional[str] = None
+class ShareIdResponse(pydantic.BaseModel):
+    share_id: typing.Optional[str] = None

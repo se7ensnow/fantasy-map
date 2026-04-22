@@ -1,0 +1,161 @@
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { ChevronUp } from "lucide-react";
+import { Button } from "@/components/ui/button";
+
+import LocationEditor from "./LocationEditor";
+
+export default function EditorPanel({
+    title,
+    selectedLocation,
+    addMode,
+    newLocationCoords,
+    onSaveNewLocation,
+    onSaveEditedLocation,
+    onDeleteLocation,
+    onClearSelection,
+    className = "",
+}) {
+    const { t } = useTranslation();
+
+    const scrollRef = useRef(null);
+    const [showTopFade, setShowTopFade] = useState(false);
+    const [showBottomFade, setShowBottomFade] = useState(false);
+
+    const updateFades = useCallback(() => {
+        const el = scrollRef.current;
+        if (!el) {
+            setShowTopFade(false);
+            setShowBottomFade(false);
+            return;
+        }
+
+        const { scrollTop, scrollHeight, clientHeight } = el;
+        setShowTopFade(scrollTop > 4);
+        setShowBottomFade(scrollTop + clientHeight < scrollHeight - 4);
+    }, []);
+
+    const scrollToTop = () => {
+        const el = scrollRef.current;
+        if (!el) return;
+
+        el.scrollTo({
+            top: 0,
+            behavior: "smooth",
+        });
+    };
+
+    useEffect(() => {
+        const el = scrollRef.current;
+        if (!el) {
+            setShowTopFade(false);
+            setShowBottomFade(false);
+            return;
+        }
+
+        el.scrollTop = 0;
+        updateFades();
+    }, [selectedLocation, newLocationCoords, addMode, updateFades]);
+
+    const renderContent = () => {
+        if (addMode) {
+            if (newLocationCoords) {
+                return (
+                    <LocationEditor
+                        coords={newLocationCoords}
+                        onSave={onSaveNewLocation}
+                        onCancel={onClearSelection}
+                    />
+                );
+            }
+
+            return (
+                <div className="rounded border border-border-default bg-surface-paper/70 p-4 text-text-heading shadow-sm">
+                    {t("editableMapViewer.emptyStateAddMode")}
+                </div>
+            );
+        }
+
+        if (selectedLocation) {
+            return (
+                <>
+                    <LocationEditor
+                        location={selectedLocation}
+                        onSave={onSaveEditedLocation}
+                        onCancel={onClearSelection}
+                    />
+
+                    <div className="mt-4 space-x-2">
+                        <Button
+                            variant="destructive"
+                            onClick={() => onDeleteLocation(selectedLocation.id)}
+                        >
+                            {t("editableMapViewer.actions.deleteLocation")}
+                        </Button>
+                    </div>
+                </>
+            );
+        }
+
+        return (
+            <p className="text-text-heading">
+                {t("editableMapViewer.emptyState")}
+            </p>
+        );
+    };
+
+    return (
+        <div className={`relative h-full min-h-0 overflow-hidden rounded-xl bg-surface-panel/95 ${className}`}>
+            <div
+                ref={scrollRef}
+                onScroll={updateFades}
+                className="h-full overflow-y-auto p-4"
+            >
+                {title && (
+                    <div className="mb-4">
+                        <h2 className="text-xl font-bold text-text-heading">{title}</h2>
+                    </div>
+                )}
+
+                {renderContent()}
+            </div>
+
+            <button
+                type="button"
+                onClick={scrollToTop}
+                aria-label={t("mapViewer.scrollToTop")}
+                title={t("mapViewer.scrollToTop")}
+                className={`
+                    absolute left-1/2 top-3 z-10 -translate-x-1/2
+                    flex h-9 w-9 items-center justify-center
+                    rounded-full border border-border-default
+                    bg-surface-panel/90 text-text-heading
+                    shadow-md backdrop-blur-sm
+                    transition-all duration-200
+                    hover:scale-105 hover:bg-surface-panel
+                    ${showTopFade ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"}
+                `}
+            >
+                <ChevronUp className="h-4 w-4" />
+            </button>
+
+            <div
+                className={`
+                    pointer-events-none absolute left-0 right-0 top-0 h-10
+                    bg-gradient-to-b from-surface-panel/95 to-transparent
+                    transition-opacity duration-200
+                    ${showTopFade ? "opacity-100" : "opacity-0"}
+                `}
+            />
+
+            <div
+                className={`
+                    pointer-events-none absolute bottom-0 left-0 right-0 h-8
+                    bg-gradient-to-t from-surface-panel/95 to-transparent
+                    transition-opacity duration-200
+                    ${showBottomFade ? "opacity-100" : "opacity-0"}
+                `}
+            />
+        </div>
+    );
+}

@@ -1,24 +1,23 @@
-from sqlalchemy.orm import Session, selectinload
-from uuid import UUID
-from typing import Optional, List
-from sqlalchemy import func, text, desc, case
-from sqlalchemy.exc import IntegrityError
-
 import re
+import typing
+import uuid
 
-from map_service_app.config import MAX_TAGS_PER_MAP, MAX_TAG_LEN, SHARE_ID_TRIES
-from map_service_app.models import Map, Location, Tag
-from map_service_app.schemas import MapCreate, LocationCreate, MapUpdate, LocationUpdate, TilesInfo
-from map_service_app.utils import generate_share_id
+import sqlalchemy
+from sqlalchemy import exc
+from sqlalchemy import orm
 
+from map_service_app import config
+from map_service_app import models
+from map_service_app import schemas
+from map_service_app import utils
 
 
 _strip_re = re.compile(r"[^0-9a-zA-Zа-яА-ЯёЁ\- ]+")
 _spaces_re = re.compile(r"\s+")
 
 
-def create_map(db: Session, owner_id: UUID, map_in: MapCreate) -> Map:
-    db_map = Map(
+def create_map(db: orm.Session, owner_id: uuid.UUID, map_in: schemas.MapCreate) -> models.Map:
+    db_map = models.Map(
         owner_id=owner_id,
         owner_username=map_in.owner_username,
         title=map_in.title,
@@ -38,16 +37,20 @@ def create_map(db: Session, owner_id: UUID, map_in: MapCreate) -> Map:
     return db_map
 
 
-def get_map_by_id(db: Session, map_id: UUID) -> Optional[Map]:
+def get_map_by_id(db: orm.Session, map_id: uuid.UUID) -> typing.Optional[models.Map]:
     return (
-        db.query(Map)
-        .options(selectinload(Map.tags))
-        .filter(Map.id == map_id)
+        db.query(models.Map)
+        .options(orm.selectinload(models.Map.tags))
+        .filter(models.Map.id == map_id)
         .first()
     )
 
 
-def update_map_tiles_info(db: Session, map_id: UUID, tiles_info: TilesInfo) -> Optional[Map]:
+def update_map_tiles_info(
+    db: orm.Session,
+    map_id: uuid.UUID,
+    tiles_info: schemas.TilesInfo,
+) -> typing.Optional[models.Map]:
     db_map = get_map_by_id(db, map_id)
     if db_map is None:
         return None
@@ -65,10 +68,16 @@ def update_map_tiles_info(db: Session, map_id: UUID, tiles_info: TilesInfo) -> O
     db.refresh(db_map)
     return db_map
 
-def update_map(db: Session, map_id: UUID, map_in: MapUpdate) -> Optional[Map]:
+
+def update_map(
+    db: orm.Session,
+    map_id: uuid.UUID,
+    map_in: schemas.MapUpdate,
+) -> typing.Optional[models.Map]:
     db_map = get_map_by_id(db, map_id)
     if db_map is None:
         return None
+
     if map_in.title is not None:
         db_map.title = map_in.title
     if map_in.description is not None:
@@ -76,7 +85,7 @@ def update_map(db: Session, map_id: UUID, map_in: MapUpdate) -> Optional[Map]:
     if map_in.visibility is not None:
         db_map.visibility = map_in.visibility
 
-    removed_tags: List[Tag] = []
+    removed_tags: typing.List[models.Tag] = []
     if map_in.tags is not None:
         old_tags = list(db_map.tags)
 
@@ -95,8 +104,7 @@ def update_map(db: Session, map_id: UUID, map_in: MapUpdate) -> Optional[Map]:
     return db_map
 
 
-
-def delete_map(db: Session, map_id: UUID) -> bool:
+def delete_map(db: orm.Session, map_id: uuid.UUID) -> bool:
     db_map = get_map_by_id(db, map_id)
     if db_map is None:
         return False
@@ -111,32 +119,36 @@ def delete_map(db: Session, map_id: UUID) -> bool:
     return True
 
 
-def get_map_tiles_version(db: Session, map_id: UUID) -> Optional[int]:
+def get_map_tiles_version(db: orm.Session, map_id: uuid.UUID) -> typing.Optional[int]:
     db_map = get_map_by_id(db, map_id)
     if db_map is None:
         return None
     return db_map.tiles_version
 
 
-def get_maps_by_owner(db: Session, owner_id: UUID, offset: int = 0, limit: int = 10):
-    query = db.query(Map).options(selectinload(Map.tags)).filter(Map.owner_id == owner_id)
+def get_maps_by_owner(db: orm.Session, owner_id: uuid.UUID, offset: int = 0, limit: int = 10):
+    query = (
+        db.query(models.Map)
+        .options(orm.selectinload(models.Map.tags))
+        .filter(models.Map.owner_id == owner_id)
+    )
     total = query.count()
     maps = query.offset(offset).limit(limit).all()
     return maps, total
 
 
 def list_maps_catalog(
-        db: Session,
-        q: Optional[str],
-        tags: List[str],
-        tags_mode: str,
-        offset: int = 0,
-        limit: int = 10,
+    db: orm.Session,
+    q: typing.Optional[str],
+    tags: typing.List[str],
+    tags_mode: str,
+    offset: int = 0,
+    limit: int = 10,
 ):
     query = (
-        db.query(Map)
-        .options(selectinload(Map.tags))
-        .filter(Map.visibility == "public", Map.status == "ready")
+        db.query(models.Map)
+        .options(orm.selectinload(models.Map.tags))
+        .filter(models.Map.visibility == "public", models.Map.status == "ready")
     )
 
     matched_tags_count = None
@@ -145,33 +157,34 @@ def list_maps_catalog(
         names = prepare_tags(tags)
         if names:
             n = len(set(names))
-            query = query.join(Map.tags).filter(Tag.name.in_(names))
-            matched_tags_count = func.count(func.distinct(Tag.name))
+            query = query.join(models.Map.tags).filter(models.Tag.name.in_(names))
+            matched_tags_count = sqlalchemy.func.count(sqlalchemy.func.distinct(models.Tag.name))
 
             if tags_mode == "all":
-                query = query.group_by(Map.id).having(matched_tags_count == n)
+                query = query.group_by(models.Map.id).having(matched_tags_count == n)
             else:
-                query = query.group_by(Map.id)
+                query = query.group_by(models.Map.id)
 
     q = (q or "").strip()
     order_criteria = []
+
     if q:
         if len(q) < 3:
             q_lower = q.lower()
             q_pattern = f"%{q_lower}%"
             q_prefix = f"{q_lower}%"
-            query = query.filter(func.lower(Map.title).like(q_pattern))
-            query = query.order_by(Map.updated_at.desc())
+            query = query.filter(sqlalchemy.func.lower(models.Map.title).like(q_pattern))
+            query = query.order_by(models.Map.updated_at.desc())
 
-            short_q_rank = case(
-                (func.lower(Map.title) == q_lower, 3),
-                (func.lower(Map.title).like(q_prefix), 2),
+            short_q_rank = sqlalchemy.case(
+                (sqlalchemy.func.lower(models.Map.title) == q_lower, 3),
+                (sqlalchemy.func.lower(models.Map.title).like(q_prefix), 2),
                 else_=1,
             )
             order_criteria.append(short_q_rank.desc())
         else:
             threshold = 0.15
-            similarity_expr = func.similarity(Map.title, q)
+            similarity_expr = sqlalchemy.func.similarity(models.Map.title, q)
 
             query = query.filter(similarity_expr >= threshold)
             order_criteria.append(similarity_expr.desc())
@@ -179,7 +192,7 @@ def list_maps_catalog(
     if matched_tags_count is not None:
         order_criteria.append(matched_tags_count.desc())
 
-    order_criteria.append(Map.updated_at.desc())
+    order_criteria.append(models.Map.updated_at.desc())
 
     query = query.order_by(*order_criteria)
 
@@ -188,8 +201,8 @@ def list_maps_catalog(
     return items, total
 
 
-def create_location(db: Session, location_in: LocationCreate) -> Location:
-    location = Location(
+def create_location(db: orm.Session, location_in: schemas.LocationCreate) -> models.Location:
+    location = models.Location(
         map_id=location_in.map_id,
         type=location_in.type,
         name=location_in.name,
@@ -203,18 +216,23 @@ def create_location(db: Session, location_in: LocationCreate) -> Location:
     return location
 
 
-def get_locations_by_map_id(db: Session, map_id: UUID) -> List[Location]:
-    return db.query(Location).filter(Location.map_id == map_id).all()
+def get_locations_by_map_id(db: orm.Session, map_id: uuid.UUID) -> typing.List[models.Location]:
+    return db.query(models.Location).filter(models.Location.map_id == map_id).all()
 
 
-def get_location_by_id(db: Session, location_id: UUID) -> Optional[Location]:
-    return db.query(Location).filter(Location.id == location_id).first()
+def get_location_by_id(db: orm.Session, location_id: uuid.UUID) -> typing.Optional[models.Location]:
+    return db.query(models.Location).filter(models.Location.id == location_id).first()
 
 
-def update_location(db: Session, location_id: UUID, location_in: LocationUpdate) -> Optional[Location]:
+def update_location(
+    db: orm.Session,
+    location_id: uuid.UUID,
+    location_in: schemas.LocationUpdate,
+) -> typing.Optional[models.Location]:
     location = get_location_by_id(db, location_id)
     if location is None:
         return None
+
     if location_in.type is not None:
         location.type = location_in.type
     if location_in.name is not None:
@@ -225,29 +243,38 @@ def update_location(db: Session, location_id: UUID, location_in: LocationUpdate)
         location.x = location_in.x
     if location_in.y is not None:
         location.y = location_in.y
+
     db.commit()
     db.refresh(location)
     return location
 
 
-def delete_location(db: Session, location_id: UUID) -> bool:
+def delete_location(db: orm.Session, location_id: uuid.UUID) -> bool:
     location = get_location_by_id(db, location_id)
     if location is None:
         return False
+
     db.delete(location)
     db.commit()
     return True
 
 
-def is_map_owned_by_user(db: Session, user_id: UUID, map_id: UUID) -> bool:
-    return db.query(Map).filter(Map.owner_id == user_id, Map.id == map_id).first() is not None
+def is_map_owned_by_user(db: orm.Session, user_id: uuid.UUID, map_id: uuid.UUID) -> bool:
+    return db.query(models.Map).filter(
+        models.Map.owner_id == user_id,
+        models.Map.id == map_id
+    ).first() is not None
 
 
-def is_location_owned_by_user(db: Session, user_id: UUID, location_id: UUID) -> bool:
+def is_location_owned_by_user(db: orm.Session, user_id: uuid.UUID, location_id: uuid.UUID) -> bool:
     location = get_location_by_id(db, location_id)
     if location is None:
         return False
-    return db.query(Location).filter(Map.id == location.map_id, Map.owner_id == user_id).first() is not None
+
+    return db.query(models.Location).filter(
+        models.Map.id == location.map_id,
+        models.Map.owner_id == user_id
+    ).first() is not None
 
 
 def normalize_tag(raw: str) -> str | None:
@@ -263,14 +290,14 @@ def normalize_tag(raw: str) -> str | None:
 
     name = name.lower()
 
-    if len(name) > MAX_TAG_LEN:
-        raise ValueError(f"Tag '{raw}' is too long (max {MAX_TAG_LEN} chars)")
+    if len(name) > config.MAX_TAG_LEN:
+        raise ValueError(f"Tag '{raw}' is too long (max {config.MAX_TAG_LEN} chars)")
 
     return name
 
 
-def prepare_tags(tags: List[str]) -> List[str]:
-    prepared: List[str] = []
+def prepare_tags(tags: typing.List[str]) -> typing.List[str]:
+    prepared: typing.List[str] = []
     seen: set[str] = set()
 
     for raw in tags or []:
@@ -282,42 +309,42 @@ def prepare_tags(tags: List[str]) -> List[str]:
         seen.add(norm)
         prepared.append(norm)
 
-    if len(prepared) > MAX_TAGS_PER_MAP:
-        raise ValueError(f"Too many tags (max {MAX_TAGS_PER_MAP})")
+    if len(prepared) > config.MAX_TAGS_PER_MAP:
+        raise ValueError(f"Too many tags (max {config.MAX_TAGS_PER_MAP})")
 
     return prepared
 
 
-def get_or_create_tags(db: Session, tags: List[str]) -> List[Tag]:
+def get_or_create_tags(db: orm.Session, tags: typing.List[str]) -> typing.List[models.Tag]:
     names = prepare_tags(tags)
     if not names:
         return []
 
-    existing = db.query(Tag).filter(Tag.name.in_(names)).all()
+    existing = db.query(models.Tag).filter(models.Tag.name.in_(names)).all()
     by_name = {t.name: t for t in existing}
 
-    to_create = [Tag(name=n) for n in names if n not in by_name]
+    to_create = [models.Tag(name=n) for n in names if n not in by_name]
 
     if to_create:
         with db.begin_nested():
             db.add_all(to_create)
             try:
                 db.flush()
-            except IntegrityError:
+            except exc.IntegrityError:
                 pass
 
-        existing = db.query(Tag).filter(Tag.name.in_(names)).all()
+        existing = db.query(models.Tag).filter(models.Tag.name.in_(names)).all()
         by_name = {t.name: t for t in existing}
 
     return [by_name[n] for n in names if n in by_name]
 
 
-def set_map_tags(db: Session, map_obj: Map, tag_names: List[str]) -> None:
+def set_map_tags(db: orm.Session, map_obj: models.Map, tag_names: typing.List[str]) -> None:
     tags = get_or_create_tags(db, tag_names)
     map_obj.tags = tags
 
 
-def cleanup_unused_tags(db: Session, removed_tags: List[Tag]) -> None:
+def cleanup_unused_tags(db: orm.Session, removed_tags: typing.List[models.Tag]) -> None:
     if not removed_tags:
         return
 
@@ -325,9 +352,9 @@ def cleanup_unused_tags(db: Session, removed_tags: List[Tag]) -> None:
 
     for tag_id in removed_by_id:
         still_used = (
-            db.query(Map.id)
-            .join(Map.tags)
-            .filter(Tag.id == tag_id)
+            db.query(models.Map.id)
+            .join(models.Map.tags)
+            .filter(models.Tag.id == tag_id)
             .limit(1)
             .first()
             is not None
@@ -336,52 +363,54 @@ def cleanup_unused_tags(db: Session, removed_tags: List[Tag]) -> None:
             db.delete(removed_by_id[tag_id])
 
 
-def list_tags(db: Session, q: Optional[str] = None, limit: int = 50):
+def list_tags(db: orm.Session, q: typing.Optional[str] = None, limit: int = 50):
     query = (
         db.query(
-            Tag.name.label("name"),
-            func.count(Map.id).label("count"),
+            models.Tag.name.label("name"),
+            sqlalchemy.func.count(models.Map.id).label("count"),
         )
-        .select_from(Tag)
-        .outerjoin(Tag.maps)
-        .group_by(Tag.id)
+        .select_from(models.Tag)
+        .outerjoin(models.Tag.maps)
+        .group_by(models.Tag.id)
     )
 
     if q:
         q_norm = normalize_tag(q)
         if q_norm:
             if len(q_norm) < 3:
-                query = query.filter(func.lower(Tag.name).like(f"%{q_norm}%"))
-                query = query.order_by(desc("count"), Tag.name.asc())
+                query = query.filter(sqlalchemy.func.lower(models.Tag.name).like(f"%{q_norm}%"))
+                query = query.order_by(sqlalchemy.desc("count"), models.Tag.name.asc())
             else:
                 th = 0.2
                 query = (
-                    query.filter(text("similarity(tags.name, :q) >= :th"))
+                    query.filter(sqlalchemy.text("similarity(tags.name, :q) >= :th"))
                     .params(q=q_norm, th=th)
-                    .order_by(text("similarity(tags.name, :q) DESC"), desc("count"), Tag.name.asc())
+                    .order_by(
+                        sqlalchemy.text("similarity(tags.name, :q) DESC"),
+                        sqlalchemy.desc("count"),
+                        models.Tag.name.asc(),
+                    )
                     .params(q=q_norm)
                 )
         else:
-            query = query.order_by(desc("count"), Tag.name.asc())
+            query = query.order_by(sqlalchemy.desc("count"), models.Tag.name.asc())
     else:
-        query = query.order_by(desc("count"), Tag.name.asc())
+        query = query.order_by(sqlalchemy.desc("count"), models.Tag.name.asc())
 
     return query.limit(limit).all()
 
 
-
-
-def create_share(db: Session, map_id: UUID) -> Optional[str]:
-    db_map = db.query(Map).filter(Map.id == map_id).first()
+def create_share(db: orm.Session, map_id: uuid.UUID) -> typing.Optional[str]:
+    db_map = db.query(models.Map).filter(models.Map.id == map_id).first()
     if not db_map:
         return None
 
     if db_map.share_id:
         return str(db_map.share_id)
 
-    for _ in range(SHARE_ID_TRIES):
-        candidate = generate_share_id()
-        exists = db.query(Map).filter(Map.share_id == candidate).first()
+    for _ in range(config.SHARE_ID_TRIES):
+        candidate = utils.generate_share_id()
+        exists = db.query(models.Map).filter(models.Map.share_id == candidate).first()
         if not exists:
             db_map.share_id = candidate
             db.commit()
@@ -391,8 +420,8 @@ def create_share(db: Session, map_id: UUID) -> Optional[str]:
     raise RuntimeError("Failed to generate unique share ID after multiple attempts")
 
 
-def delete_share(db: Session, map_id: UUID) -> bool:
-    db_map = db.query(Map).filter(Map.id == map_id).first()
+def delete_share(db: orm.Session, map_id: uuid.UUID) -> bool:
+    db_map = db.query(models.Map).filter(models.Map.id == map_id).first()
     if not db_map:
         return False
 
@@ -404,8 +433,13 @@ def delete_share(db: Session, map_id: UUID) -> bool:
     return True
 
 
-def get_map_by_share_id(db: Session, share_id: str) -> Optional[Map]:
-    db_map = db.query(Map).options(selectinload(Map.tags)).filter(Map.share_id == share_id).first()
+def get_map_by_share_id(db: orm.Session, share_id: str) -> typing.Optional[models.Map]:
+    db_map = (
+        db.query(models.Map)
+        .options(orm.selectinload(models.Map.tags))
+        .filter(models.Map.share_id == share_id)
+        .first()
+    )
     if not db_map:
         return None
     return db_map

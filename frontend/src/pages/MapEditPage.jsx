@@ -214,11 +214,11 @@ export default function MapEditPage() {
     };
 
     if (error) {
-        return <p className="text-status-danger p-4">{error}</p>;
+        return <p className="p-3 text-status-danger md:p-4">{error}</p>;
     }
 
     if (!map) {
-        return <p className="p-4 text-text-heading">{t("mapEdit.loading")}</p>;
+        return <p className="p-3 text-text-heading md:p-4">{t("mapEdit.loading")}</p>;
     }
 
     const isReady = map?.status === "ready";
@@ -226,71 +226,56 @@ export default function MapEditPage() {
     const willBePublicWhenReady = isDraft && map?.visibility === "public";
 
     return (
-        <div className="space-y-8">
-            <Card>
-                <CardHeader>
-                    <CardTitle className="text-text-heading">
-                        {map_id ? t("mapEdit.titles.editMap") : t("mapEdit.titles.createMap")}
-                    </CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <MapForm
-                        initialTitle={map.title}
-                        initialDescription={map.description}
-                        initialTags={(map.tags || []).filter(Boolean)}
-                        initialVisibility={map.visibility}
-                        onSubmit={handleMapSubmit}
-                        loading={loading}
-                    />
-                </CardContent>
-            </Card>
+        <div className="space-y-3 p-1 md:space-y-8 md:p-8">
+            <MapForm
+                initialTitle={map.title}
+                initialDescription={map.description}
+                initialTags={(map.tags || []).filter(Boolean)}
+                initialVisibility={map.visibility}
+                onSubmit={handleMapSubmit}
+                loading={loading}
+            />
 
             {map_id && (
                 <>
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="text-text-heading">
-                                {t("mapEdit.titles.uploadTiles")}
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <TilesUploader
-                                onSubmit={handleUploadImage}
-                                isProcessing={isProcessing}
-                                successMessage={tilesReadyMessage}
-                                progressData={progressData}
-                                errorMessage={processingError?.message || ""}
-                                errorDetails={processingError?.details || ""}
-                            />
-                            <div className="mt-4 space-y-2">
-                                {isDraft && (
-                                    <div className="max-w-2xl rounded-xl border border-border-default/40 bg-surface-paper/70 p-4">
-                                        <div className="text-sm font-semibold text-text-heading">
-                                            {t("mapEdit.draft.title")}
-                                        </div>
-                                        <div className="mt-1 text-sm text-text-primary leading-6">
-                                            {t("mapEdit.draft.description")}
-                                        </div>
+                    <TilesUploader
+                        onSubmit={handleUploadImage}
+                        isProcessing={isProcessing}
+                        successMessage={tilesReadyMessage}
+                        progressData={progressData}
+                        errorMessage={processingError?.message || ""}
+                        errorDetails={processingError?.details || ""}
+                    />
 
-                                        {willBePublicWhenReady && (
-                                            <div className="mt-2 text-sm text-text-muted leading-6">
-                                                {t("mapEdit.draft.publicWhenReady")}
-                                            </div>
-                                        )}
+                    {isDraft && (
+                        <Card>
+                            <CardContent className="p-3 md:p-6">
+                                <div className="max-w-2xl rounded-xl border border-border-default/40 bg-surface-paper/70 p-4">
+                                    <div className="text-sm font-semibold text-text-heading">
+                                        {t("mapEdit.draft.title")}
                                     </div>
-                                )}
-                            </div>
-                        </CardContent>
-                    </Card>
+                                    <div className="mt-1 text-sm leading-6 text-text-primary">
+                                        {t("mapEdit.draft.description")}
+                                    </div>
+
+                                    {willBePublicWhenReady && (
+                                        <div className="mt-2 text-sm leading-6 text-text-muted">
+                                            {t("mapEdit.draft.publicWhenReady")}
+                                        </div>
+                                    )}
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
 
                     {isReady && (
-                        <Card>
-                            <CardHeader>
+                        <Card className="overflow-hidden">
+                            <CardHeader className="px-3 pb-2 pt-3 md:px-6 md:pb-6 md:pt-6">
                                 <CardTitle className="text-text-heading">
                                     {t("mapEdit.titles.editLocations")}
                                 </CardTitle>
                             </CardHeader>
-                            <CardContent>
+                            <CardContent className="p-1 md:p-6">
                                 <EditableMapViewer
                                     map={map}
                                     locations={locations}
@@ -304,7 +289,7 @@ export default function MapEditPage() {
                 </>
             )}
 
-            <div className="flex flex-col items-end gap-2 px-8 pb-8">
+            <div className="flex flex-col gap-2 px-1 pb-4 md:items-end md:px-8 md:pb-8">
                 <Button
                     variant="outline"
                     onClick={() => {
@@ -312,7 +297,7 @@ export default function MapEditPage() {
                             navigate(`/maps/${map_id}`);
                         }
                     }}
-                    className="w-32"
+                    className="w-full md:w-32"
                     disabled={!isReady}
                     title={!isReady ? t("mapEdit.viewMap.availableAfterUpload") : undefined}
                 >
@@ -320,7 +305,7 @@ export default function MapEditPage() {
                 </Button>
 
                 {!isReady && map_id && (
-                    <p className="max-w-xs text-right text-xs text-text-muted">
+                    <p className="text-xs text-text-muted md:max-w-xs md:text-right">
                         {t("mapEdit.viewMap.availableAfterUpload")}
                     </p>
                 )}

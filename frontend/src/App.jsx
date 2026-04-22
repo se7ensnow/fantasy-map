@@ -20,7 +20,7 @@ function App() {
             <div className="min-h-screen flex flex-col">
                 <Navbar />
 
-                <main className="flex-1 pt-20 px-6">
+                <main className="flex-1 px-4 pt-16 md:px-6 md:pt-20">
                     <Routes>
                         <Route path="/" element={<HomePage />} />
                         <Route

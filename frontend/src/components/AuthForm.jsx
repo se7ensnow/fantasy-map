@@ -30,22 +30,16 @@ export default function AuthForm({
         <form
             onSubmit={handleSubmit}
             className="
-                space-y-4
-                max-w-md
-                mx-auto
-                p-6
-                rounded-lg
-                shadow
-                bg-surface-panel/90
-                border border-border-default/40
+                mx-auto max-w-md space-y-4 rounded-lg border border-border-default/40
+                bg-surface-panel/90 p-4 shadow md:p-6
             "
         >
             <div>
-                <Label className="block mb-1 font-semibold">
+                <Label className="mb-1 block text-sm font-semibold md:text-base">
                     {t("authForm.username")}
                 </Label>
                 <Input
-                    className="!text-text-heading"
+                    className="!text-text-heading text-sm md:text-base"
                     type="text"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
@@ -55,11 +49,11 @@ export default function AuthForm({
 
             {showEmail && (
                 <div>
-                    <Label className="block mb-1 font-semibold">
+                    <Label className="mb-1 block text-sm font-semibold md:text-base">
                         {t("authForm.email")}
                     </Label>
                     <Input
-                        className="!text-text-heading"
+                        className="!text-text-heading text-sm md:text-base"
                         type="email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
@@ -69,11 +63,11 @@ export default function AuthForm({
             )}
 
             <div>
-                <Label className="block mb-1 font-semibold">
+                <Label className="mb-1 block text-sm font-semibold md:text-base">
                     {t("authForm.password")}
                 </Label>
                 <Input
-                    className="!text-text-heading"
+                    className="!text-text-heading text-sm md:text-base"
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
@@ -82,7 +76,7 @@ export default function AuthForm({
             </div>
 
             {errorMessage && (
-                <div className="rounded-md border border-status-error-border bg-status-error-border/10 px-4 py-3">
+                <div className="rounded-md border border-status-error-border bg-status-error-border/10 px-3 py-2.5 md:px-4 md:py-3">
                     <p className="text-sm font-medium text-status-error-ink">
                         {errorMessage}
                     </p>
