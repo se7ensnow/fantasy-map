@@ -40,7 +40,7 @@ def test_generate_tile_pyramid_square(tmp_image, tmp_output):
 
 
 def test_generate_tile_pyramid_non_square(tmp_path):
-    img = PIL.Image.new("RGB", (1024, 512), color=(0, 255, 0))
+    img = Image.new("RGB", (1024, 512), color=(0, 255, 0))
     source_path = tmp_path / "source.png"
     img.save(source_path)
 
@@ -65,7 +65,7 @@ def test_generate_tile_pyramid_non_square(tmp_path):
 
 
 def test_generate_tile_pyramid_small(tmp_path):
-    img = PIL.Image.new("RGB", (100, 100), color=(0, 0, 255))
+    img = Image.new("RGB", (100, 100), color=(0, 0, 255))
     source_path = tmp_path / "source.png"
     img.save(source_path)
 
