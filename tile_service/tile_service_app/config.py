@@ -1,7 +1,7 @@
 import os
-from dotenv import load_dotenv
+import dotenv
 
-load_dotenv()
+dotenv.load_dotenv()
 
 REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")
 MAP_SERVICE_URL = os.getenv("MAP_SERVICE_URL", "http://map-service:8000")

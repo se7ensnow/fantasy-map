@@ -2,24 +2,18 @@ import logging
 import os
 import shutil
 import tempfile
-import time
 import threading
+import time
 
 import httpx
-from rq import get_current_job
+import rq
 
-from tile_service_app.config import MAP_SERVICE_URL
-from tile_service_app.log_config import log
-from tile_service_app.progress import set_tile_progress, set_tile_heartbeat
-from tile_service_app.storage import (
-    storage,
-    StorageError,
-    build_map_source_key,
-    build_map_source_prefix,
-    build_map_tiles_version_prefix,
-)
-from tile_service_app.tiler import generate_tile_pyramid
-from tile_service_app.utils import upload_generated_tiles
+from tile_service_app import config
+from tile_service_app import log_config
+from tile_service_app import progress
+from tile_service_app import storage
+from tile_service_app import tiler
+from tile_service_app import utils
 
 
 def process_task(
@@ -31,10 +25,10 @@ def process_task(
     started_at = time.perf_counter()
     temp_dir = tempfile.mkdtemp(prefix=f"tiles_{map_id}_")
 
-    job = get_current_job()
+    job = rq.get_current_job()
     job_id = job.id if job else None
 
-    log(
+    log_config.log(
         logging.INFO,
         "tile_task_started",
         request_id=request_id,
@@ -49,10 +43,10 @@ def process_task(
     def heartbeat_loop():
         while not heartbeat_stop.wait(3):
             if job_id:
-                set_tile_heartbeat(job_id)
+                progress.set_tile_heartbeat(job_id)
 
     if job_id:
-        set_tile_progress(
+        progress.set_tile_progress(
             job_id,
             map_id=map_id,
             status="running",
@@ -68,10 +62,10 @@ def process_task(
 
     try:
         source_path = os.path.join(temp_dir, f"source.{source_ext}")
-        source_key = build_map_source_key(map_id, source_ext)
+        source_key = storage.build_map_source_key(map_id, source_ext)
 
         if job_id:
-            set_tile_progress(
+            progress.set_tile_progress(
                 job_id,
                 map_id=map_id,
                 status="running",
@@ -81,10 +75,10 @@ def process_task(
             )
 
         download_started = time.perf_counter()
-        storage.download_file(source_key, source_path)
+        storage.storage.download_file(source_key, source_path)
         download_ms = round((time.perf_counter() - download_started) * 1000, 2)
 
-        log(
+        log_config.log(
             logging.INFO,
             "tile_source_downloaded",
             request_id=request_id,
@@ -94,12 +88,12 @@ def process_task(
             job_id=job_id,
         )
 
-        source_prefix = build_map_source_prefix(map_id)
+        source_prefix = storage.build_map_source_prefix(map_id)
         source_delete_started = time.perf_counter()
-        deleted_source_count = storage.delete_prefix(source_prefix)
+        deleted_source_count = storage.storage.delete_prefix(source_prefix)
         source_delete_ms = round((time.perf_counter() - source_delete_started) * 1000, 2)
 
-        log(
+        log_config.log(
             logging.INFO,
             "tile_source_deleted_after_download",
             request_id=request_id,
@@ -113,14 +107,14 @@ def process_task(
             if not job_id or total_tiles <= 0:
                 return
 
-            progress = 5 + int(65 * generated_tiles / total_tiles)
+            progress_value = 5 + int(65 * generated_tiles / total_tiles)
 
-            set_tile_progress(
+            progress.set_tile_progress(
                 job_id,
                 map_id=map_id,
                 status="running",
                 stage="generating_tiles",
-                progress=min(progress, 70),
+                progress=min(progress_value, 70),
                 message="Generating tiles",
                 total_tiles=total_tiles,
                 generated_tiles=generated_tiles,
@@ -128,7 +122,7 @@ def process_task(
             )
 
         if job_id:
-            set_tile_progress(
+            progress.set_tile_progress(
                 job_id,
                 map_id=map_id,
                 status="running",
@@ -138,7 +132,7 @@ def process_task(
             )
 
         generation_started = time.perf_counter()
-        result = generate_tile_pyramid(
+        result = tiler.generate_tile_pyramid(
             map_id=map_id,
             source_image_path=source_path,
             output_base_path=temp_dir,
@@ -147,7 +141,7 @@ def process_task(
         )
         generation_ms = round((time.perf_counter() - generation_started) * 1000, 2)
 
-        log(
+        log_config.log(
             logging.INFO,
             "tile_generation_finished",
             request_id=request_id,
@@ -164,14 +158,14 @@ def process_task(
             if not job_id or total_tiles <= 0:
                 return
 
-            progress = 70 + int(25 * uploaded_tiles / total_tiles)
+            progress_value = 70 + int(25 * uploaded_tiles / total_tiles)
 
-            set_tile_progress(
+            progress.set_tile_progress(
                 job_id,
                 map_id=map_id,
                 status="running",
                 stage="uploading_tiles",
-                progress=min(progress, 95),
+                progress=min(progress_value, 95),
                 message="Uploading tiles",
                 total_tiles=total_tiles,
                 generated_tiles=result["generated_tiles"],
@@ -179,7 +173,7 @@ def process_task(
             )
 
         if job_id:
-            set_tile_progress(
+            progress.set_tile_progress(
                 job_id,
                 map_id=map_id,
                 status="running",
@@ -191,12 +185,12 @@ def process_task(
                 uploaded_tiles=0,
             )
 
-        tiles_version_prefix = build_map_tiles_version_prefix(map_id, next_tiles_version)
+        tiles_version_prefix = storage.build_map_tiles_version_prefix(map_id, next_tiles_version)
         cleanup_started = time.perf_counter()
-        deleted_version_objects = storage.delete_prefix(tiles_version_prefix)
+        deleted_version_objects = storage.storage.delete_prefix(tiles_version_prefix)
         cleanup_ms = round((time.perf_counter() - cleanup_started) * 1000, 2)
 
-        log(
+        log_config.log(
             logging.INFO,
             "tiles_version_prefix_cleaned_before_upload",
             request_id=request_id,
@@ -208,7 +202,7 @@ def process_task(
         )
 
         upload_started = time.perf_counter()
-        uploaded_count = upload_generated_tiles(
+        uploaded_count = utils.upload_generated_tiles(
             map_id=map_id,
             tiles_version=next_tiles_version,
             tiles_local_dir=result["tiles_local_dir"],
@@ -218,7 +212,7 @@ def process_task(
         )
         upload_ms = round((time.perf_counter() - upload_started) * 1000, 2)
 
-        log(
+        log_config.log(
             logging.INFO,
             "tiles_uploaded",
             request_id=request_id,
@@ -230,7 +224,7 @@ def process_task(
         )
 
         if job_id:
-            set_tile_progress(
+            progress.set_tile_progress(
                 job_id,
                 map_id=map_id,
                 status="running",
@@ -242,7 +236,7 @@ def process_task(
                 uploaded_tiles=uploaded_count,
             )
 
-        callback_url = f"{MAP_SERVICE_URL}/maps/{map_id}/tiles_info"
+        callback_url = f"{config.MAP_SERVICE_URL}/maps/{map_id}/tiles_info"
         callback_payload = {
             "width": result["width"],
             "height": result["height"],
@@ -258,7 +252,7 @@ def process_task(
             )
             response.raise_for_status()
 
-        log(
+        log_config.log(
             logging.INFO,
             "tiles_callback_sent",
             request_id=request_id,
@@ -270,7 +264,7 @@ def process_task(
 
         total_ms = round((time.perf_counter() - started_at) * 1000, 2)
 
-        log(
+        log_config.log(
             logging.INFO,
             "tile_task_finished",
             request_id=request_id,
@@ -284,7 +278,7 @@ def process_task(
         )
 
         if job_id:
-            set_tile_progress(
+            progress.set_tile_progress(
                 job_id,
                 map_id=map_id,
                 status="done",
@@ -316,12 +310,12 @@ def process_task(
     except Exception as e:
         total_ms = round((time.perf_counter() - started_at) * 1000, 2)
 
-        failed_tiles_prefix = build_map_tiles_version_prefix(map_id, next_tiles_version)
+        failed_tiles_prefix = storage.build_map_tiles_version_prefix(map_id, next_tiles_version)
         deleted_failed_tiles = None
 
         try:
-            deleted_failed_tiles = storage.delete_prefix(failed_tiles_prefix)
-            log(
+            deleted_failed_tiles = storage.storage.delete_prefix(failed_tiles_prefix)
+            log_config.log(
                 logging.INFO,
                 "failed_tiles_version_deleted",
                 request_id=request_id,
@@ -330,8 +324,8 @@ def process_task(
                 deleted_objects=deleted_failed_tiles,
                 job_id=job_id,
             )
-        except StorageError as cleanup_error:
-            log(
+        except storage.StorageError as cleanup_error:
+            log_config.log(
                 logging.ERROR,
                 "failed_tiles_version_delete_failed",
                 request_id=request_id,
@@ -359,7 +353,7 @@ def process_task(
         )
 
         if job_id:
-            set_tile_progress(
+            progress.set_tile_progress(
                 job_id,
                 map_id=map_id,
                 status="error",

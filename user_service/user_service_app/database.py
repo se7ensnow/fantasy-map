@@ -1,11 +1,12 @@
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+import sqlalchemy
+from sqlalchemy import orm
 
-from user_service_app.config import DATABASE_URL
+from user_service_app import config
 
-engine = create_engine(DATABASE_URL)
+engine = sqlalchemy.create_engine(config.DATABASE_URL)
 
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+SessionLocal = orm.sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
 
 def get_db():
     db = SessionLocal()

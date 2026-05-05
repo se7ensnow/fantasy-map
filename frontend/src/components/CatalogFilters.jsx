@@ -8,7 +8,6 @@ import TagsModeToggle from "@/components/TagsModeToggle";
 
 const MAX_TAG_LEN = 25;
 
-// Разрешаем: любые буквы (включая кириллицу) + цифры + пробел + дефис
 function normalizeForInput(raw) {
     let s = (raw || "").toLowerCase();
     s = s.replace(/[^\p{L}\p{N} -]+/gu, " ");
@@ -27,16 +26,12 @@ function normalizeForTag(raw) {
 export default function CatalogFilters({
     query,
     onQueryChange,
-
     selectedTags,
     onToggleTag,
-
     tagsMode,
     onTagsModeChange,
-
     tagQuery,
     onTagQueryChange,
-
     onClear,
 }) {
     const { t } = useTranslation();
@@ -76,7 +71,7 @@ export default function CatalogFilters({
                 if (cancelled) return;
 
                 const items = (res || [])
-                    .map((t) => normalizeForTag(t.name))
+                    .map((tag) => normalizeForTag(tag.name))
                     .filter(Boolean)
                     .filter((name) => !selectedTags.includes(name));
 
@@ -108,28 +103,38 @@ export default function CatalogFilters({
     }
 
     return (
-        <div className="rounded-lg border border-border-default/30 bg-md-code-bg/60 p-4 space-y-3">
-            <div className="flex items-end justify-between gap-3">
-                <div className="flex-1">
-                    <label className="block mb-1 font-medium text-text-heading">
+        <div className="space-y-3 rounded-lg border border-border-default/30 bg-md-code-bg/60 p-3 md:p-4">
+            <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+                <div className="w-full flex-1">
+                    <label className="mb-1 block text-sm font-medium text-text-heading md:text-base">
                         {t("catalogFilters.searchLabel")}
                     </label>
                     <Input
                         value={query}
                         onChange={(e) => onQueryChange(e.target.value)}
                         placeholder={t("catalogFilters.searchPlaceholder")}
+                        className="text-sm md:text-base"
                     />
                 </div>
 
-                <Button type="button" variant="outline" onClick={onClear}>
+                <Button
+                    type="button"
+                    variant="outline"
+                    onClick={onClear}
+                    className="w-full text-sm md:w-auto md:text-base"
+                >
                     {t("catalogFilters.clear")}
                 </Button>
             </div>
 
             <div ref={boxRef} className="relative">
-                <div className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-2">
-                        <div className="w-72 max-w-full">
+                <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+                    <div className="w-full">
+                        <label className="mb-1 block text-sm font-medium text-text-heading md:text-base">
+                            {t("catalogFilters.tagPlaceholder")}
+                        </label>
+
+                        <div className="relative w-full md:w-72">
                             <Input
                                 value={tagQuery}
                                 onChange={(e) => {
@@ -145,19 +150,22 @@ export default function CatalogFilters({
                                     if (e.key === "Escape") setOpen(false);
                                 }}
                                 placeholder={t("catalogFilters.tagPlaceholder")}
+                                className="pr-14 text-sm md:text-base"
                             />
-                        </div>
 
-                        <span className="text-xs text-text-heading/70 tabular-nums">
-                            {tagQuery.length}/{MAX_TAG_LEN}
-                        </span>
+                            <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[11px] text-text-heading/70 tabular-nums md:text-xs">
+                                {tagQuery.length}/{MAX_TAG_LEN}
+                            </span>
+                        </div>
                     </div>
 
-                    <TagsModeToggle value={tagsMode} onChange={onTagsModeChange} />
+                    <div className="w-full md:w-auto">
+                        <TagsModeToggle value={tagsMode} onChange={onTagsModeChange} />
+                    </div>
                 </div>
 
                 {open && normalizedTagQuery && (loadingSug || suggestions.length > 0) && (
-                    <div className="absolute z-20 mt-1 w-72 max-w-full rounded-md border border-border-default/30 bg-surface-input shadow-md overflow-hidden">
+                    <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-md border border-border-default/30 bg-surface-input shadow-md md:w-72">
                         <div className="max-h-48 overflow-y-auto">
                             {loadingSug && (
                                 <div className="px-3 py-2 text-sm text-text-heading/70">
@@ -176,7 +184,7 @@ export default function CatalogFilters({
                                     <button
                                         key={suggestion}
                                         type="button"
-                                        className="w-full text-left px-3 py-2 text-sm hover:bg-md-code-bg border-b border-border-default/20 last:border-b-0"
+                                        className="w-full border-b border-border-default/20 px-3 py-2 text-left text-sm hover:bg-md-code-bg last:border-b-0"
                                         onClick={() => addTag(suggestion)}
                                     >
                                         <span className="tag-font">{suggestion}</span>

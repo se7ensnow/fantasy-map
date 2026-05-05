@@ -1,177 +1,124 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { createShareId, deleteShareId, getShareId } from "@/api/maps";
 
-function buildShareUrl(shareId) {
-    const base = window.location.origin;
-    return `${base}/maps/share/${shareId}`;
-}
-
-export default function ShareMapModal({ open, onClose, mapId, mapTitle }) {
+export default function DeleteMapModal({
+    open,
+    onClose,
+    onConfirm,
+    mapTitle,
+    loading = false,
+}) {
     const { t } = useTranslation();
-    const [loading, setLoading] = useState(false);
-    const [shareId, setShareId] = useState(null);
-
-    const shareUrl = useMemo(() => (shareId ? buildShareUrl(shareId) : ""), [shareId]);
+    const [value, setValue] = useState("");
 
     useEffect(() => {
-        if (!open || !mapId) return;
-
-        let cancelled = false;
-
-        async function load() {
-            try {
-                setLoading(true);
-                const data = await getShareId(mapId);
-                if (!cancelled) setShareId(data?.share_id ?? null);
-            } catch (e) {
-                toast.error(e.message || t("shareModal.errors.failedToLoad"));
-            } finally {
-                if (!cancelled) setLoading(false);
-            }
+        if (!open) {
+            setValue("");
         }
+    }, [open]);
 
-        load();
-
-        return () => {
-            cancelled = true;
-        };
-    }, [open, mapId, t]);
+    const isMatch = useMemo(
+        () => value.trim() === (mapTitle || "").trim(),
+        [value, mapTitle]
+    );
 
     useEffect(() => {
         if (!open) return;
-        function onKeyDown(e) {
-            if (e.key === "Escape") onClose?.();
-        }
-        window.addEventListener("keydown", onKeyDown);
-        return () => window.removeEventListener("keydown", onKeyDown);
-    }, [open, onClose]);
 
-    async function handleCreate() {
-        try {
-            setLoading(true);
-            const data = await createShareId(mapId);
-            const id = data?.share_id ?? null;
-            setShareId(id);
-            if (id) toast.success(t("shareModal.toasts.created"));
-        } catch (e) {
-            toast.error(e.message || t("shareModal.errors.failedToCreate"));
-        } finally {
-            setLoading(false);
-        }
-    }
-
-    async function handleDisable() {
-        try {
-            setLoading(true);
-            const ok = await deleteShareId(mapId);
-            if (ok) {
-                setShareId(null);
-                toast.success(t("shareModal.toasts.disabled"));
-            } else {
-                toast.error(t("shareModal.errors.failedToDisable"));
+        const handleEsc = (e) => {
+            if (e.key === "Escape" && !loading) {
+                onClose?.();
             }
-        } catch (e) {
-            toast.error(e.message || t("shareModal.errors.failedToDisable"));
-        } finally {
-            setLoading(false);
-        }
-    }
+        };
 
-    async function handleCopy() {
-        if (!shareUrl) return;
-        try {
-            await navigator.clipboard.writeText(shareUrl);
-            toast.success(t("shareModal.toasts.copied"));
-        } catch {
-            try {
-                const el = document.createElement("textarea");
-                el.value = shareUrl;
-                document.body.appendChild(el);
-                el.select();
-                document.execCommand("copy");
-                document.body.removeChild(el);
-                toast.success(t("shareModal.toasts.copied"));
-            } catch {
-                toast.error(t("shareModal.errors.failedToCopy"));
-            }
-        }
-    }
+        window.addEventListener("keydown", handleEsc);
+        return () => window.removeEventListener("keydown", handleEsc);
+    }, [open, loading, onClose]);
 
     if (!open) return null;
 
     return (
-        <div className="fixed inset-0 z-50">
+        <div
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-overlay-backdrop/50 px-2 py-4 md:px-4"
+            onClick={() => {
+                if (!loading) onClose?.();
+            }}
+        >
             <div
-                className="absolute inset-0 bg-overlay-backdrop/40"
-                onClick={onClose}
-                aria-hidden="true"
-            />
+                className="w-full max-w-lg rounded-2xl border border-border-emphasis bg-surface-panel p-4 shadow-card md:p-6"
+                onClick={(e) => e.stopPropagation()}
+            >
+                <div className="space-y-4">
+                    <div>
+                        <h2 className="text-xl font-bold text-text-heading md:text-2xl">
+                            {t("deleteMapModal.title")}
+                        </h2>
+                        <p className="mt-2 text-sm leading-relaxed text-text-primary md:text-base">
+                            {t("deleteMapModal.description")}
+                        </p>
+                    </div>
 
-            <div className="absolute inset-0 flex items-center justify-center p-4">
-                <Card variant="surface" className="w-full max-w-lg shadow-lg bg-surface-panel/95">
-                    <CardHeader className="flex flex-row items-center justify-between gap-3">
-                        <CardTitle className="text-xl">
-                            {mapTitle
-                                ? t("shareModal.titleWithName", { name: mapTitle })
-                                : t("shareModal.title")}
-                        </CardTitle>
+                    <div className="rounded-lg border border-border-default/60 bg-surface-paper/60 p-3">
+                        <p className="mb-1 text-xs text-text-muted md:text-sm">
+                            {t("deleteMapModal.mapTitleLabel")}
+                        </p>
+                        <p className="break-words font-semibold text-text-heading">
+                            {mapTitle}
+                        </p>
+                    </div>
 
-                        <Button variant="outline" onClick={onClose}>
-                            {t("actions.close")}
+                    <div className="space-y-2">
+                        <label
+                            htmlFor="delete-map-confirmation"
+                            className="block text-sm font-medium text-text-heading"
+                        >
+                            {t("deleteMapModal.confirmationLabel")}
+                        </label>
+                        <input
+                            id="delete-map-confirmation"
+                            type="text"
+                            value={value}
+                            onChange={(e) => setValue(e.target.value)}
+                            autoFocus
+                            disabled={loading}
+                            className="
+                                w-full rounded-md border border-border-default
+                                bg-surface-input px-3 py-2
+                                text-sm text-text-primary outline-none
+                                focus:border-border-emphasis md:text-base
+                            "
+                            placeholder={mapTitle}
+                        />
+                    </div>
+
+                    {!isMatch && value.length > 0 && (
+                        <p className="text-sm font-medium text-status-warning-ink">
+                            {t("deleteMapModal.mismatch")}
+                        </p>
+                    )}
+
+                    <div className="flex flex-col gap-2 pt-2 sm:flex-row sm:justify-end">
+                        <Button
+                            variant="outline"
+                            onClick={onClose}
+                            disabled={loading}
+                            className="w-full sm:w-auto"
+                        >
+                            {t("actions.cancel")}
                         </Button>
-                    </CardHeader>
-
-                    <CardContent className="space-y-4">
-                        {loading && (
-                            <div className="text-sm text-text-heading/70">
-                                {t("shareModal.loading")}
-                            </div>
-                        )}
-
-                        {!loading && !shareId && (
-                            <div className="space-y-3">
-                                <div className="text-sm text-text-heading/80">
-                                    {t("shareModal.noLink")}
-                                </div>
-                                <Button onClick={handleCreate} disabled={loading}>
-                                    {t("shareModal.createLink")}
-                                </Button>
-                            </div>
-                        )}
-
-                        {!loading && shareId && (
-                            <div className="space-y-3">
-                                <div className="text-sm text-text-heading/80">
-                                    {t("shareModal.linkDescription")}
-                                </div>
-
-                                <div className="flex items-center gap-2">
-                                    <input
-                                        className="flex-1 h-10 rounded-md border px-3 text-sm bg-surface-input text-text-primary border-border-default/30"
-                                        value={shareUrl}
-                                        readOnly
-                                    />
-                                    <Button onClick={handleCopy} disabled={!shareUrl}>
-                                        {t("actions.copy")}
-                                    </Button>
-                                </div>
-
-                                <div className="flex items-center gap-2">
-                                    <Button variant="destructive" onClick={handleDisable} disabled={loading}>
-                                        {t("shareModal.disableLink")}
-                                    </Button>
-                                    <div className="text-xs text-text-heading/60">
-                                        {t("shareModal.disableHint")}
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-                    </CardContent>
-                </Card>
+                        <Button
+                            variant="destructive"
+                            onClick={onConfirm}
+                            disabled={!isMatch || loading}
+                            className="w-full sm:w-auto"
+                        >
+                            {loading
+                                ? t("deleteMapModal.deleting")
+                                : t("deleteMapModal.deleteMap")}
+                        </Button>
+                    </div>
+                </div>
             </div>
         </div>
     );

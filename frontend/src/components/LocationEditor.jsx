@@ -47,8 +47,8 @@ export default function LocationEditor({ location, coords, onSave, onCancel }) {
     };
 
     return (
-        <div className="bg-surface-paper/85 border border-border-default backdrop-blur-sm rounded p-4 space-y-3 shadow text-text-primary">
-            <h2 className="text-xl font-bold mb-2 text-text-heading">
+        <div className="space-y-3 rounded border border-border-default bg-surface-paper/85 p-3 text-text-primary shadow backdrop-blur-sm md:p-4">
+            <h2 className="mb-2 text-lg font-bold text-text-heading md:text-xl">
                 {location
                     ? t("locationEditor.title.edit")
                     : t("locationEditor.title.add")}
@@ -56,25 +56,25 @@ export default function LocationEditor({ location, coords, onSave, onCancel }) {
 
             <form onSubmit={handleSubmit} className="space-y-3">
                 <div>
-                    <label className="block mb-1 font-medium text-text-heading">
+                    <label className="mb-1 block font-medium text-text-heading">
                         {t("locationEditor.fields.name")}
                     </label>
                     <Input value={name} onChange={(e) => setName(e.target.value)} required />
                 </div>
 
                 <div>
-                    <label className="block mb-1 font-medium text-text-heading">
+                    <label className="mb-1 block font-medium text-text-heading">
                         {t("locationEditor.fields.type")}
                     </label>
                     <Input value={type} onChange={(e) => setType(e.target.value)} required />
                 </div>
 
                 <div>
-                    <div className="flex items-center justify-between mb-1">
+                    <div className="mb-1 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                         <label className="block font-medium text-text-heading">
                             {t("locationEditor.fields.article")}
                         </label>
-                        <div className="inline-flex rounded border border-border-default overflow-hidden">
+                        <div className="inline-flex overflow-hidden rounded border border-border-default self-start">
                             <button
                                 type="button"
                                 onClick={() => setTab("edit")}
@@ -107,19 +107,19 @@ export default function LocationEditor({ location, coords, onSave, onCancel }) {
                         <Textarea
                             value={descriptionMd}
                             onChange={(e) => setDescriptionMd(e.target.value)}
-                            rows={12}
+                            rows={10}
                             placeholder={t("locationEditor.placeholders.article")}
                         />
                     ) : (
-                        <div className="border border-border-default rounded p-3 bg-surface-panel/60">
+                        <div className="rounded border border-border-default bg-surface-panel/60 p-3">
                             <MarkdownRenderer content={descriptionMd} />
                         </div>
                     )}
                 </div>
 
-                <div className="flex space-x-2">
-                    <div className="flex-1">
-                        <label className="block mb-1 font-medium text-text-heading">
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                    <div>
+                        <label className="mb-1 block font-medium text-text-heading">
                             {t("locationEditor.fields.x")}
                         </label>
                         <Input
@@ -128,8 +128,8 @@ export default function LocationEditor({ location, coords, onSave, onCancel }) {
                             onChange={(e) => setX(parseFloat(e.target.value))}
                         />
                     </div>
-                    <div className="flex-1">
-                        <label className="block mb-1 font-medium text-text-heading">
+                    <div>
+                        <label className="mb-1 block font-medium text-text-heading">
                             {t("locationEditor.fields.y")}
                         </label>
                         <Input
@@ -140,13 +140,13 @@ export default function LocationEditor({ location, coords, onSave, onCancel }) {
                     </div>
                 </div>
 
-                <div className="flex justify-between mt-4">
-                    <Button type="submit">
+                <div className="flex flex-col gap-2 pt-1 sm:flex-row sm:justify-between">
+                    <Button type="submit" className="w-full sm:w-auto">
                         {location
                             ? t("locationEditor.actions.saveChanges")
                             : t("locationEditor.actions.addLocation")}
                     </Button>
-                    <Button type="button" variant="outline" onClick={onCancel}>
+                    <Button type="button" variant="outline" onClick={onCancel} className="w-full sm:w-auto">
                         {t("actions.cancel")}
                     </Button>
                 </div>

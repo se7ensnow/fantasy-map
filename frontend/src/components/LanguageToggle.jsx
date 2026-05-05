@@ -8,7 +8,7 @@ const LANGUAGES = [
     { code: "ru", shortLabel: "RU", labelKey: "language.russian" },
 ];
 
-export default function LanguageToggle() {
+export default function LanguageToggle({ compact = false }) {
     const { t, i18n } = useTranslation();
     const [open, setOpen] = useState(false);
     const boxRef = useRef(null);
@@ -61,7 +61,9 @@ export default function LanguageToggle() {
                 variant="ghost"
                 onClick={() => setOpen((prev) => !prev)}
                 className={[
-                    "h-9 px-2 rounded-xl border",
+                    compact
+                        ? "h-9 rounded-xl border px-2"
+                        : "h-9 rounded-xl border px-2",
                     "bg-surface-page/30 hover:bg-surface-page/50",
                     "border-border-default/40 hover:border-border-emphasis/60",
                     "text-text-heading hover:text-accent-primary",
@@ -72,19 +74,20 @@ export default function LanguageToggle() {
                 aria-haspopup="menu"
                 aria-expanded={open}
             >
-                <Languages className="mr-1 h-4 w-4" />
-                <span className="hidden md:inline text-sm font-semibold">
-                    {current.shortLabel}
-                </span>
-                <ChevronDown className="ml-1 h-4 w-4" />
+                <Languages className={compact ? "h-4 w-4" : "mr-1 h-4 w-4"} />
+                {!compact && (
+                    <span className="hidden text-sm font-semibold md:inline">
+                        {current.shortLabel}
+                    </span>
+                )}
+                {!compact && <ChevronDown className="ml-1 h-4 w-4" />}
             </Button>
 
             {open && (
                 <div
                     className="
-                        absolute right-0 mt-2 w-44 rounded-xl border
-                        border-border-default/40 bg-surface-panel/95
-                        shadow-card backdrop-blur-sm overflow-hidden z-50
+                        absolute right-0 z-50 mt-2 w-44 overflow-hidden rounded-xl border
+                        border-border-default/40 bg-surface-panel/95 shadow-card backdrop-blur-sm
                     "
                     role="menu"
                 >
@@ -100,7 +103,7 @@ export default function LanguageToggle() {
                                 className={[
                                     "flex w-full items-center justify-between px-3 py-2 text-sm transition-colors",
                                     isActive
-                                        ? "bg-state-selected text-text-heading font-semibold"
+                                        ? "bg-state-selected font-semibold text-text-heading"
                                         : "text-text-primary hover:bg-state-hover",
                                 ].join(" ")}
                             >

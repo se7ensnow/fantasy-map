@@ -6,7 +6,7 @@ import { applyTheme, loadTheme, saveTheme, watchSystemTheme } from "@/lib/theme"
 
 const ORDER = ["system", "light", "dark"];
 
-export default function ThemeToggle() {
+export default function ThemeToggle({ compact = false }) {
     const { t } = useTranslation();
     const [theme, setTheme] = useState(() => loadTheme());
 
@@ -48,7 +48,9 @@ export default function ThemeToggle() {
                 variant="ghost"
                 onClick={nextTheme}
                 className={[
-                    "h-9 px-2 rounded-xl border",
+                    compact
+                        ? "h-9 w-9 rounded-xl border px-0"
+                        : "h-9 rounded-xl border px-2",
                     "bg-surface-page/30 hover:bg-surface-page/50",
                     "border-border-default/40 hover:border-border-emphasis/60",
                     "text-text-heading hover:text-accent-primary",
@@ -57,10 +59,12 @@ export default function ThemeToggle() {
                 title={title}
                 aria-label={title}
             >
-                <Icon className="mr-1" />
-                <span className="hidden md:inline text-sm font-semibold">
-                    {label}
-                </span>
+                <Icon className={compact ? "h-4 w-4" : "mr-1 h-4 w-4"} />
+                {!compact && (
+                    <span className="hidden text-sm font-semibold md:inline">
+                        {label}
+                    </span>
+                )}
             </Button>
         </div>
     );

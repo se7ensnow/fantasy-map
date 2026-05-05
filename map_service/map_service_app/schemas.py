@@ -1,122 +1,123 @@
-from pydantic import BaseModel, ConfigDict, field_validator, Field
-from uuid import UUID
-from datetime import datetime
-from typing import Optional, List, Dict, Any, Literal
+import datetime
+import typing
+import uuid
 
-from map_service_app.models import Tag
-from map_service_app.config import DESCRIPTION_MAX_LENGTH
+import pydantic
 
-
-Visibility = Literal["private", "public"]
-MapStatus = Literal['draft', 'ready']
+from map_service_app import config
+from map_service_app import models
 
 
-class MapCreate(BaseModel):
+Visibility = typing.Literal["private", "public"]
+MapStatus = typing.Literal["draft", "ready"]
+
+
+class MapCreate(pydantic.BaseModel):
     title: str
-    description: Optional[str] = None
+    description: typing.Optional[str] = None
     owner_username: str
-    tags: List[str] = Field(default_factory=list)
+    tags: typing.List[str] = pydantic.Field(default_factory=list)
     visibility: Visibility = "private"
 
 
-class MapUpdate(BaseModel):
-    title: Optional[str] = None
-    description: Optional[str] = None
-    tags: Optional[List[str]] = None
-    visibility: Optional[Visibility] = None
+class MapUpdate(pydantic.BaseModel):
+    title: typing.Optional[str] = None
+    description: typing.Optional[str] = None
+    tags: typing.Optional[typing.List[str]] = None
+    visibility: typing.Optional[Visibility] = None
 
 
-class MapCardResponse(BaseModel):
-    id: UUID
+class MapCardResponse(pydantic.BaseModel):
+    id: uuid.UUID
     owner_username: str
     title: str
-    tags: List[str] = Field(default_factory=list)
+    tags: typing.List[str] = pydantic.Field(default_factory=list)
     visibility: Visibility
     status: MapStatus
-    updated_at: datetime
+    updated_at: datetime.datetime
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = pydantic.ConfigDict(from_attributes=True)
 
-    @field_validator("tags", mode="before")
+    @pydantic.field_validator("tags", mode="before")
     @classmethod
-    def normalize_tags(cls, v: List[Tag]) -> List[str]:
+    def normalize_tags(cls, v: typing.List[models.Tag]) -> typing.List[str]:
         return [tag.name for tag in v]
 
 
-class ListMapCardResponse(BaseModel):
-    items: List[MapCardResponse]
+class ListMapCardResponse(pydantic.BaseModel):
+    items: typing.List[MapCardResponse]
     total: int
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = pydantic.ConfigDict(from_attributes=True)
 
 
-class MapResponse(BaseModel):
-    id: UUID
-    owner_id: UUID
+class MapResponse(pydantic.BaseModel):
+    id: uuid.UUID
+    owner_id: uuid.UUID
     owner_username: str
     title: str
-    description: Optional[str] = None
-    tags: List[str] = Field(default_factory=list)
+    description: typing.Optional[str] = None
+    tags: typing.List[str] = pydantic.Field(default_factory=list)
     status: MapStatus
     tiles_version: int
-    width: Optional[int] = None
-    height: Optional[int] = None
-    max_zoom: Optional[int] = None
+    width: typing.Optional[int] = None
+    height: typing.Optional[int] = None
+    max_zoom: typing.Optional[int] = None
     visibility: Visibility
-    share_id: Optional[str] = None
-    created_at: datetime
-    updated_at: datetime
+    share_id: typing.Optional[str] = None
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = pydantic.ConfigDict(from_attributes=True)
 
-    @field_validator("tags", mode="before")
+    @pydantic.field_validator("tags", mode="before")
     @classmethod
-    def normalize_tags(cls, v: List[Tag]) -> List[str]:
+    def normalize_tags(cls, v: typing.List[models.Tag]) -> typing.List[str]:
         return [tag.name for tag in v]
 
 
-class TilesInfo(BaseModel):
+class TilesInfo(pydantic.BaseModel):
     width: int
     height: int
     max_zoom: int
     tiles_version: int
 
 
-class LocationCreate(BaseModel):
-    map_id: UUID
+class LocationCreate(pydantic.BaseModel):
+    map_id: uuid.UUID
     type: str
     name: str
-    description_md: str = Field(default="", max_length=DESCRIPTION_MAX_LENGTH)
+    description_md: str = pydantic.Field(default="", max_length=config.DESCRIPTION_MAX_LENGTH)
     x: float
     y: float
 
 
-class LocationUpdate(BaseModel):
-    type: Optional[str] = None
-    name: Optional[str] = None
-    description_md: Optional[str] = Field(default=None, max_length=DESCRIPTION_MAX_LENGTH)
-    x: Optional[float] = None
-    y: Optional[float] = None
+class LocationUpdate(pydantic.BaseModel):
+    type: typing.Optional[str] = None
+    name: typing.Optional[str] = None
+    description_md: typing.Optional[str] = pydantic.Field(default=None, max_length=config.DESCRIPTION_MAX_LENGTH)
+    x: typing.Optional[float] = None
+    y: typing.Optional[float] = None
 
 
-class LocationResponse(BaseModel):
-    id: UUID
-    map_id: UUID
+class LocationResponse(pydantic.BaseModel):
+    id: uuid.UUID
+    map_id: uuid.UUID
     type: str
     name: str
     description_md: str = ""
     x: float
     y: float
-    created_at: datetime
-    updated_at: datetime
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = pydantic.ConfigDict(from_attributes=True)
 
 
-class TagStatResponse(BaseModel):
+class TagStatResponse(pydantic.BaseModel):
     name: str
     count: int
 
 
-class ShareIdResponse(BaseModel):
-    share_id: Optional[str] = None
+class ShareIdResponse(pydantic.BaseModel):
+    share_id: typing.Optional[str] = None

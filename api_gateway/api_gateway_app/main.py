@@ -1,25 +1,25 @@
 import logging
 import time
-from uuid import uuid4
+import uuid
 
-from fastapi import FastAPI, Request
-from fastapi.middleware.cors import CORSMiddleware
+import fastapi
+from fastapi.middleware import cors
 
 from api_gateway_app.proxy_routes import users_proxy, maps_proxy, auth_proxy, locations_proxy, progress_proxy
-from api_gateway_app.config import FRONTEND_URL
-from api_gateway_app.log_config import setup_logging, logger, log
+from api_gateway_app import config
+from api_gateway_app import log_config
 
-setup_logging()
+log_config.setup_logging()
 
-app = FastAPI(
+app = fastapi.FastAPI(
     title="Fantasy Map API Gateway",
     description="Прокси сервис для маршрутизации запросов в другие микросервисы",
     version="2.0"
 )
 
 app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[FRONTEND_URL],
+    cors.CORSMiddleware,
+    allow_origins=[config.FRONTEND_URL],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -27,13 +27,13 @@ app.add_middleware(
 
 
 @app.middleware("http")
-async def request_logging_middleware(request: Request, call_next):
-    request_id = request.headers.get("X-Request-ID", str(uuid4()))
+async def request_logging_middleware(request: fastapi.Request, call_next):
+    request_id = request.headers.get("X-Request-ID", str(uuid.uuid4()))
     request.state.request_id = request_id
 
     start = time.perf_counter()
 
-    log(
+    log_config.log(
         request,
         logging.INFO,
         "request_started",
@@ -45,7 +45,7 @@ async def request_logging_middleware(request: Request, call_next):
         response = await call_next(request)
     except Exception:
         duration_ms = round((time.perf_counter() - start) * 1000, 2)
-        logger.exception(
+        log_config.logger.exception(
             "request_unhandled_error",
             extra={
                 "extra_fields": {
@@ -62,7 +62,7 @@ async def request_logging_middleware(request: Request, call_next):
     duration_ms = round((time.perf_counter() - start) * 1000, 2)
     response.headers["X-Request-ID"] = request_id
 
-    log(
+    log_config.log(
         request,
         logging.INFO,
         "request_finished",

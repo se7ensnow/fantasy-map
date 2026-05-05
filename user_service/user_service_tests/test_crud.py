@@ -1,13 +1,12 @@
-from pydantic import EmailStr
-
 from user_service_app import crud
-from user_service_app.schemas import UserCreate
+from user_service_app import schemas
 
-create_request = UserCreate(
+create_request = schemas.UserCreate(
     username="testuser",
     email="test@example.com",
-    password="StrongPass123!"
+    password="StrongPass123!",
 )
+
 
 def test_create_user(db):
     user = crud.create_user(db, create_request)
@@ -15,15 +14,18 @@ def test_create_user(db):
     assert user.email == "test@example.com"
     assert user.password_hash != "StrongPass123!"
 
+
 def test_is_username_taken(db):
     user = crud.create_user(db, create_request)
     assert crud.is_username_taken(db, user.username) is True
     assert crud.is_username_taken(db, "nonexistent") is False
 
+
 def test_is_email_taken(db):
     user = crud.create_user(db, create_request)
     assert crud.is_email_taken(db, user.email) is True
     assert crud.is_email_taken(db, "nonexistent@example.com") is False
+
 
 def test_authenticate_user(db):
     crud.create_user(db, create_request)
@@ -35,6 +37,7 @@ def test_authenticate_user(db):
 
     user_fail = crud.authenticate_user(db, create_request.username, "wrongpassword")
     assert user_fail is None
+
 
 def test_get_user_by_id(db):
     user = crud.create_user(db, create_request)

@@ -23,9 +23,9 @@ export default function RegisterPage() {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center pb-6 text-text-primary">
-            <div className="w-full max-w-md rounded-lg border border-border-default/40 bg-surface-panel/80 p-8 shadow-xl backdrop-blur-sm">
-                <h1 className="mb-6 text-center text-4xl font-bold text-text-heading">
+        <div className="flex min-h-[70vh] items-center justify-center px-2 py-4 text-text-primary md:px-6 md:py-8">
+            <div className="w-full max-w-md rounded-lg border border-border-default/40 bg-surface-panel/80 p-4 shadow-xl backdrop-blur-sm md:p-8">
+                <h1 className="mb-5 text-center text-3xl font-bold text-text-heading md:mb-6 md:text-4xl">
                     {t("register.title")}
                 </h1>
 
@@ -36,7 +36,7 @@ export default function RegisterPage() {
                     errorMessage={errorMessage}
                 />
 
-                <div className="mt-6 text-center">
+                <div className="mt-5 text-center md:mt-6">
                     <p className="text-sm text-text-muted">
                         {t("register.alreadyHaveAccount")}
                     </p>

@@ -1,12 +1,12 @@
+import datetime
 import json
-from datetime import datetime, timezone
-from typing import Any, Optional
+import typing
 
-from redis import Redis
+import redis
 
-from tile_service_app.config import REDIS_URL
+from tile_service_app import config
 
-redis_conn = Redis.from_url(REDIS_URL, decode_responses=True)
+redis_conn = redis.Redis.from_url(config.REDIS_URL, decode_responses=True)
 
 
 def build_progress_key(job_id: str) -> str:
@@ -28,17 +28,17 @@ def set_tile_progress(
     total_tiles: int | None = None,
     generated_tiles: int | None = None,
     uploaded_tiles: int | None = None,
-    extra: dict[str, Any] | None = None,
+    extra: dict[str, typing.Any] | None = None,
     ttl_seconds: int = 3600,
-) -> dict[str, Any]:
-    payload: dict[str, Any] = {
+) -> dict[str, typing.Any]:
+    payload: dict[str, typing.Any] = {
         "job_id": job_id,
         "map_id": map_id,
         "status": status,
         "stage": stage,
         "progress": progress,
         "message": message,
-        "updated_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
         "total_tiles": total_tiles,
         "generated_tiles": generated_tiles,
         "uploaded_tiles": uploaded_tiles,
@@ -57,10 +57,10 @@ def set_tile_progress(
 
 def set_tile_heartbeat(job_id: str, ttl_seconds: int = 3600) -> None:
     key = build_progress_key(job_id)
-    data: Optional[str] = redis_conn.get(key)
+    data: typing.Optional[str] = redis_conn.get(key)
     if not data:
         return
 
     payload = json.loads(data)
-    payload["updated_at"] = datetime.now(timezone.utc).isoformat()
+    payload["updated_at"] = datetime.datetime.now(datetime.timezone.utc).isoformat()
     redis_conn.set(key, json.dumps(payload, ensure_ascii=False), ex=ttl_seconds)

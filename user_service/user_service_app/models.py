@@ -1,16 +1,17 @@
-from sqlalchemy import Column, String, DateTime, func
-from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import declarative_base
-from datetime import datetime
 import uuid
 
-Base = declarative_base()
+import sqlalchemy
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import orm
+
+Base = orm.declarative_base()
+
 
 class User(Base):
-    __tablename__ = 'users'
+    __tablename__ = "users"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True, index=True)
-    username = Column(String, unique=True, nullable=False)
-    email = Column(String, unique=True, nullable=False)
-    password_hash = Column(String, nullable=False)
-    created_at = Column(DateTime(timezone=True), default=func.now())
+    id = sqlalchemy.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True, index=True)
+    username = sqlalchemy.Column(sqlalchemy.String, unique=True, nullable=False)
+    email = sqlalchemy.Column(sqlalchemy.String, unique=True, nullable=False)
+    password_hash = sqlalchemy.Column(sqlalchemy.String, nullable=False)
+    created_at = sqlalchemy.Column(sqlalchemy.DateTime(timezone=True), default=sqlalchemy.func.now())

@@ -28,7 +28,6 @@ function normalizeForTag(raw) {
     s = s.replace(/- /g, "-").replace(/ -/g, "-");
 
     if (!s) return "";
-
     if (s.length > MAX_LEN) s = s.slice(0, MAX_LEN).trim();
 
     return s;
@@ -174,8 +173,8 @@ export default function TagsInput({
             )}
 
             <div className="relative">
-                <div className="flex items-center gap-2">
-                    <div className="w-72 max-w-full">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                    <div className="relative w-full sm:w-72 sm:max-w-full">
                         <Input
                             value={text}
                             onChange={handleInputChange}
@@ -186,25 +185,27 @@ export default function TagsInput({
                                     : t("tagsInput.limitReachedPlaceholder")
                             }
                             disabled={!canAddMore}
+                            className="pr-14"
                         />
+                
+                        <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-text-heading/70 tabular-nums">
+                            {text.length}/{MAX_LEN}
+                        </span>
                     </div>
-
+                        
                     <Button
                         type="button"
                         variant="outline"
                         onClick={() => addTag(text)}
                         disabled={!canSubmitTag}
+                        className="w-full sm:w-auto"
                     >
                         {t("tagsInput.add")}
                     </Button>
-
-                    <span className="text-xs text-text-heading/70 tabular-nums">
-                        {text.length}/{MAX_LEN}
-                    </span>
                 </div>
 
                 {showSuggestions && (
-                    <div className="absolute z-20 mt-1 w-72 max-w-full rounded-md border border-border-default bg-surface-paper shadow-md overflow-hidden">
+                    <div className="absolute z-20 mt-1 w-full rounded-md border border-border-default bg-surface-paper shadow-md overflow-hidden sm:w-72">
                         <div className="max-h-48 overflow-y-auto">
                             {loadingSug && (
                                 <div className="px-3 py-2 text-sm text-text-heading/70">
@@ -223,7 +224,7 @@ export default function TagsInput({
                                     <button
                                         type="button"
                                         key={suggestion}
-                                        className="w-full text-left px-3 py-2 text-sm hover:bg-surface-panel border-b border-border-default/30 last:border-b-0"
+                                        className="w-full border-b border-border-default/30 px-3 py-2 text-left text-sm hover:bg-surface-panel last:border-b-0"
                                         onClick={() => addTag(suggestion)}
                                     >
                                         <span className="tag-font">{suggestion}</span>

@@ -1,29 +1,30 @@
 import logging
 import time
-from uuid import uuid4
+import uuid
 
-from fastapi import FastAPI, Request
+import fastapi
 
-from user_service_app.log_config import log, logger, setup_logging
-from user_service_app.routes import auth, users
+from user_service_app import log_config
+from user_service_app.routes import auth
+from user_service_app.routes import users
 
-setup_logging()
+log_config.setup_logging()
 
-app = FastAPI(
+app = fastapi.FastAPI(
     title="User Service",
     description="Сервис управления пользователями",
-    version="1.0"
+    version="1.0",
 )
 
 
 @app.middleware("http")
-async def request_logging_middleware(request: Request, call_next):
-    request_id = request.headers.get("X-Request-ID", str(uuid4()))
+async def request_logging_middleware(request: fastapi.Request, call_next):
+    request_id = request.headers.get("X-Request-ID", str(uuid.uuid4()))
     request.state.request_id = request_id
 
     start = time.perf_counter()
 
-    log(
+    log_config.log(
         request,
         logging.INFO,
         "request_started",
@@ -35,7 +36,7 @@ async def request_logging_middleware(request: Request, call_next):
         response = await call_next(request)
     except Exception:
         duration_ms = round((time.perf_counter() - start) * 1000, 2)
-        logger.exception(
+        log_config.logger.exception(
             "request_unhandled_error",
             extra={
                 "extra_fields": {
@@ -52,7 +53,7 @@ async def request_logging_middleware(request: Request, call_next):
     duration_ms = round((time.perf_counter() - start) * 1000, 2)
     response.headers["X-Request-ID"] = request_id
 
-    log(
+    log_config.log(
         request,
         logging.INFO,
         "request_finished",

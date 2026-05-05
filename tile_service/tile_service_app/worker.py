@@ -1,23 +1,23 @@
 import logging
 
-from redis import Redis
-from rq import Queue, Worker
+import redis
+import rq
 
-from tile_service_app.config import REDIS_URL
-from tile_service_app.log_config import log, setup_logging
+from tile_service_app import config
+from tile_service_app import log_config
 
 
 def main():
-    setup_logging()
+    log_config.setup_logging()
 
-    redis_conn = Redis.from_url(REDIS_URL)
+    redis_conn = redis.Redis.from_url(config.REDIS_URL)
 
     queue_name = "default"
-    queue = Queue(name=queue_name, connection=redis_conn)
+    queue = rq.Queue(name=queue_name, connection=redis_conn)
 
-    log(logging.INFO, "worker_started", queue=queue_name)
+    log_config.log(logging.INFO, "worker_started", queue=queue_name)
 
-    worker = Worker([queue])
+    worker = rq.Worker([queue])
     worker.work()
 
 
