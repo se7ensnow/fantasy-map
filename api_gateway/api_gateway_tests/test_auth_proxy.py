@@ -16,7 +16,7 @@ async def test_auth_register_ok(httpx_mock, async_client, user_base_url, test_us
     )
 
     resp = await async_client.post(
-        "/auth/register",
+        "/api/auth/register",
         json={
             "username": "testuser",
             "email": "text@example.com",
@@ -31,9 +31,8 @@ async def test_auth_register_ok(httpx_mock, async_client, user_base_url, test_us
 
 @pytest.mark.asyncio
 async def test_auth_register_validation_error(async_client):
-    # Это проверка валидации на стороне gateway (Pydantic)
     resp = await async_client.post(
-        "/auth/register",
+        "/api/auth/register",
         json={
             "username": "",
             "email": "invalid",
@@ -58,7 +57,7 @@ async def test_auth_login_ok(httpx_mock, async_client, user_base_url):
     )
 
     resp = await async_client.post(
-        "/auth/login",
+        "/api/auth/login",
         data={
             "username": "testuser",
             "password": "password123",
@@ -82,7 +81,7 @@ async def test_auth_login_invalid(httpx_mock, async_client, user_base_url):
     )
 
     resp = await async_client.post(
-        "/auth/login",
+        "/api/auth/login",
         data={
             "username": "wronguser",
             "password": "wrongpass",
@@ -104,7 +103,7 @@ async def test_auth_service_unavailable_on_register(httpx_mock, async_client, us
     )
 
     resp = await async_client.post(
-        "/auth/register",
+        "/api/auth/register",
         json={
             "username": "testuser",
             "email": "test@example.com",

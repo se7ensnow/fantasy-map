@@ -19,7 +19,10 @@ async def test_get_user_ok(httpx_mock, async_client, user_base_url, test_user_id
         },
     )
 
-    resp = await async_client.get(f"/users/{test_user_id}", headers=auth_header())
+    resp = await async_client.get(
+        f"/api/users/{test_user_id}",
+        headers=auth_header(),
+    )
 
     assert resp.status_code == 200
     data = resp.json()
@@ -37,7 +40,10 @@ async def test_get_user_not_found(httpx_mock, async_client, user_base_url, test_
         json={"detail": "User not found"},
     )
 
-    resp = await async_client.get(f"/users/{test_user_id}", headers=auth_header())
+    resp = await async_client.get(
+        f"/api/users/{test_user_id}",
+        headers=auth_header(),
+    )
 
     assert resp.status_code == 404
     assert "detail" in resp.json()
@@ -52,7 +58,10 @@ async def test_get_user_service_unavailable(httpx_mock, async_client, user_base_
         json={"detail": "User service unavailable"},
     )
 
-    resp = await async_client.get(f"/users/{test_user_id}", headers=auth_header())
+    resp = await async_client.get(
+        f"/api/users/{test_user_id}",
+        headers=auth_header(),
+    )
 
     assert resp.status_code == 503
     assert "detail" in resp.json()

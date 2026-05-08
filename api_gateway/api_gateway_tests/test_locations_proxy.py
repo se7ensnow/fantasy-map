@@ -1,12 +1,20 @@
 import pytest
 
+
 def auth_header(token="test-token"):
     return {"Authorization": f"Bearer {token}"}
 
 
 @pytest.mark.asyncio
-async def test_create_location_ok(httpx_mock, async_client, user_base_url, map_base_url, test_user_id, test_map_id, test_loc_id):
-    # auth dependency
+async def test_create_location_ok(
+    httpx_mock,
+    async_client,
+    user_base_url,
+    map_base_url,
+    test_user_id,
+    test_map_id,
+    test_loc_id,
+):
     httpx_mock.add_response(
         method="POST",
         url=f"{user_base_url}/auth/verify-token",
@@ -33,7 +41,7 @@ async def test_create_location_ok(httpx_mock, async_client, user_base_url, map_b
     )
 
     resp = await async_client.post(
-        "/locations/create",
+        "/api/locations/create",
         json={
             "map_id": test_map_id,
             "name": "Location 1",
@@ -53,7 +61,6 @@ async def test_create_location_ok(httpx_mock, async_client, user_base_url, map_b
 
 @pytest.mark.asyncio
 async def test_list_locations_ok(httpx_mock, async_client, map_base_url, test_map_id, test_loc_id):
-    # ВАЖНО: query должен совпасть 1:1
     httpx_mock.add_response(
         method="GET",
         url=f"{map_base_url}/locations/?map_id={test_map_id}",
@@ -74,7 +81,7 @@ async def test_list_locations_ok(httpx_mock, async_client, map_base_url, test_ma
         ],
     )
 
-    resp = await async_client.get("/locations/", params={"map_id": test_map_id})
+    resp = await async_client.get("/api/locations/", params={"map_id": test_map_id})
 
     assert resp.status_code == 200
     data = resp.json()
@@ -103,14 +110,22 @@ async def test_get_location_ok(httpx_mock, async_client, map_base_url, test_map_
         },
     )
 
-    resp = await async_client.get(f"/locations/{test_loc_id}")
+    resp = await async_client.get(f"/api/locations/{test_loc_id}")
 
     assert resp.status_code == 200
     assert resp.json()["id"] == test_loc_id
 
 
 @pytest.mark.asyncio
-async def test_update_location_ok(httpx_mock, async_client, user_base_url, map_base_url, test_user_id, test_map_id, test_loc_id):
+async def test_update_location_ok(
+    httpx_mock,
+    async_client,
+    user_base_url,
+    map_base_url,
+    test_user_id,
+    test_map_id,
+    test_loc_id,
+):
     httpx_mock.add_response(
         method="POST",
         url=f"{user_base_url}/auth/verify-token",
@@ -137,7 +152,7 @@ async def test_update_location_ok(httpx_mock, async_client, user_base_url, map_b
     )
 
     resp = await async_client.put(
-        f"/locations/{test_loc_id}",
+        f"/api/locations/{test_loc_id}",
         json={
             "name": "Update Location 1",
             "description": "Updated Description",
@@ -153,7 +168,14 @@ async def test_update_location_ok(httpx_mock, async_client, user_base_url, map_b
 
 
 @pytest.mark.asyncio
-async def test_delete_location_ok(httpx_mock, async_client, user_base_url, map_base_url, test_user_id, test_loc_id):
+async def test_delete_location_ok(
+    httpx_mock,
+    async_client,
+    user_base_url,
+    map_base_url,
+    test_user_id,
+    test_loc_id,
+):
     httpx_mock.add_response(
         method="POST",
         url=f"{user_base_url}/auth/verify-token",
@@ -167,6 +189,9 @@ async def test_delete_location_ok(httpx_mock, async_client, user_base_url, map_b
         status_code=204,
     )
 
-    resp = await async_client.delete(f"/locations/{test_loc_id}", headers=auth_header())
+    resp = await async_client.delete(
+        f"/api/locations/{test_loc_id}",
+        headers=auth_header(),
+    )
 
     assert resp.status_code == 204
