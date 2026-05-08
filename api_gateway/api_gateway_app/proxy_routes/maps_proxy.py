@@ -339,22 +339,43 @@ async def upload_image(
     files = {"file": (file.filename, await file.read(), file.content_type)}
     headers = utils.build_headers(request, user_id)
 
-    async with httpx.AsyncClient() as client:
+    timeout = httpx.Timeout(
+        connect=10.0,
+        read=config.MAP_UPLOAD_TIMEOUT_SECONDS,
+        write=config.MAP_UPLOAD_TIMEOUT_SECONDS,
+        pool=10.0,
+    )
+
+    async with httpx.AsyncClient(timeout=timeout) as client:
         try:
             response = await client.post(
                 f"{config.MAP_SERVICE_URL}/maps/{map_id}/upload-image",
                 files=files,
                 headers=headers,
             )
-        except httpx.RequestError:
+        except httpx.TimeoutException as exc:
+            log_config.log(
+                request,
+                logging.ERROR,
+                "map_upload_timeout",
+                error=str(exc),
+                timeout_seconds=config.MAP_UPLOAD_TIMEOUT_SECONDS,
+            )
+            raise fastapi.HTTPException(
+                status_code=504,
+                detail="Map service upload timeout",
+            )
+        except httpx.RequestError as exc:
             log_config.log(
                 request,
                 logging.ERROR,
                 "map_upload_service_unavailable",
-                map_id=str(map_id),
-                user_id=str(user_id),
+                error=str(exc),
             )
-            raise fastapi.HTTPException(status_code=503, detail="Map Service unavailable")
+            raise fastapi.HTTPException(
+                status_code=503,
+                detail="Map Service Unavailable",
+            )
 
     if response.status_code != 200:
         log_config.log(

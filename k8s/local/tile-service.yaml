@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tile-service-worker
+  namespace: fantasy-maps
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tile-service-worker
+  template:
+    metadata:
+      labels:
+        app: tile-service-worker
+    spec:
+      containers:
+        - name: tile-service-worker
+          image: fantasy-maps-tile-service:local
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - secretRef:
+                name: tile-service-secret
+          resources:
+            requests:
+              cpu: "1000m"
+              memory: "2Gi"
+            limits:
+              cpu: "4000m"
+              memory: "8Gi"

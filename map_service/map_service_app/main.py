@@ -73,32 +73,24 @@ def on_startup() -> None:
     with database.engine.begin() as conn:
         conn.execute(sqlalchemy.text("CREATE EXTENSION IF NOT EXISTS pg_trgm"))
 
-        conn.execute(
-            sqlalchemy.text(
-                """
-            CREATE INDEX IF NOT EXISTS ix_maps_title_trgm
-            ON maps
-            USING GIN (title gin_trgm_ops)
-        """
-            )
-        )
+        sim = conn.execute(
+            sqlalchemy.text("SELECT similarity('wizard tower','wziard towr')")
+        ).scalar_one()
 
-        conn.execute(
-            sqlalchemy.text(
-                """
-            CREATE INDEX IF NOT EXISTS ix_tags_name_trgm
-            ON tags
-            USING GIN (name gin_trgm_ops)
-        """
-            )
-        )
-
-        sim = conn.execute(sqlalchemy.text("SELECT similarity('wizard tower','wziard towr')")).scalar_one()
         log_config.logger.info(
             "startup_pg_trgm_ready",
-            extra={"extra_fields": {"event": "startup_pg_trgm_ready", "similarity": sim}},
+            extra={
+                "extra_fields": {
+                    "event": "startup_pg_trgm_ready",
+                    "similarity": sim,
+                }
+            },
         )
 
+
+@app.get("/health")
+def health():
+    return {"status": "ok", "service": "map-service"}
 
 app.include_router(maps.router, prefix="/maps", tags=["maps"])
 app.include_router(locations.router, prefix="/locations", tags=["locations"])

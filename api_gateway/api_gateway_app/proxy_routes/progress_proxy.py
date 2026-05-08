@@ -13,11 +13,6 @@ router = fastapi.APIRouter()
 
 redis_client = redis.from_url(config.REDIS_URL, decode_responses=True)
 
-INITIAL_SNAPSHOT_GRACE_SECONDS = 15
-PROGRESS_STALE_TIMEOUT_SECONDS = 12
-PUBSUB_POLL_TIMEOUT_SECONDS = 5.0
-LOOP_SLEEP_SECONDS = 0.05
-
 
 def build_progress_key(job_id: str) -> str:
     return f"tile_progress:{job_id}"
@@ -83,7 +78,7 @@ async def stream_job_progress(request: fastapi.Request, job_id: str) -> abc.Asyn
 
             message = await pubsub.get_message(
                 ignore_subscribe_messages=True,
-                timeout=PUBSUB_POLL_TIMEOUT_SECONDS,
+                timeout=config.PUBSUB_POLL_TIMEOUT_SECONDS,
             )
 
             if message and message.get("data"):
@@ -110,7 +105,7 @@ async def stream_job_progress(request: fastapi.Request, job_id: str) -> abc.Asyn
                 if not is_payload_terminal(payload) and updated_at is not None:
                     age_seconds = (datetime.datetime.now(datetime.timezone.utc) - updated_at).total_seconds()
 
-                    if age_seconds > PROGRESS_STALE_TIMEOUT_SECONDS:
+                    if age_seconds > config.PROGRESS_STALE_TIMEOUT_SECONDS:
                         timeout_payload = build_timeout_error_payload(job_id)
                         event_id += 1
                         yield sse.ServerSentEvent(
@@ -124,8 +119,8 @@ async def stream_job_progress(request: fastapi.Request, job_id: str) -> abc.Asyn
 
                 if not has_seen_snapshot:
                     startup_age_seconds = (now - stream_started_at).total_seconds()
-                    if startup_age_seconds <= INITIAL_SNAPSHOT_GRACE_SECONDS:
-                        await asyncio.sleep(LOOP_SLEEP_SECONDS)
+                    if startup_age_seconds <= config.INITIAL_SNAPSHOT_GRACE_SECONDS:
+                        await asyncio.sleep(config.LOOP_SLEEP_SECONDS)
                         continue
 
                 timeout_payload = build_timeout_error_payload(job_id)
@@ -137,7 +132,7 @@ async def stream_job_progress(request: fastapi.Request, job_id: str) -> abc.Asyn
                 )
                 break
 
-            await asyncio.sleep(LOOP_SLEEP_SECONDS)
+            await asyncio.sleep(config.LOOP_SLEEP_SECONDS)
 
     finally:
         await pubsub.unsubscribe(channel)

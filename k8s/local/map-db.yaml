@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: map-db
+  namespace: fantasy-maps
+spec:
+  serviceName: map-db
+  replicas: 1
+  selector:
+    matchLabels:
+      app: map-db
+  template:
+    metadata:
+      labels:
+        app: map-db
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:15
+          ports:
+            - containerPort: 5432
+          envFrom:
+            - secretRef:
+                name: map-db-secret
+          volumeMounts:
+            - name: map-db-data
+              mountPath: /var/lib/postgresql/data
+  volumeClaimTemplates:
+    - metadata:
+        name: map-db-data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 5Gi
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: map-db
+  namespace: fantasy-maps
+spec:
+  selector:
+    app: map-db
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: 5432
