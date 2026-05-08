@@ -1,0 +1,36 @@
+loki:
+  enabled: true
+  isDefault: true
+
+  persistence:
+    enabled: false
+
+promtail:
+  enabled: true
+
+  config:
+    snippets:
+      pipelineStages:
+        - cri: {}
+
+grafana:
+  enabled: true
+
+  adminUser: admin
+  adminPassword: admin
+
+  service:
+    type: ClusterIP
+
+  sidecar:
+    datasources:
+      enabled: true
+
+prometheus:
+  enabled: false
+
+filebeat:
+  enabled: false
+
+logstash:
+  enabled: false

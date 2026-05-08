@@ -7,3 +7,4 @@ pydantic[email]~=2.11.5
 passlib[argon2]~=1.7.4
 python-jose[cryptography]~=3.5.0
 python-multipart~=0.0.20
+alembic~=1.18.4

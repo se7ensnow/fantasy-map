@@ -41,9 +41,38 @@ def process_task(
     heartbeat_stop = threading.Event()
 
     def heartbeat_loop():
+        log_config.log(
+            logging.INFO,
+            "tile_heartbeat_thread_started",
+            request_id=request_id,
+            map_id=map_id,
+            job_id=job_id,
+        )
+
         while not heartbeat_stop.wait(3):
-            if job_id:
+            if not job_id:
+                continue
+
+            try:
                 progress.set_tile_heartbeat(job_id)
+
+            except Exception as heartbeat_error:
+                log_config.log(
+                    logging.ERROR,
+                    "tile_heartbeat_update_failed",
+                    request_id=request_id,
+                    map_id=map_id,
+                    job_id=job_id,
+                    detail=str(heartbeat_error),
+                )
+
+        log_config.log(
+            logging.INFO,
+            "tile_heartbeat_thread_stopped",
+            request_id=request_id,
+            map_id=map_id,
+            job_id=job_id,
+        )
 
     if job_id:
         progress.set_tile_progress(
@@ -57,6 +86,8 @@ def process_task(
 
     heartbeat_thread = None
     if job_id:
+        progress.set_tile_heartbeat(job_id)
+
         heartbeat_thread = threading.Thread(target=heartbeat_loop, daemon=True)
         heartbeat_thread.start()
 
@@ -208,7 +239,7 @@ def process_task(
             tiles_local_dir=result["tiles_local_dir"],
             workers=20,
             progress_callback=on_upload_progress,
-            progress_every=50,
+            progress_every=10,
         )
         upload_ms = round((time.perf_counter() - upload_started) * 1000, 2)
 
@@ -244,7 +275,14 @@ def process_task(
             "tiles_version": next_tiles_version,
         }
 
-        with httpx.Client() as client:
+        timeout = httpx.Timeout(
+            connect=10.0,
+            read=120.0,
+            write=30.0,
+            pool=10.0,
+        )
+
+        with httpx.Client(timeout=timeout) as client:
             response = client.post(
                 callback_url,
                 json=callback_payload,

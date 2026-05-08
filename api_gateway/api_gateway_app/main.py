@@ -75,8 +75,16 @@ async def request_logging_middleware(request: fastapi.Request, call_next):
     return response
 
 
-app.include_router(auth_proxy.router, prefix="/auth", tags=["auth"])
-app.include_router(users_proxy.router, prefix="/users", tags=["users"])
-app.include_router(maps_proxy.router, prefix="/maps", tags=["maps"])
-app.include_router(locations_proxy.router, prefix="/locations", tags=["locations"])
-app.include_router(progress_proxy.router, prefix="/jobs", tags=["progress"])
+@app.get("/health")
+def health():
+    return {"status": "ok", "service": "api-gateway"}
+
+api_router = fastapi.APIRouter(prefix="/api")
+
+api_router.include_router(auth_proxy.router, prefix="/auth", tags=["auth"])
+api_router.include_router(users_proxy.router, prefix="/users", tags=["users"])
+api_router.include_router(maps_proxy.router, prefix="/maps", tags=["maps"])
+api_router.include_router(locations_proxy.router, prefix="/locations", tags=["locations"])
+api_router.include_router(progress_proxy.router, prefix="/jobs", tags=["progress"])
+
+app.include_router(api_router)

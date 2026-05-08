@@ -66,5 +66,9 @@ async def request_logging_middleware(request: fastapi.Request, call_next):
     return response
 
 
+@app.get("/health")
+def health():
+    return {"status": "ok", "service": "user-service"}
+
 app.include_router(auth.router, prefix="/auth", tags=["auth"])
 app.include_router(users.router, prefix="/users", tags=["users"])
