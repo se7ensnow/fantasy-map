@@ -3,7 +3,10 @@
         "profile": "Профиль",
         "login": "Войти",
         "register": "Регистрация",
-        "logout": "Выйти"
+        "logout": "Выйти",
+        "logoAlt": "Fantasy Maps",
+        "openMenu": "Открыть меню",
+        "closeMenu": "Закрыть меню"
     },
     "home": {
         "hero": {
@@ -15,14 +18,15 @@
             "title": "Каталог карт"
         },
         "errors": {
-            "failedToLoadMaps": "Не удалось загрузить карты",
-            "failedToLoadTags": "Не удалось загрузить теги"
-        }
+            "failedToLoadMaps": "Не удалось загрузить карты"
+        },
+        "loadingMaps": "Загрузка карт…"
     },
     "pagination": {
         "previous": "Назад",
         "next": "Вперёд",
-        "pageOf": "Страница {{page}} из {{total}}"
+        "pageOf": "Страница {{page}} из {{total}}",
+        "navigation": "Постраничная навигация"
     },
     "profile": {
         "title": "Профиль",
@@ -48,13 +52,8 @@
         "searchPlaceholder": "Поиск по названию…",
         "tagPlaceholder": "Фильтр по тегу…",
         "clear": "Очистить",
-        "loading": "Загрузка…",
-        "noSuggestions": "Нет подсказок",
-        "pressEnterToAdd": "Нажмите Enter, чтобы добавить «{{tag}}»",
         "removeTagTitle": "Нажмите, чтобы удалить",
-        "errors": {
-            "tagSuggestionsFailed": "Не удалось загрузить подсказки тегов"
-        }
+        "removeTagAria": "Удалить тег {{tag}}"
     },
     "mapCard": {
         "status": {
@@ -74,10 +73,16 @@
         "delete": "Удалить",
         "cancel": "Отмена",
         "close": "Закрыть",
-        "copy": "Копировать"
+        "copy": "Копировать",
+        "retry": "Попробовать снова"
     },
     "mapList": {
-        "empty": "Карты не найдены."
+        "noMatchesTitle": "По вашим фильтрам ничего не найдено",
+        "noMatchesDescription": "Попробуйте изменить запрос, убрать тег или сбросить фильтры.",
+        "emptyTitle": "Каталог пока пуст",
+        "emptyDescription": "Станьте первым картографом, который нанесёт мир на карту.",
+        "emptyProfileTitle": "У вас пока нет карт",
+        "emptyProfileDescription": "Создайте первую карту и начните добавлять локации."
     },
     "login": {
         "title": "Вход",
@@ -106,7 +111,10 @@
     "authForm": {
         "username": "Имя пользователя",
         "email": "Email",
-        "password": "Пароль"
+        "password": "Пароль",
+        "showPassword": "Показать пароль",
+        "hidePassword": "Скрыть пароль",
+        "submitting": "Подождите…"
     },
     "themeToggle": {
         "light": "Светлая",
@@ -121,7 +129,8 @@
         "confirmationLabel": "Введите название карты для подтверждения",
         "mismatch": "Введённое название не совпадает.",
         "deleting": "Удаление...",
-        "deleteMap": "Удалить карту"
+        "deleteMap": "Удалить карту",
+        "match": "Название совпадает."
     },
     "shareModal": {
         "title": "Поделиться картой",
@@ -142,13 +151,16 @@
             "created": "Ссылка для шаринга создана",
             "disabled": "Ссылка отключена",
             "copied": "Ссылка скопирована"
-        }
+        },
+        "linkLabel": "Ссылка для шаринга",
+        "copied": "Скопировано"
     },
     "tagsModeToggle": {
         "any": "любой",
         "all": "все",
         "matchAny": "Совпадение по любому выбранному тегу",
-        "matchAll": "Совпадение по всем выбранным тегам"
+        "matchAll": "Совпадение по всем выбранным тегам",
+        "label": "Режим совпадения тегов"
     },
     "footer": {
         "brand": "Fantasy Maps",
@@ -168,7 +180,6 @@
         "unknown": "Неизвестно",
         "mapSectionTitle": "Карта",
         "errors": {
-            "failedToLoadMap": "Не удалось загрузить карту",
             "unableToOpen": "Не удалось открыть карту"
         },
         "notFound": {
@@ -184,14 +195,14 @@
         "hidePanel": "Скрыть панель описания",
         "showPanel": "Показать панель описания",
         "enterFullscreen": "Открыть во весь экран",
-        "exitFullscreen": "Выйти из полноэкранного режима"
+        "exitFullscreen": "Выйти из полноэкранного режима",
+        "detailsTitle": "Детали локации",
+        "detailsPanel": "Панель деталей локации"
     },
     "mapEdit": {
         "loading": "Загрузка карты...",
         "titles": {
-            "editMap": "Редактирование карты",
             "createMap": "Создание карты",
-            "uploadTiles": "Загрузка тайлов",
             "editLocations": "Редактирование локаций"
         },
         "draft": {
@@ -241,10 +252,6 @@
             "privateHint": "Видна только вам.",
             "publicHint": "Появится в каталоге, когда карта будет готова."
         },
-        "tags": {
-            "placeholder": "Добавить теги (Enter)…",
-            "hint": "Нажмите Enter, чтобы добавить тег."
-        },
         "actions": {
             "saving": "Сохранение...",
             "save": "Сохранить карту"
@@ -259,13 +266,10 @@
         "removeTagAria": "Удалить тег {{tag}}",
         "placeholder": "добавить тег…",
         "limitReachedPlaceholder": "достигнут лимит",
-        "loading": "Загрузка…",
-        "noSuggestions": "Нет подсказок",
         "limitReachedMessage": "Достигнут лимит тегов ({{maxTags}}). Удалите тег, чтобы добавить новый.",
-        "errors": {
-            "tagSuggestionsFailed": "Не удалось загрузить подсказки тегов"
-        },
-        "add": "Добавить"
+        "add": "Добавить",
+        "tagsCount": "{{used}} / {{maxTags}} тегов",
+        "inputLabel": "Добавить тег"
     },
     "tilesUploader": {
         "title": "Загрузка изображения карты",
@@ -309,7 +313,10 @@
             "tileUploadFailed": "Не удалось загрузить сгенерированные тайлы. Попробуйте снова.",
             "callbackFailed": "Не удалось завершить обработку карты. Попробуйте снова.",
             "processingTimeout": "Обработка заняла слишком много времени или неожиданно остановилась. Попробуйте снова."
-        }
+        },
+        "dropHint": "Перетащите изображение сюда или нажмите, чтобы выбрать файл",
+        "fileTypes": "PNG, JPG или WebP",
+        "clearSelection": "Убрать выбранный файл"
     },
     "editableMapViewer": {
         "title": "Редактор локаций",
@@ -322,7 +329,8 @@
             "addLocation": "Добавить локацию",
             "cancelAdd": "Отменить добавление",
             "deleteLocation": "Удалить локацию"
-        }
+        },
+        "emptyStateTitle": "Локация не выбрана"
     },
     "locationEditor": {
         "title": {
@@ -334,23 +342,53 @@
             "type": "Тип:",
             "article": "Статья (Markdown):",
             "x": "X:",
-            "y": "Y:"
+            "y": "Y:",
+            "coordinates": "Координаты"
         },
         "tabs": {
             "edit": "Редактировать",
-            "preview": "Предпросмотр"
+            "preview": "Предпросмотр",
+            "label": "Режим статьи"
         },
         "actions": {
             "saveChanges": "Сохранить изменения",
-            "addLocation": "Добавить локацию"
+            "addLocation": "Добавить локацию",
+            "saving": "Сохранение…"
         },
         "placeholders": {
             "article": "# Заголовок\n\nНапишите статью о локации...\n\n- списки\n- **жирный текст**\n- [ссылка](https://...)"
+        },
+        "hints": {
+            "coordinates": "Координаты обновляются автоматически, когда вы ставите или перетаскиваете маркер."
+        },
+        "errors": {
+            "coordinatesInvalid": "Введите корректные координаты."
         }
     },
     "language": {
         "switchLanguage": "Переключить язык",
         "english": "English",
         "russian": "Русский"
+    },
+    "a11y": {
+        "skipToContent": "Перейти к содержимому"
+    },
+    "auth": {
+        "sessionExpired": "Сессия истекла. Войдите снова."
+    },
+    "tagCombobox": {
+        "loading": "Загрузка…",
+        "pressEnterToAdd": "Нажмите Enter, чтобы добавить «{{tag}}»"
+    },
+    "map": {
+        "ariaLabel": "Интерактивная карта",
+        "zoomIn": "Приблизить",
+        "zoomOut": "Отдалить"
+    },
+    "mobileSheet": {
+        "dragHandle": "Потяните, чтобы изменить размер"
+    },
+    "markdown": {
+        "empty": "Описания пока нет."
     }
 }

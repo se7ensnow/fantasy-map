@@ -1,28 +1,63 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { getAllMaps, listTags } from "../api/maps";
 import { useNavigate } from "react-router-dom";
-import MapList from "../components/MapList";
-import CatalogFilters from "@/components/CatalogFilters";
+
+import { getAllMaps } from "@/api/maps";
 import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import CatalogFilters from "@/components/CatalogFilters";
+import ErrorState from "@/components/ErrorState";
 import LayoutContainer from "@/components/LayoutContainer";
+import LoadingState from "@/components/LoadingState";
+import MapList from "@/components/MapList";
+import Pagination from "@/components/Pagination";
+import { useAsyncData } from "@/hooks/useAsyncData";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+import { cn } from "@/lib/utils";
+
+const PAGE_SIZE = 10;
 
 export default function HomePage() {
     const { t } = useTranslation();
     const navigate = useNavigate();
-    const [mapsData, setMapsData] = useState({ items: [], total: 0 });
+
     const [page, setPage] = useState(1);
     const [query, setQuery] = useState("");
-    const size = 10;
-    const [error, setError] = useState("");
-    const [availableTags, setAvailableTags] = useState([]);
     const [selectedTags, setSelectedTags] = useState([]);
     const [tagsMode, setTagsMode] = useState("any");
     const [tagQuery, setTagQuery] = useState("");
 
     const debouncedQuery = useDebouncedValue(query, 300);
+    const tagsParam = selectedTags.join(",");
+
+    const maps = useAsyncData(
+        () =>
+            getAllMaps(page, PAGE_SIZE, {
+                q: debouncedQuery,
+                tags: tagsParam,
+                tagsMode,
+            }),
+        `${page}|${debouncedQuery}|${tagsMode}|${tagsParam}`
+    );
+
+    const toggleTag = (name) => {
+        setSelectedTags((previous) =>
+            previous.includes(name)
+                ? previous.filter((item) => item !== name)
+                : [...previous, name]
+        );
+        setPage(1);
+    };
+
+    const handleQueryChange = (value) => {
+        setQuery(value);
+        setPage(1);
+    };
+
+    const handleTagsModeChange = (value) => {
+        setTagsMode(value);
+        setPage(1);
+    };
 
     const handleClear = () => {
         setQuery("");
@@ -31,134 +66,89 @@ export default function HomePage() {
         setPage(1);
     };
 
-    const toggleTag = (name) => {
-        setSelectedTags((prev) =>
-            prev.includes(name) ? prev.filter((t) => t !== name) : [...prev, name]
-        );
-    };
-
-    const handleTagClick = (tag) => {
-        toggleTag(tag);
-        setPage(1);
-    };
-
-    useEffect(() => {
-        async function fetchTags() {
-            try {
-                const tags = await listTags("", 20);
-                setAvailableTags(tags);
-            } catch (err) {
-                console.error(t("home.errors.failedToLoadTags"), err);
-            }
-        }
-
-        fetchTags();
-    }, [t]);
-
-    useEffect(() => {
-        async function fetchMaps() {
-            try {
-                const mapsData = await getAllMaps(page, size, {
-                    q: debouncedQuery,
-                    tags: selectedTags.join(","),
-                    tagsMode: tagsMode,
-                });
-                setMapsData(mapsData);
-            } catch (err) {
-                setError(err.message || t("home.errors.failedToLoadMaps"));
-                console.error(err);
-            }
-        }
-
-        fetchMaps();
-    }, [page, debouncedQuery, selectedTags, tagsMode, t]);
-
-    useEffect(() => {
-        setPage(1);
-    }, [query, selectedTags, tagsMode]);
-
-    const totalPages = Math.ceil(mapsData.total / size);
-
-    const handleOpenMap = (mapId) => {
-        navigate(`/maps/${mapId}`);
-    };
-
-    const handleCreateMap = () => {
-        navigate("/maps/new");
-    };
-
-    if (error) {
-        return <p className="p-2 text-destructive md:p-4">{error}</p>;
-    }
+    const mapsData = maps.data ?? { items: [], total: 0 };
+    const totalPages = Math.ceil(mapsData.total / PAGE_SIZE);
+    const isFiltered = Boolean(query || tagQuery || selectedTags.length);
 
     return (
         <LayoutContainer>
             <div className="space-y-3 px-1 py-3 md:space-y-8 md:px-8 md:py-6">
-                <div className="space-y-3 rounded-lg border border-border-default/40 bg-surface-panel/95 p-4 text-center shadow-md md:space-y-4 md:p-8">
+                <section className="space-y-3 rounded-lg border border-border-default/40 bg-surface-panel/95 p-4 text-center shadow-md md:space-y-4 md:p-8">
                     <h1 className="text-3xl font-bold text-text-heading md:text-5xl">
                         {t("home.hero.title")}
                     </h1>
                     <p className="text-base text-text-heading/80 md:text-xl">
                         {t("home.hero.subtitle")}
                     </p>
-                    <Button onClick={handleCreateMap} className="w-full md:mt-4 md:w-auto">
+                    <Button
+                        onClick={() => navigate("/maps/new")}
+                        className="w-full md:mt-4 md:w-auto"
+                    >
                         {t("home.hero.createMap")}
                     </Button>
-                </div>
+                </section>
 
                 <Card className="overflow-hidden">
                     <CardHeader className="px-3 pb-2 pt-3 md:px-6 md:pb-6 md:pt-6">
                         <CardTitle>{t("home.catalog.title")}</CardTitle>
                     </CardHeader>
+
                     <CardContent className="p-2 md:p-6">
                         <CatalogFilters
                             query={query}
-                            onQueryChange={setQuery}
-                            availableTags={availableTags}
+                            onQueryChange={handleQueryChange}
                             selectedTags={selectedTags}
                             onToggleTag={toggleTag}
                             tagsMode={tagsMode}
-                            onTagsModeChange={setTagsMode}
+                            onTagsModeChange={handleTagsModeChange}
                             tagQuery={tagQuery}
                             onTagQueryChange={setTagQuery}
                             onClear={handleClear}
                         />
 
-                        <div className="mt-3 md:mt-4">
-                            <MapList
-                                maps={mapsData.items}
-                                onOpen={handleOpenMap}
-                                onTagClick={handleTagClick}
-                                activeTags={selectedTags}
-                                isProfileView={false}
-                            />
+                        <div
+                            className={cn(
+                                "mt-3 transition-opacity md:mt-4",
+                                maps.loading && maps.data && "opacity-60"
+                            )}
+                            aria-busy={maps.loading}
+                        >
+                            {maps.loading && !maps.data && (
+                                <LoadingState
+                                    compact
+                                    label={t("home.loadingMaps")}
+                                />
+                            )}
+
+                            {maps.error && (
+                                <ErrorState
+                                    className="max-w-none"
+                                    title={t("home.errors.failedToLoadMaps")}
+                                    message={maps.error.message}
+                                    onRetry={maps.reload}
+                                    retryLabel={t("actions.retry")}
+                                />
+                            )}
+
+                            {!maps.error && maps.data && (
+                                <MapList
+                                    maps={mapsData.items}
+                                    onOpen={(mapId) => navigate(`/maps/${mapId}`)}
+                                    onTagClick={toggleTag}
+                                    activeTags={selectedTags}
+                                    isProfileView={false}
+                                    onClearFilters={isFiltered ? handleClear : undefined}
+                                />
+                            )}
                         </div>
                     </CardContent>
                 </Card>
 
-                <div className="mt-3 flex items-center justify-between gap-2 md:mt-4 md:justify-center md:gap-4">
-                    <Button
-                        variant="outline"
-                        onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
-                        disabled={page === 1}
-                        className="min-w-[96px] md:min-w-[110px]"
-                    >
-                        {t("pagination.previous")}
-                    </Button>
-
-                    <span className="flex-1 text-center text-sm text-text-primary md:flex-none md:text-lg">
-                        {t("pagination.pageOf", { page, total: totalPages || 1 })}
-                    </span>
-
-                    <Button
-                        variant="outline"
-                        onClick={() => setPage((prev) => (prev < totalPages ? prev + 1 : prev))}
-                        disabled={page >= totalPages}
-                        className="min-w-[96px] md:min-w-[110px]"
-                    >
-                        {t("pagination.next")}
-                    </Button>
-                </div>
+                <Pagination
+                    page={page}
+                    totalPages={totalPages}
+                    onChange={setPage}
+                />
             </div>
         </LayoutContainer>
     );

@@ -1,11 +1,14 @@
-import React from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
+
 import { Button } from "@/components/ui/button";
+import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 
 export default function NotFoundPage() {
     const { t } = useTranslation();
     const navigate = useNavigate();
+
+    useDocumentTitle(t("notFound.title"));
 
     return (
         <div className="flex min-h-[70vh] items-center justify-center px-2 py-6 md:px-6 md:py-12">

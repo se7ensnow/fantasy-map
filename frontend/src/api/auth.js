@@ -1,52 +1,29 @@
-import axios from "axios";
-import { API_URL } from "../config";
-import { toApiError } from "./errors";
+import { saveTokens } from "@/lib/tokenStore";
+import client from "./client";
 
 export async function register(username, email, password) {
-    try {
-        const response = await axios.post(`${API_URL}/auth/register`, {
-            username,
-            email,
-            password,
-        });
-
-        return response.data;
-    } catch (error) {
-        throw toApiError(error, "Registration failed. Please try again.");
-    }
+    return client.post(
+        "/auth/register",
+        { username, email, password },
+        { errorMessage: "Registration failed. Please try again." }
+    );
 }
 
 export async function login(username, password) {
-    const params = new URLSearchParams();
-    params.append("username", username);
-    params.append("password", password);
+    const params = new URLSearchParams({ username, password });
 
-    try {
-        const response = await axios.post(`${API_URL}/auth/login`, params, {
-            headers: {
-                "Content-Type": "application/x-www-form-urlencoded",
-            },
-        });
+    const data = await client.post("/auth/login", params, {
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        errorMessage: "Login failed. Please try again.",
+    });
 
-        const { access_token, token_type } = response.data;
-        localStorage.setItem("access_token", access_token);
-        localStorage.setItem("token_type", token_type);
+    const { access_token: accessToken, token_type: tokenType } = data ?? {};
 
-        return { access_token, token_type };
-    } catch (error) {
-        throw toApiError(error, "Login failed. Please try again.");
+    if (!accessToken) {
+        throw new Error("Login response did not contain an access token.");
     }
-}
 
-export function clearToken() {
-    localStorage.removeItem("access_token");
-    localStorage.removeItem("token_type");
-}
+    saveTokens({ access_token: accessToken, token_type: tokenType });
 
-export function getToken() {
-    return localStorage.getItem("access_token");
-}
-
-export function getTokenType() {
-    return localStorage.getItem("token_type") || "Bearer";
+    return { access_token: accessToken, token_type: tokenType };
 }

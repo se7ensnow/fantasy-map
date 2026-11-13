@@ -1,10 +1,22 @@
-import React, { useState } from "react";
+import { useState } from "react";
+import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { ArrowUpRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import {
+    ArrowUpRight,
+    Eye,
+    Pencil,
+    Share2,
+    Trash2,
+} from "lucide-react";
+
 import { Badge } from "@/components/ui/badge";
-import ShareMapModal from "@/components/ShareMapModal";
+import { Button } from "@/components/ui/button";
 import DeleteMapModal from "@/components/DeleteMapModal";
+import ShareMapModal from "@/components/ShareMapModal";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
+import { sortTags } from "@/lib/tags";
+import { cn } from "@/lib/utils";
+
 
 export default function MapListItem({
     map,
@@ -18,27 +30,22 @@ export default function MapListItem({
     const { t } = useTranslation();
     const [shareOpen, setShareOpen] = useState(false);
     const [deleteOpen, setDeleteOpen] = useState(false);
+    const [deleting, setDeleting] = useState(false);
 
-    const tags = Array.isArray(map.tags) ? map.tags : [];
+    const isCompact = useMediaQuery("(max-width: 767px)");
     const activeSet = new Set(activeTags);
 
-    const sortTags = (a, b) =>
-        a.localeCompare(b, undefined, { sensitivity: "base" });
-
-    const activeOnCard = tags.filter((tag) => activeSet.has(tag)).sort(sortTags);
-    const inactiveOnCard = tags.filter((tag) => !activeSet.has(tag)).sort(sortTags);
+    const tags = sortTags((Array.isArray(map.tags) ? map.tags : []).filter(Boolean));
+    const activeOnCard = tags.filter((tag) => activeSet.has(tag));
+    const inactiveOnCard = tags.filter((tag) => !activeSet.has(tag));
     const ordered = [...activeOnCard, ...inactiveOnCard];
 
-    const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
-    const MAX_VISIBLE = isMobile ? 4 : 5;
-
-    const mustShowCount = activeOnCard.length;
-    const visibleCount = Math.max(mustShowCount, MAX_VISIBLE);
+    const maxVisible = isCompact ? 4 : 5;
+    const visibleCount = Math.max(activeOnCard.length, maxVisible);
     const visible = ordered.slice(0, visibleCount);
-
     const hiddenInactiveCount = Math.max(
         0,
-        inactiveOnCard.length - Math.max(0, visibleCount - mustShowCount)
+        inactiveOnCard.length - Math.max(0, visibleCount - activeOnCard.length)
     );
 
     const isDraft = map.status === "draft";
@@ -46,73 +53,67 @@ export default function MapListItem({
 
     const canShowStatus = isProfileView;
     const canShare = isProfileView && isReady;
-    const canEdit = isProfileView && !!onEdit;
-    const canDelete = isProfileView && !!onDelete;
-    const canView = isProfileView && isReady && !!onOpen;
+    const canEdit = isProfileView && Boolean(onEdit);
+    const canDelete = isProfileView && Boolean(onDelete);
+    const canView = isProfileView && isReady && Boolean(onOpen);
 
-    const cardAction = !isProfileView ? onOpen : null;
-    const cardClickable = !isProfileView && !!cardAction;
+    const cardClickable = !isProfileView && Boolean(onOpen);
 
-    const stopCardOpen = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
+    const openCard = () => {
+        if (cardClickable) onOpen?.();
     };
 
-    const handleCardKeyDown = (e) => {
-        if (!cardClickable) return;
-
-        if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            cardAction?.();
-        }
-    };
-
-    const handleActionClick = (action) => (e) => {
-        stopCardOpen(e);
+    const handleActionClick = (action) => (event) => {
+        event.stopPropagation();
         action?.();
     };
 
-    const handleTagActivate = (tag) => (e) => {
-        stopCardOpen(e);
+    const handleTagActivate = (tag) => (event) => {
+        event.stopPropagation();
         onTagClick?.(tag);
     };
 
-    const handleTagKeyDown = (tag) => (e) => {
-        if (e.key === "Enter" || e.key === " ") {
-            stopCardOpen(e);
-            onTagClick?.(tag);
-        }
+    const handleTagKeyDown = (tag) => (event) => {
+        if (event.key !== "Enter" && event.key !== " ") return;
+
+        event.preventDefault();
+        event.stopPropagation();
+        onTagClick?.(tag);
     };
 
-    const handleOpenShare = (e) => {
-        stopCardOpen(e);
+    const handleOpenShare = (event) => {
+        event.stopPropagation();
         setShareOpen(true);
     };
 
-    const handleOpenDelete = (e) => {
-        stopCardOpen(e);
+    const handleOpenDelete = (event) => {
+        event.stopPropagation();
         setDeleteOpen(true);
     };
 
     const handleConfirmDelete = async () => {
-        await onDelete?.();
-        setDeleteOpen(false);
+        setDeleting(true);
+
+        try {
+            await onDelete?.();
+            setDeleteOpen(false);
+        } catch {
+            // Keep the modal open so the user can retry.
+        } finally {
+            setDeleting(false);
+        }
     };
 
     return (
         <>
             <div
-                role={cardClickable ? "button" : undefined}
-                tabIndex={cardClickable ? 0 : undefined}
-                onClick={cardClickable ? () => cardAction?.() : undefined}
-                onKeyDown={handleCardKeyDown}
-                className={[
-                    "rounded-lg border-2 border-border-emphasis bg-surface-panel p-3 md:p-4",
-                    "shadow-card transition-[box-shadow,background-color,border-color,transform] duration-200",
-                    cardClickable
-                        ? "group cursor-pointer hover:-translate-y-0.5 hover:border-accent-primary/40 hover:shadow-card-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary/50 dark:hover:bg-state-hover/50"
-                        : "",
-                ].join(" ")}
+                role="listitem"
+                onClick={cardClickable ? openCard : undefined}
+                className={cn(
+                    "rounded-lg border-2 border-border-emphasis bg-surface-panel p-3 shadow-card transition-[box-shadow,background-color,border-color,transform] duration-200 md:p-4",
+                    cardClickable &&
+                        "group cursor-pointer hover:-translate-y-0.5 hover:border-accent-primary/40 hover:shadow-card-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary/50 dark:hover:bg-state-hover/50"
+                )}
             >
                 <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between md:gap-4">
                     <div className="min-w-0 flex-1">
@@ -138,32 +139,43 @@ export default function MapListItem({
 
                                 <div className="flex min-w-0 flex-1 items-start justify-between gap-3">
                                     <h3 className="min-w-0 break-words text-2xl font-bold text-accent-text md:text-3xl">
-                                        {map.title}
+                                        {cardClickable ? (
+                                            <Link
+                                                to={`/maps/${map.id}`}
+                                                onClick={(event) => event.stopPropagation()}
+                                                className="rounded-sm underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary/50"
+                                            >
+                                                {map.title}
+                                            </Link>
+                                        ) : (
+                                            map.title
+                                        )}
                                     </h3>
-                            
+
                                     {cardClickable && (
-                                        <ArrowUpRight className="mt-1 h-5 w-5 shrink-0 text-text-muted transition-all group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-accent-primary" />
+                                        <ArrowUpRight
+                                            className="mt-1 h-5 w-5 shrink-0 text-text-muted transition-all group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-accent-primary"
+                                            aria-hidden="true"
+                                        />
                                     )}
                                 </div>
                             </div>
-                                
+
                             {!isProfileView && tags.length > 0 && (
                                 <div className="mt-2 flex flex-wrap gap-1 md:mt-3 md:gap-2">
                                     {visible.map((tag) => {
                                         const isActive = activeSet.has(tag);
-                                    
+
                                         return (
                                             <Badge
                                                 key={tag}
                                                 role="button"
                                                 tabIndex={0}
-                                                className={[
-                                                    "cursor-pointer select-none",
-                                                    "rounded-md px-1.5 py-[1px] text-[9px] md:rounded-full md:px-2 md:py-[2px] md:text-[11px]",
-                                                    isActive
-                                                        ? "border-accent-primary bg-accent-primary/15"
-                                                        : "",
-                                                ].join(" ")}
+                                                className={cn(
+                                                    "cursor-pointer select-none rounded-md px-1.5 py-[1px] text-[9px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary/50 md:rounded-full md:px-2 md:py-[2px] md:text-[11px]",
+                                                    isActive &&
+                                                        "border-accent-primary bg-accent-primary/15"
+                                                )}
                                                 onClick={handleTagActivate(tag)}
                                                 onKeyDown={handleTagKeyDown(tag)}
                                                 title={
@@ -172,14 +184,16 @@ export default function MapListItem({
                                                         : t("mapCard.tagTitles.filterByTag")
                                                 }
                                             >
-                                                <span className="tag-font">{tag}</span>
+                                                <span className="font-tag">{tag}</span>
                                             </Badge>
                                         );
                                     })}
 
                                     {hiddenInactiveCount > 0 && (
                                         <Badge className="select-none rounded-md px-1.5 py-[1px] text-[9px] opacity-80 md:rounded-full md:px-2 md:py-[2px] md:text-[11px]">
-                                            <span className="tag-font">+{hiddenInactiveCount}</span>
+                                            <span className="font-tag">
+                                                +{hiddenInactiveCount}
+                                            </span>
                                         </Badge>
                                     )}
                                 </div>
@@ -187,52 +201,52 @@ export default function MapListItem({
                         </div>
                     </div>
 
-                    <div
-                        className={
-                            isProfileView
-                                ? "grid shrink-0 grid-cols-2 gap-2 md:flex md:flex-wrap md:justify-end"
-                                : "flex shrink-0 flex-wrap gap-2 md:justify-end"
-                        }
-                    >
-                        {canView && (
-                            <Button
-                                onClick={handleActionClick(onOpen)}
-                                className={isProfileView ? "h-10 w-full md:h-auto md:w-auto" : "w-full sm:w-auto"}
-                            >
-                                {t("actions.view")}
-                            </Button>
-                        )}
-                    
-                        {canShare && (
-                            <Button
-                                variant="secondary"
-                                onClick={handleOpenShare}
-                                className={isProfileView ? "h-10 w-full md:h-auto md:w-auto" : "w-full sm:w-auto"}
-                            >
-                                {t("actions.share")}
-                            </Button>
-                        )}
-                    
-                        {canEdit && (
-                            <Button
-                                variant={isDraft ? "default" : "secondary"}
-                                onClick={handleActionClick(onEdit)}
-                                className={isProfileView ? "h-10 w-full md:h-auto md:w-auto" : "w-full sm:w-auto"}
-                            >
-                                {t("actions.edit")}
-                            </Button>
-                        )}
-                    
-                        {canDelete && (
-                            <Button
-                                variant="destructive"
-                                onClick={handleOpenDelete}
-                                className={isProfileView ? "h-10 w-full md:h-auto md:w-auto" : "w-full sm:w-auto"}
-                            >
-                                {t("actions.delete")}
-                            </Button>
-                        )}
-                    </div>
+                    {isProfileView && (
+                        <div className="grid shrink-0 grid-cols-2 gap-2 md:flex md:flex-wrap md:justify-end">
+                            {canView && (
+                                <Button
+                                    onClick={handleActionClick(onOpen)}
+                                    className="h-10 w-full md:h-auto md:w-auto"
+                                >
+                                    <Eye className="h-4 w-4" aria-hidden="true" />
+                                    {t("actions.view")}
+                                </Button>
+                            )}
+
+                            {canShare && (
+                                <Button
+                                    variant="secondary"
+                                    onClick={handleOpenShare}
+                                    className="h-10 w-full md:h-auto md:w-auto"
+                                >
+                                    <Share2 className="h-4 w-4" aria-hidden="true" />
+                                    {t("actions.share")}
+                                </Button>
+                            )}
+
+                            {canEdit && (
+                                <Button
+                                    variant={isDraft ? "default" : "secondary"}
+                                    onClick={handleActionClick(onEdit)}
+                                    className="h-10 w-full md:h-auto md:w-auto"
+                                >
+                                    <Pencil className="h-4 w-4" aria-hidden="true" />
+                                    {t("actions.edit")}
+                                </Button>
+                            )}
+
+                            {canDelete && (
+                                <Button
+                                    variant="destructive"
+                                    onClick={handleOpenDelete}
+                                    className="h-10 w-full md:h-auto md:w-auto"
+                                >
+                                    <Trash2 className="h-4 w-4" aria-hidden="true" />
+                                    {t("actions.delete")}
+                                </Button>
+                            )}
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -248,6 +262,7 @@ export default function MapListItem({
                 onClose={() => setDeleteOpen(false)}
                 onConfirm={handleConfirmDelete}
                 mapTitle={map.title}
+                loading={deleting}
             />
         </>
     );

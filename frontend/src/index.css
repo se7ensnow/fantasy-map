@@ -210,8 +210,21 @@
    BASE — global element styles
    ========================================================= */
 @layer base {
+  :root {
+    color-scheme: light;
+  }
+
+  .dark {
+    color-scheme: dark;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
   body {
     @apply font-serif;
+    min-height: 100vh;
     color: rgb(var(--text-primary) / 1);
     background-color: rgb(var(--surface-page) / 1);
     background-image: url("https://www.transparenttextures.com/patterns/paper-fibers.png");
@@ -220,6 +233,50 @@
       background-color 180ms ease,
       color 180ms ease;
     position: relative;
+  }
+
+  :where(a, button, input, textarea, select):focus-visible {
+    outline: none;
+  }
+
+  ::selection {
+    background-color: rgb(var(--accent-primary) / 0.25);
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(var(--border-default) / 0.45) transparent;
+  }
+
+  *::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    border: 3px solid transparent;
+    border-radius: 9999px;
+    background-clip: content-box;
+    background-color: rgb(var(--border-default) / 0.45);
+  }
+
+  *::-webkit-scrollbar-thumb:hover {
+    background-color: rgb(var(--border-default) / 0.7);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
   }
 
   body::before {
@@ -279,6 +336,14 @@
   .markdown-body {
     @apply text-sm leading-6 md:text-base md:leading-relaxed;
     color: rgb(var(--md-text) / 1);
+  }
+
+  .markdown-body > :first-child {
+    margin-top: 0;
+  }
+
+  .markdown-body > :last-child {
+    margin-bottom: 0;
   }
 
   .markdown-body h1 {
