@@ -6,11 +6,20 @@ export function getSystemTheme() {
 }
 
 export function loadTheme() {
-    return localStorage.getItem(STORAGE_KEY) || "system";
+    try {
+        return localStorage.getItem(STORAGE_KEY) || "system";
+    } catch {
+        // Safari private mode / blocked storage.
+        return "system";
+    }
 }
 
 export function saveTheme(theme) {
-    localStorage.setItem(STORAGE_KEY, theme);
+    try {
+        localStorage.setItem(STORAGE_KEY, theme);
+    } catch {
+        // Persisting the preference is best-effort; the UI still works.
+    }
 }
 
 export function applyTheme(theme) {
@@ -19,6 +28,9 @@ export function applyTheme(theme) {
 
     root.classList.toggle("dark", actual === "dark");
     root.dataset.theme = theme;
+    // Keep the browser canvas/scrollbars (and Safari toolbar) in sync before
+    // the next frame instead of letting the default white show through.
+    root.style.colorScheme = actual;
 }
 
 export function watchSystemTheme(onChange) {

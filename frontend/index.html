@@ -2,6 +2,33 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <!--
+      Apply the saved theme before the first paint. main.jsx runs only after
+      the bundle loads, which caused a flash of the light page (and, in dark
+      mode, a white/empty background) while reloading in Safari.
+    -->
+    <script>
+      (function () {
+        try {
+          var stored = localStorage.getItem("theme");
+          var prefersDark =
+            window.matchMedia &&
+            window.matchMedia("(prefers-color-scheme: dark)").matches;
+          var actual =
+            stored === "light" || stored === "dark"
+              ? stored
+              : prefersDark
+                ? "dark"
+                : "light";
+          var root = document.documentElement;
+          root.classList.toggle("dark", actual === "dark");
+          root.dataset.theme = stored || "system";
+          root.style.colorScheme = actual;
+        } catch (error) {
+          /* Storage can be unavailable in private mode; fall back to the default theme. */
+        }
+      })();
+    </script>
     <link rel="icon" type="image/png" href="/favicon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
@@ -10,6 +37,24 @@
     />
     <meta name="theme-color" content="#f2f0e6" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#181411" media="(prefers-color-scheme: dark)" />
+    <!--
+      Load web fonts without blocking the first paint: if Google Fonts is slow
+      or unreachable, the page still renders with the local serif fallbacks.
+    -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600&family=Cormorant+Garamond:wght@600;700&family=Merriweather:wght@400;700&display=swap"
+      media="print"
+      onload="this.media='all'"
+    />
+    <noscript>
+      <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600&family=Cormorant+Garamond:wght@600;700&family=Merriweather:wght@400;700&display=swap"
+      />
+    </noscript>
     <title>Fantasy Maps</title>
   </head>
   <body>
