@@ -1,24 +1,29 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { register } from "../api/auth";
+
+import { register } from "@/api/auth";
 import AuthForm from "@/components/AuthForm";
+import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 
 export default function RegisterPage() {
     const { t } = useTranslation();
     const navigate = useNavigate();
+    const location = useLocation();
     const [errorMessage, setErrorMessage] = useState("");
+
+    useDocumentTitle(t("register.title"));
 
     const handleSubmit = async ({ username, email, password }) => {
         try {
             setErrorMessage("");
             await register(username, email, password);
             toast.success(t("register.toasts.success"));
-            navigate("/login");
-        } catch (err) {
-            setErrorMessage(err.message || t("register.errors.failed"));
-            console.error(err);
+            navigate("/login", { state: location.state });
+        } catch (error) {
+            setErrorMessage(error.message || t("register.errors.failed"));
+            console.error(error);
         }
     };
 
@@ -31,7 +36,7 @@ export default function RegisterPage() {
 
                 <AuthForm
                     onSubmit={handleSubmit}
-                    showEmail={true}
+                    showEmail
                     submitLabel={t("register.submit")}
                     errorMessage={errorMessage}
                 />
@@ -42,8 +47,10 @@ export default function RegisterPage() {
                     </p>
                     <button
                         type="button"
-                        onClick={() => navigate("/login")}
-                        className="mt-2 text-sm font-semibold text-text-link transition-colors duration-200 hover:text-text-link-hover hover:underline"
+                        onClick={() =>
+                            navigate("/login", { state: location.state })
+                        }
+                        className="mt-2 text-sm font-semibold text-text-link transition-colors duration-200 hover:text-text-link-hover hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary/50"
                     >
                         {t("register.logIn")}
                     </button>

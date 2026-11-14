@@ -1,11 +1,19 @@
-import { Navigate } from "react-router-dom";
-import { getToken } from "@/api/auth";
+import { Navigate, useLocation } from "react-router-dom";
+
+import { useAuth } from "@/hooks/useAuth";
 
 export default function RequireAuth({ children }) {
-    const token = getToken();
+    const { isAuthenticated } = useAuth();
+    const location = useLocation();
 
-    if (!token) {
-        return <Navigate to="/login" replace />;
+    if (!isAuthenticated) {
+        return (
+            <Navigate
+                to="/login"
+                replace
+                state={{ from: location.pathname + location.search }}
+            />
+        );
     }
 
     return children;

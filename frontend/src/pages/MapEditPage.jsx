@@ -1,28 +1,38 @@
-import React, { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useParams, useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 
 import {
+    createMap,
     getMapById,
     updateMap,
-    createMap,
-    uploadImage,
-    subscribeToTileProgress,
-} from "../api/maps";
+} from "@/api/maps";
 import {
-    getLocations,
     createLocation,
-    updateLocation,
     deleteLocation,
+    getLocations,
+    updateLocation,
 } from "@/api/locations";
-
-import MapForm from "../components/MapForm";
-import TilesUploader from "../components/TilesUploader";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import EditableMapViewer from "@/components/EditableMapViewer";
+import ErrorState from "@/components/ErrorState";
+import LoadingState from "@/components/LoadingState";
+import MapForm from "@/components/MapForm";
+import TilesUploader from "@/components/TilesUploader";
+import { useDocumentTitle } from "@/hooks/useDocumentTitle";
+import { useTileProcessing } from "@/hooks/useTileProcessing";
 
-import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
-import { Button } from "../components/ui/button";
+function createEmptyMap() {
+    return {
+        title: "",
+        description: "",
+        tags: [],
+        visibility: "private",
+        status: "draft",
+    };
+}
 
 export default function MapEditPage() {
     const { t } = useTranslation();
@@ -31,53 +41,11 @@ export default function MapEditPage() {
 
     const [map, setMap] = useState(null);
     const [locations, setLocations] = useState([]);
-    const [loading, setLoading] = useState(false);
-    const [isProcessing, setIsProcessing] = useState(false);
-    const [tilesReadyMessage, setTilesReadyMessage] = useState("");
-    const [progressData, setProgressData] = useState(null);
-    const [processingError, setProcessingError] = useState(null);
-    const [error, setError] = useState("");
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [loadRevision, setLoadRevision] = useState(0);
 
-    const unsubscribeRef = useRef(null);
-
-    useEffect(() => {
-        async function fetchData() {
-            try {
-                setLoading(true);
-
-                if (map_id) {
-                    const mapData = await getMapById(map_id);
-                    setMap(mapData);
-
-                    const locationsData = await getLocations(map_id);
-                    setLocations(locationsData);
-                } else {
-                    setMap({
-                        title: "",
-                        description: "",
-                        tags: [],
-                        visibility: "private",
-                    });
-                    setLocations([]);
-                }
-            } catch (err) {
-                setError(err.message || t("mapEdit.errors.failedToLoadMap"));
-                console.error(err);
-            } finally {
-                setLoading(false);
-            }
-        }
-
-        fetchData();
-    }, [map_id, t]);
-
-    useEffect(() => {
-        return () => {
-            unsubscribeRef.current?.();
-        };
-    }, []);
-
-    const refreshMapData = async () => {
+    const refreshMapData = useCallback(async () => {
         if (!map_id) return;
 
         const updatedMap = await getMapById(map_id);
@@ -89,7 +57,53 @@ export default function MapEditPage() {
         } else {
             setLocations([]);
         }
-    };
+    }, [map_id]);
+
+    const tiles = useTileProcessing({
+        mapId: map_id,
+        onCompleted: refreshMapData,
+    });
+
+    useEffect(() => {
+        let cancelled = false;
+
+        async function fetchData() {
+            setLoading(true);
+            setError(null);
+
+            try {
+                if (map_id) {
+                    const mapData = await getMapById(map_id);
+                    if (cancelled) return;
+
+                    setMap(mapData);
+
+                    const locationsData =
+                        mapData.status === "ready"
+                            ? await getLocations(map_id)
+                            : [];
+
+                    if (!cancelled) setLocations(locationsData);
+                } else {
+                    setMap(createEmptyMap());
+                    setLocations([]);
+                }
+            } catch (fetchError) {
+                if (cancelled) return;
+
+                setError(fetchError);
+                console.error(fetchError);
+            } finally {
+                if (!cancelled) setLoading(false);
+            }
+        }
+
+        fetchData();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [map_id, loadRevision]);
 
     const handleMapSubmit = async (title, description, tags, visibility) => {
         try {
@@ -106,124 +120,88 @@ export default function MapEditPage() {
                 toast.success(t("mapEdit.toasts.created"));
                 navigate(`/maps/${newMap.id}/edit`);
             }
-        } catch (err) {
-            toast.error(err.message || t("mapEdit.errors.failedToSaveMap"));
-            console.error(err);
+        } catch (saveError) {
+            toast.error(saveError.message || t("mapEdit.errors.failedToSaveMap"));
+            console.error(saveError);
         } finally {
             setLoading(false);
-        }
-    };
-
-    const handleUploadImage = async (file) => {
-        if (!map_id) {
-            toast.error(t("mapEdit.errors.createMapBeforeUpload"));
-            return;
-        }
-
-        try {
-            setTilesReadyMessage("");
-            setProgressData(null);
-            setProcessingError(null);
-            setIsProcessing(true);
-
-            const result = await uploadImage(map_id, file);
-
-            if (!result?.job_id) {
-                setIsProcessing(false);
-                toast.error(t("mapEdit.errors.progressUnavailable"));
-                return;
-            }
-
-            unsubscribeRef.current?.();
-
-            unsubscribeRef.current = subscribeToTileProgress(result.job_id, {
-                onProgress: (payload) => {
-                    setProgressData(payload);
-                },
-                onDone: async (payload) => {
-                    setProgressData(payload);
-                    setProcessingError(null);
-                    setIsProcessing(false);
-                    setTilesReadyMessage(t("mapEdit.tiles.readyMessage"));
-                    unsubscribeRef.current = null;
-
-                    toast.success(t("mapEdit.toasts.imageProcessed"));
-
-                    try {
-                        await refreshMapData();
-                    } catch (err) {
-                        console.error(err);
-                    }
-                },
-                onError: (payload) => {
-                    setProgressData(payload);
-                    setIsProcessing(false);
-                    setTilesReadyMessage("");
-                    setProcessingError({
-                        message: payload?.userMessage || t("mapEdit.errors.processingFailed"),
-                        details: payload?.errorDetails || null,
-                    });
-                    unsubscribeRef.current = null;
-
-                    toast.error(payload?.userMessage || t("mapEdit.errors.processingFailed"));
-                },
-            });
-        } catch (err) {
-            setIsProcessing(false);
-            setProcessingError({
-                message: err.message || t("mapEdit.errors.failedToUploadImage"),
-                details: null,
-            });
-            toast.error(err.message || t("mapEdit.errors.failedToUploadImage"));
-            console.error(err);
         }
     };
 
     const handleAddLocation = async (newLocation) => {
         if (!map_id) {
             toast.error(t("mapEdit.errors.saveMapBeforeAddLocation"));
-            return;
+            throw new Error("Map is not saved yet");
         }
+
         try {
             const created = await createLocation(newLocation);
-            setLocations([...locations, created]);
-        } catch (err) {
-            toast.error(err.message || t("mapEdit.errors.failedToAddLocation"));
-            console.error(err);
+            setLocations((previous) => [...previous, created]);
+        } catch (locationError) {
+            toast.error(
+                locationError.message || t("mapEdit.errors.failedToAddLocation")
+            );
+            console.error(locationError);
+            throw locationError;
         }
     };
 
     const handleDeleteLocation = async (locationId) => {
         try {
             await deleteLocation(locationId);
-            setLocations(locations.filter((loc) => loc.id !== locationId));
-        } catch (err) {
-            toast.error(err.message || t("mapEdit.errors.failedToDeleteLocation"));
-            console.error(err);
+            setLocations((previous) =>
+                previous.filter((location) => location.id !== locationId)
+            );
+        } catch (locationError) {
+            toast.error(
+                locationError.message || t("mapEdit.errors.failedToDeleteLocation")
+            );
+            console.error(locationError);
+            throw locationError;
         }
     };
 
     const handleUpdateLocation = async (locationId, updatedLocation) => {
         try {
             const saved = await updateLocation(locationId, updatedLocation);
-            setLocations(locations.map((loc) => (loc.id === saved.id ? saved : loc)));
-        } catch (err) {
-            toast.error(err.message || t("mapEdit.errors.failedToUpdateLocation"));
-            console.error(err);
+            setLocations((previous) =>
+                previous.map((location) =>
+                    location.id === saved.id ? saved : location
+                )
+            );
+        } catch (locationError) {
+            toast.error(
+                locationError.message || t("mapEdit.errors.failedToUpdateLocation")
+            );
+            console.error(locationError);
+            throw locationError;
         }
     };
 
+    useDocumentTitle(
+        map?.title || (map_id ? undefined : t("mapEdit.titles.createMap"))
+    );
+
     if (error) {
-        return <p className="p-3 text-status-danger md:p-4">{error}</p>;
+        return (
+            <div className="p-3 md:p-8">
+                <ErrorState
+                    title={t("mapEdit.errors.failedToLoadMap")}
+                    message={error.message}
+                    onRetry={() => setLoadRevision((value) => value + 1)}
+                    retryLabel={t("actions.retry")}
+                />
+            </div>
+        );
     }
 
     if (!map) {
-        return <p className="p-3 text-text-heading md:p-4">{t("mapEdit.loading")}</p>;
+        return <LoadingState label={t("mapEdit.loading")} />;
     }
 
-    const isReady = map?.status === "ready";
-    const isDraft = map?.status === "draft";
-    const willBePublicWhenReady = isDraft && map?.visibility === "public";
+    const isReady = map.status === "ready";
+    const isDraft = map.status === "draft";
+    const willBePublicWhenReady = isDraft && map.visibility === "public";
 
     return (
         <div className="space-y-3 p-1 md:space-y-8 md:p-8">
@@ -239,12 +217,12 @@ export default function MapEditPage() {
             {map_id && (
                 <>
                     <TilesUploader
-                        onSubmit={handleUploadImage}
-                        isProcessing={isProcessing}
-                        successMessage={tilesReadyMessage}
-                        progressData={progressData}
-                        errorMessage={processingError?.message || ""}
-                        errorDetails={processingError?.details || ""}
+                        onSubmit={tiles.upload}
+                        isProcessing={tiles.isProcessing}
+                        successMessage={tiles.successMessage}
+                        progressData={tiles.progressData}
+                        errorMessage={tiles.errorMessage}
+                        errorDetails={tiles.errorDetails}
                     />
 
                     {isDraft && (
@@ -289,27 +267,29 @@ export default function MapEditPage() {
                 </>
             )}
 
-            <div className="flex flex-col gap-2 px-1 pb-4 md:items-end md:px-8 md:pb-8">
-                <Button
-                    variant="outline"
-                    onClick={() => {
-                        if (isReady) {
-                            navigate(`/maps/${map_id}`);
+            {map_id && (
+                <div className="flex flex-col gap-2 px-1 pb-4 md:items-end md:px-8 md:pb-8">
+                    <Button
+                        variant="outline"
+                        onClick={() => navigate(`/maps/${map_id}`)}
+                        className="w-full md:w-32"
+                        disabled={!isReady}
+                        title={
+                            !isReady
+                                ? t("mapEdit.viewMap.availableAfterUpload")
+                                : undefined
                         }
-                    }}
-                    className="w-full md:w-32"
-                    disabled={!isReady}
-                    title={!isReady ? t("mapEdit.viewMap.availableAfterUpload") : undefined}
-                >
-                    {t("mapEdit.viewMap.button")}
-                </Button>
+                    >
+                        {t("mapEdit.viewMap.button")}
+                    </Button>
 
-                {!isReady && map_id && (
-                    <p className="text-xs text-text-muted md:max-w-xs md:text-right">
-                        {t("mapEdit.viewMap.availableAfterUpload")}
-                    </p>
-                )}
-            </div>
+                    {!isReady && (
+                        <p className="text-xs text-text-muted md:max-w-xs md:text-right">
+                            {t("mapEdit.viewMap.availableAfterUpload")}
+                        </p>
+                    )}
+                </div>
+            )}
         </div>
     );
 }

@@ -1,218 +1,129 @@
-import axios from "axios";
-import { getToken, getTokenType } from "./auth";
-import { API_URL } from "../config";
-import { toApiError } from "./errors";
+import { API_URL } from "@/config";
+import client from "./client";
 
 export async function getMyMaps(page = 1, size = 10) {
-    try {
-        const response = await axios.get(`${API_URL}/maps/owned`, {
-            params: { page, size },
-            headers: {
-                Authorization: `${getTokenType()} ${getToken()}`,
-            },
-        });
-
-        return response.data;
-    } catch (error) {
-        throw toApiError(error, "Failed to load maps");
-    }
+    return client.get("/maps/owned", {
+        params: { page, size },
+        errorMessage: "Failed to load maps",
+    });
 }
 
 export async function getAllMaps(page = 1, size = 10, { q, tags, tagsMode } = {}) {
-    try {
-        const params = { page, size };
-        if (q && q.trim()) params.q = q.trim();
-        if (tags && tags.trim()) params.tags = tags.trim();
-        if (tagsMode) params.tags_mode = tagsMode;
+    const params = { page, size };
 
-        const response = await axios.get(`${API_URL}/maps/all`, { params });
-        return response.data;
-    } catch (error) {
-        throw toApiError(error, "Failed to load maps");
-    }
+    if (q?.trim()) params.q = q.trim();
+    if (tags?.trim()) params.tags = tags.trim();
+    if (tagsMode) params.tags_mode = tagsMode;
+
+    return client.get("/maps/all", {
+        params,
+        errorMessage: "Failed to load maps",
+    });
 }
 
 export async function getMapById(mapId) {
-    try {
-        const response = await axios.get(`${API_URL}/maps/${mapId}`, {
-            headers: {
-                Authorization: `${getTokenType()} ${getToken()}`,
-            },
-        });
-
-        return response.data;
-    } catch (error) {
-        throw toApiError(error, "Failed to load map");
-    }
+    return client.get(`/maps/${mapId}`, {
+        errorMessage: "Failed to load map",
+    });
 }
 
 export async function getMapByShareId(shareId) {
-    try {
-        const response = await axios.get(`${API_URL}/maps/share/${shareId}`);
-        return response.data;
-    } catch (error) {
-        throw toApiError(error, "Failed to load shared map");
-    }
+    return client.get(`/maps/share/${shareId}`, {
+        errorMessage: "Failed to load shared map",
+    });
 }
 
 export async function listTags(q = "", limit = 50) {
-    try {
-        const params = { limit };
-        if (q && q.trim()) params.q = q.trim();
+    const params = { limit };
 
-        const response = await axios.get(`${API_URL}/maps/tags`, { params });
-        return response.data;
-    } catch (error) {
-        throw toApiError(error, "Failed to load tags");
-    }
+    if (q?.trim()) params.q = q.trim();
+
+    return client.get("/maps/tags", {
+        params,
+        errorMessage: "Failed to load tags",
+    });
 }
 
 export async function createMap(title, description, tags = [], visibility = "private") {
-    try {
-        const response = await axios.post(
-            `${API_URL}/maps/create`,
-            {
-                title,
-                description,
-                tags,
-                visibility,
-            },
-            {
-                headers: {
-                    Authorization: `${getTokenType()} ${getToken()}`,
-                },
-            }
-        );
-
-        return response.data;
-    } catch (error) {
-        throw toApiError(error, "Failed to create map");
-    }
+    return client.post(
+        "/maps/create",
+        { title, description, tags, visibility },
+        { errorMessage: "Failed to create map" }
+    );
 }
 
 export async function updateMap(mapId, title, description, tags, visibility) {
-    try {
-        const payload = { title, description };
-        if (tags !== undefined) payload.tags = tags;
-        if (visibility !== undefined) payload.visibility = visibility;
+    const payload = { title, description };
 
-        const response = await axios.put(`${API_URL}/maps/${mapId}`, payload, {
-            headers: {
-                Authorization: `${getTokenType()} ${getToken()}`,
-            },
-        });
+    if (tags !== undefined) payload.tags = tags;
+    if (visibility !== undefined) payload.visibility = visibility;
 
-        return response.data;
-    } catch (error) {
-        throw toApiError(error, "Failed to update map");
-    }
+    return client.put(`/maps/${mapId}`, payload, {
+        errorMessage: "Failed to update map",
+    });
 }
 
 export async function deleteMap(mapId) {
-    try {
-        const response = await axios.delete(`${API_URL}/maps/${mapId}`, {
-            headers: {
-                Authorization: `${getTokenType()} ${getToken()}`,
-            },
-        });
+    await client.delete(`/maps/${mapId}`, {
+        errorMessage: "Failed to delete map",
+    });
 
-        return response.status === 204;
-    } catch (error) {
-        throw toApiError(error, "Failed to delete map");
-    }
+    return true;
 }
 
 export async function uploadImage(mapId, imageFile) {
     const formData = new FormData();
     formData.append("file", imageFile);
 
-    try {
-        const response = await axios.post(
-            `${API_URL}/maps/${mapId}/upload-image`,
-            formData,
-            {
-                headers: {
-                    Authorization: `${getTokenType()} ${getToken()}`,
-                    "Content-Type": "multipart/form-data",
-                },
-            }
-        );
-
-        return response.data;
-    } catch (error) {
-        throw toApiError(error, "Failed to upload image");
-    }
+    return client.post(`/maps/${mapId}/upload-image`, formData, {
+        errorMessage: "Failed to upload image",
+    });
 }
 
 export async function createShareId(mapId) {
-    try {
-        const response = await axios.post(`${API_URL}/maps/${mapId}/share`, null, {
-            headers: {
-                Authorization: `${getTokenType()} ${getToken()}`,
-            },
-        });
-
-        return response.data;
-    } catch (error) {
-        throw toApiError(error, "Failed to create share link");
-    }
+    return client.post(`/maps/${mapId}/share`, null, {
+        errorMessage: "Failed to create share link",
+    });
 }
 
 export async function getShareId(mapId) {
-    try {
-        const response = await axios.get(`${API_URL}/maps/${mapId}/share`, {
-            headers: {
-                Authorization: `${getTokenType()} ${getToken()}`,
-            },
-        });
-
-        return response.data;
-    } catch (error) {
-        throw toApiError(error, "Failed to load share link");
-    }
+    return client.get(`/maps/${mapId}/share`, {
+        errorMessage: "Failed to load share link",
+    });
 }
 
 export async function deleteShareId(mapId) {
-    try {
-        const response = await axios.delete(`${API_URL}/maps/${mapId}/share`, {
-            headers: {
-                Authorization: `${getTokenType()} ${getToken()}`,
-            },
-        });
+    await client.delete(`/maps/${mapId}/share`, {
+        errorMessage: "Failed to disable share link",
+    });
 
-        return response.status === 204;
-    } catch (error) {
-        throw toApiError(error, "Failed to disable share link");
-    }
+    return true;
 }
+
+const TILE_PROGRESS_ERROR_MESSAGES = [
+    {
+        matches: (message) => message.includes("not found") && message.includes("source"),
+        userMessage: "Source image was not found. Please upload the image again.",
+    },
+    {
+        matches: (message) => message.includes("timed out") || message.includes("timeout"),
+        userMessage: "Processing took too long and was stopped. Please try again.",
+    },
+    {
+        matches: (message) => message.includes("connection"),
+        userMessage: "Connection to processing updates was lost. Please try again.",
+    },
+];
 
 function normalizeTileProgressError(payload) {
     const rawMessage = String(payload?.message || "").toLowerCase();
+    const details = payload?.message || null;
 
-    if (rawMessage.includes("not found") && rawMessage.includes("source")) {
-        return {
-            userMessage: "Source image was not found. Please upload the image again.",
-            details: payload?.message || null,
-        };
-    }
-
-    if (rawMessage.includes("timed out") || rawMessage.includes("timeout")) {
-        return {
-            userMessage: "Processing took too long and was stopped. Please try again.",
-            details: payload?.message || null,
-        };
-    }
-
-    if (rawMessage.includes("connection")) {
-        return {
-            userMessage: "Connection to processing updates was lost. Please try again.",
-            details: payload?.message || null,
-        };
-    }
+    const match = TILE_PROGRESS_ERROR_MESSAGES.find(({ matches }) => matches(rawMessage));
 
     return {
-        userMessage: "Something went wrong. Please try again.",
-        details: payload?.message || null,
+        userMessage: match?.userMessage ?? "Something went wrong. Please try again.",
+        details,
     };
 }
 
@@ -226,8 +137,9 @@ export function subscribeToTileProgress(jobId, { onProgress, onDone, onError } =
         eventSource.close();
     };
 
-    const emitNormalizedError = (payload = {}) => {
+    const emitError = (payload = {}) => {
         const normalized = normalizeTileProgressError(payload);
+
         onError?.({
             ...payload,
             status: "error",
@@ -250,13 +162,11 @@ export function subscribeToTileProgress(jobId, { onProgress, onDone, onError } =
             }
 
             if (payload.status === "error") {
-                emitNormalizedError(payload);
+                emitError(payload);
             }
-        } catch (err) {
-            console.error("Failed to parse SSE progress payload:", err);
-            emitNormalizedError({
-                message: "Invalid progress response received",
-            });
+        } catch (error) {
+            console.error("Failed to parse SSE progress payload:", error);
+            emitError({ message: "Invalid progress response received" });
         }
     };
 
@@ -264,12 +174,8 @@ export function subscribeToTileProgress(jobId, { onProgress, onDone, onError } =
 
     eventSource.onerror = () => {
         if (isClosed) return;
-        emitNormalizedError({
-            message: "Connection to progress stream lost",
-        });
+        emitError({ message: "Connection to progress stream lost" });
     };
 
-    return () => {
-        close();
-    };
+    return close;
 }

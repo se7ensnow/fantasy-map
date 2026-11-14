@@ -6,7 +6,8 @@ dotenv.load_dotenv()
 USER_SERVICE_URL = os.getenv("USER_SERVICE_URL")
 MAP_SERVICE_URL = os.getenv("MAP_SERVICE_URL")
 REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")
-FRONTEND_URL = os.getenv("FRONTEND_URL")
+FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
+FRONTEND_URLS = [url.strip() for url in FRONTEND_URL.split(",") if url.strip()]
 
 MAP_UPLOAD_TIMEOUT_SECONDS = 180.0
 DEFAULT_PROXY_TIMEOUT_SECONDS = 10.0

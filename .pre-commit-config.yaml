@@ -1,0 +1,8 @@
+# Установка: pip install pre-commit && pre-commit install
+# Хук проверяет staged-изменения на секреты перед каждым коммитом.
+repos:
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.18.4
+    hooks:
+      - id: gitleaks
+        args: ["--config", ".gitleaks.toml"]

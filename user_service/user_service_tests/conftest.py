@@ -1,3 +1,9 @@
+import os
+
+# The service refuses to start without SECRET_KEY, so tests provide their own.
+# This must happen before any user_service_app module imports its config.
+os.environ.setdefault("SECRET_KEY", "test-only-secret-key")
+
 import pytest
 import sqlalchemy
 from sqlalchemy import orm

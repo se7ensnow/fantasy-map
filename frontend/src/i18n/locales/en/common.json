@@ -3,7 +3,10 @@
         "profile": "Profile",
         "login": "Login",
         "register": "Register",
-        "logout": "Logout"
+        "logout": "Logout",
+        "logoAlt": "Fantasy Maps",
+        "openMenu": "Open menu",
+        "closeMenu": "Close menu"
     },
     "home": {
         "hero": {
@@ -15,14 +18,15 @@
             "title": "Maps Catalog"
         },
         "errors": {
-            "failedToLoadMaps": "Failed to load maps",
-            "failedToLoadTags": "Failed to load tags"
-        }
+            "failedToLoadMaps": "Failed to load maps"
+        },
+        "loadingMaps": "Loading maps…"
     },
     "pagination": {
         "previous": "Previous",
         "next": "Next",
-        "pageOf": "Page {{page}} of {{total}}"
+        "pageOf": "Page {{page}} of {{total}}",
+        "navigation": "Pagination"
     },
     "profile": {
         "title": "Profile",
@@ -48,13 +52,8 @@
         "searchPlaceholder": "Search by title…",
         "tagPlaceholder": "Filter by tag…",
         "clear": "Clear",
-        "loading": "Loading…",
-        "noSuggestions": "No suggestions",
-        "pressEnterToAdd": "Press Enter to add “{{tag}}”",
         "removeTagTitle": "Click to remove",
-        "errors": {
-            "tagSuggestionsFailed": "Tag suggestions failed"
-        }
+        "removeTagAria": "Remove tag {{tag}}"
     },
     "mapCard": {
         "status": {
@@ -74,10 +73,16 @@
         "delete": "Delete",
         "cancel": "Cancel",
         "close": "Close",
-        "copy": "Copy"
+        "copy": "Copy",
+        "retry": "Try again"
     },
     "mapList": {
-        "empty": "No maps found."
+        "noMatchesTitle": "No maps match your filters",
+        "noMatchesDescription": "Try a different search, remove a tag, or clear all filters.",
+        "emptyTitle": "The catalog is still empty",
+        "emptyDescription": "Be the first cartographer to chart a world here.",
+        "emptyProfileTitle": "You have no maps yet",
+        "emptyProfileDescription": "Create your first map and start adding locations."
     },
     "login": {
         "title": "Login",
@@ -106,7 +111,10 @@
     "authForm": {
         "username": "Username",
         "email": "Email",
-        "password": "Password"
+        "password": "Password",
+        "showPassword": "Show password",
+        "hidePassword": "Hide password",
+        "submitting": "Please wait…"
     },
     "themeToggle": {
         "light": "Light",
@@ -121,7 +129,8 @@
         "confirmationLabel": "Type map title to confirm",
         "mismatch": "The entered title does not match.",
         "deleting": "Deleting...",
-        "deleteMap": "Delete Map"
+        "deleteMap": "Delete Map",
+        "match": "Title matches."
     },
     "shareModal": {
         "title": "Share map",
@@ -142,13 +151,16 @@
             "created": "Share link created",
             "disabled": "Share link disabled",
             "copied": "Link copied"
-        }
+        },
+        "linkLabel": "Share link",
+        "copied": "Copied"
     },
     "tagsModeToggle": {
         "any": "any",
         "all": "all",
         "matchAny": "Match any selected tag",
-        "matchAll": "Match all selected tags"
+        "matchAll": "Match all selected tags",
+        "label": "Tag matching mode"
     },
     "footer": {
         "brand": "Fantasy Maps",
@@ -168,7 +180,6 @@
         "unknown": "Unknown",
         "mapSectionTitle": "Map",
         "errors": {
-            "failedToLoadMap": "Failed to load map",
             "unableToOpen": "Unable to open map"
         },
         "notFound": {
@@ -184,14 +195,14 @@
         "hidePanel": "Hide details panel",
         "showPanel": "Show details panel",
         "enterFullscreen": "Open fullscreen",
-        "exitFullscreen": "Exit fullscreen"
+        "exitFullscreen": "Exit fullscreen",
+        "detailsTitle": "Location details",
+        "detailsPanel": "Location details panel"
     },
     "mapEdit": {
         "loading": "Loading map...",
         "titles": {
-            "editMap": "Edit Map",
             "createMap": "Create Map",
-            "uploadTiles": "Upload Tiles",
             "editLocations": "Edit Locations"
         },
         "draft": {
@@ -226,8 +237,8 @@
     },
     "mapForm": {
         "title": {
-          "edit": "Edit Map Info",
-          "create": "Create New Map"
+            "edit": "Edit Map Info",
+            "create": "Create New Map"
         },
         "fields": {
             "title": "Title:",
@@ -240,10 +251,6 @@
             "public": "Public",
             "privateHint": "Visible only to you.",
             "publicHint": "Visible in the catalog once the map is ready."
-        },
-        "tags": {
-            "placeholder": "Add tags (Enter)…",
-            "hint": "Press Enter to add a tag."
         },
         "actions": {
             "saving": "Saving...",
@@ -259,22 +266,19 @@
         "removeTagAria": "Remove tag {{tag}}",
         "placeholder": "add tag…",
         "limitReachedPlaceholder": "limit reached",
-        "loading": "Loading…",
-        "noSuggestions": "No suggestions",
         "limitReachedMessage": "Tag limit reached ({{maxTags}}). Remove a tag to add another.",
-        "errors": {
-            "tagSuggestionsFailed": "Tag suggestions failed"
-        },
-        "add": "Add"
+        "add": "Add",
+        "tagsCount": "{{used}} / {{maxTags}} tags",
+        "inputLabel": "Add a tag"
     },
     "tilesUploader": {
-      "title": "Upload Map Image",
-      "fileLabel": "Upload Image (.png, .jpg, .jpeg, .webp):",
-      "actions": {
+        "title": "Upload Map Image",
+        "fileLabel": "Upload Image (.png, .jpg, .jpeg, .webp):",
+        "actions": {
             "upload": "Upload Image",
             "uploading": "Uploading..."
-      },
-      "stages": {
+        },
+        "stages": {
             "queued": "Task queued",
             "downloadingSource": "Downloading source image",
             "generatingTiles": "Generating tiles",
@@ -283,8 +287,8 @@
             "completed": "Completed",
             "failed": "Failed",
             "processing": "Processing tiles"
-      },
-      "progress": {
+        },
+        "progress": {
             "queued": "Task queued",
             "downloadingSource": "Downloading source image",
             "generatingTiles": "Generating tiles",
@@ -294,12 +298,12 @@
             "generatedCount": "{{generated}} / {{total}} tiles generated",
             "uploadedCount": "{{uploaded}} / {{total}} tiles uploaded",
             "pleaseWait": "Processing tiles... Please wait."
-      },
-      "errorBlock": {
+        },
+        "errorBlock": {
             "title": "Processing failed",
             "details": "Details"
-      },
-      "errors": {
+        },
+        "errors": {
             "uploadFailedConsole": "Upload failed:",
             "processingFailed": "Something went wrong. Please try again.",
             "sourceNotFound": "Source image was not found. Please upload the image again.",
@@ -309,7 +313,10 @@
             "tileUploadFailed": "Failed to upload generated tiles. Please try again.",
             "callbackFailed": "The map could not be finalized. Please try again.",
             "processingTimeout": "Processing took too long or stopped unexpectedly. Please try again."
-      }
+        },
+        "dropHint": "Drag & drop an image here, or click to choose a file",
+        "fileTypes": "PNG, JPG or WebP",
+        "clearSelection": "Remove selected file"
     },
     "editableMapViewer": {
         "title": "Location editor",
@@ -322,7 +329,8 @@
             "addLocation": "Add location",
             "cancelAdd": "Cancel add mode",
             "deleteLocation": "Delete location"
-        }
+        },
+        "emptyStateTitle": "No location selected"
     },
     "locationEditor": {
         "title": {
@@ -334,23 +342,53 @@
             "type": "Type:",
             "article": "Article (Markdown):",
             "x": "X:",
-            "y": "Y:"
+            "y": "Y:",
+            "coordinates": "Coordinates"
         },
         "tabs": {
             "edit": "Edit",
-            "preview": "Preview"
+            "preview": "Preview",
+            "label": "Article mode"
         },
         "actions": {
             "saveChanges": "Save Changes",
-            "addLocation": "Add Location"
+            "addLocation": "Add Location",
+            "saving": "Saving…"
         },
         "placeholders": {
             "article": "# Title\n\nWrite your location article...\n\n- lists\n- **bold**\n- [link](https://...)"
+        },
+        "hints": {
+            "coordinates": "Coordinates update automatically when you place or drag the marker."
+        },
+        "errors": {
+            "coordinatesInvalid": "Please enter valid coordinates."
         }
     },
     "language": {
         "switchLanguage": "Switch language",
         "english": "English",
         "russian": "Русский"
+    },
+    "a11y": {
+        "skipToContent": "Skip to content"
+    },
+    "auth": {
+        "sessionExpired": "Your session has expired. Please sign in again."
+    },
+    "tagCombobox": {
+        "loading": "Loading…",
+        "pressEnterToAdd": "Press Enter to add “{{tag}}”"
+    },
+    "map": {
+        "ariaLabel": "Interactive map",
+        "zoomIn": "Zoom in",
+        "zoomOut": "Zoom out"
+    },
+    "mobileSheet": {
+        "dragHandle": "Drag to resize"
+    },
+    "markdown": {
+        "empty": "No description yet."
     }
 }

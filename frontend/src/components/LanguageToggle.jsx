@@ -50,7 +50,6 @@ export default function LanguageToggle({ compact = false }) {
         }
 
         await i18n.changeLanguage(lng);
-        localStorage.setItem("language", lng);
         setOpen(false);
     };
 

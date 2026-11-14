@@ -54,6 +54,10 @@ function getValidationMessage(detail) {
 }
 
 export function toApiError(error, fallbackMessage = "Request failed") {
+    if (isApiError(error)) {
+        return error;
+    }
+
     if (error?.response) {
         const status = error.response.status;
         const detail = error.response.data?.detail ?? null;
