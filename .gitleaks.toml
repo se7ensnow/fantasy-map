@@ -1,0 +1,11 @@
+# Конфигурация gitleaks: правила по умолчанию + исключения для шаблонов.
+title = "fantasy-map gitleaks config"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Шаблоны .env.example содержат только плейсхолдеры и фиктивные значения"
+paths = [
+  '''\.env\.example$''',
+]
