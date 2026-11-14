@@ -23,18 +23,20 @@
 
 ```text
 fantasy-map/
-├── .envs/                      # env-файлы для локального запуска сервисов
-├── .github/workflows/          # GitHub Actions
-├── api_gateway/                # API Gateway: единая точка входа для frontend
-├── docs/                       # документация, диаграммы и проектные материалы
-├── frontend/                   # клиентское приложение на React
-├── k8s/                        # Kubernetes-манифесты
-├── map_service/                # сервис карт, локаций, тегов и прав доступа
-├── tests/integration/          # интеграционные тесты
-├── tile_service/               # сервис фоновой генерации тайлов
-├── user_service/               # сервис пользователей и аутентификации
-├── docker-compose.yml          # локальный запуск backend-инфраструктуры
-├── pytest.ini                  # конфигурация pytest
+├── .env.example                 # порты и build args для docker compose
+├── .envs/                       # env-файлы для локального запуска (и *.env.example)
+├── .github/workflows/           # GitHub Actions
+├── api_gateway/                 # API Gateway: единая точка входа для frontend
+├── docs/                        # документация, диаграммы и инструкция по деплою
+├── frontend/                    # клиентское приложение на React
+├── k8s/                         # Kubernetes-манифесты (экспериментальные)
+├── map_service/                 # сервис карт, локаций, тегов и прав доступа
+├── tests/integration/           # интеграционные тесты
+├── tile_service/                # сервис фоновой генерации тайлов
+├── user_service/                # сервис пользователей и аутентификации
+├── docker-compose.yml           # локальный запуск всего стека
+├── Makefile                     # команды env/up/down/logs/migrate/reset
+├── pytest.ini                   # конфигурация pytest
 └── README.md
 ```
 
@@ -59,10 +61,10 @@ fantasy-map/
 Перед запуском должны быть установлены:
 
 * Docker;
-* Docker Compose;
-* Node.js 20+;
-* npm;
+* Docker Compose v2;
 * Git.
+
+Node.js 20+ и npm нужны только для запуска frontend вне Docker.
 
 ### 1. Клонирование репозитория
 
@@ -73,7 +75,17 @@ cd fantasy-map
 
 ### 2. Настройка переменных окружения
 
-Проект использует env-файлы в директории `.envs/`.
+Все переменные лежат в `.envs/`. В репозитории хранятся только шаблоны
+`*.env.example`, поэтому сначала создайте локальные файлы:
+
+```bash
+make env
+```
+
+Команда создаст `.envs/*.env` из шаблонов `.envs/*.env.example`, **подставив
+случайные пароли и ключи** (`SECRET_KEY`, пароли PostgreSQL и MinIO), и корневой
+`.env` из `.env.example`. Существующие файлы не перезаписываются. Значения
+секретов в вывод не печатаются.
 
 Минимальный набор файлов:
 
@@ -88,130 +100,127 @@ cd fantasy-map
 └── user-service.env
 ```
 
-Пример локальной конфигурации:
+Файлы `.envs/*.env` **не хранятся в git** (они в `.gitignore`), а в репозиторий
+попадают только шаблоны с плейсхолдерами. Не коммитьте реальные пароли и ключи;
+подробности для production — в [`docs/deployment.md`](docs/deployment.md#секреты).
+Без `SECRET_KEY` сервис пользователей не запустится.
 
-#### `.envs/user-db.env`
+Репозиторий проверяется на утёкшие секреты gitleaks (CI и
+[pre-commit](https://pre-commit.com): `pip install pre-commit && pre-commit install`);
+ручная проверка — `make secrets-scan`.
 
-```env
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=postgres
-POSTGRES_DB=user_db
-```
+Адреса внутри compose используют имена сервисов (`user-db`, `map-db`, `redis`,
+`minio`), а переменные `VITE_API_URL`/`VITE_STORAGE_URL` в корневом `.env` —
+адреса, доступные из браузера (по умолчанию относительные `/api` и
+`/storage/...`, см. раздел про frontend в NGINX).
 
-#### `.envs/map-db.env`
-
-```env
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=postgres
-POSTGRES_DB=map_db
-```
-
-#### `.envs/user-service.env`
-
-```env
-DATABASE_URL=postgresql://postgres:postgres@user-db:5432/user_db
-SECRET_KEY=super-secret-key
-ALGORITHM=HS256
-ACCESS_TOKEN_EXPIRE_MINUTES=900
-```
-
-#### `.envs/map-service.env`
-
-```env
-DATABASE_URL=postgresql://postgres:postgres@map-db:5432/map_db
-REDIS_URL=redis://redis:6379/0
-TILE_SERVICE_TASK=tile_service_app.tasks.process_map_image
-
-S3_ENDPOINT=http://minio:9000
-S3_ACCESS_KEY=minioadmin
-S3_SECRET_KEY=minioadmin
-S3_BUCKET=fantasy-maps
-S3_SECURE=false
-```
-
-#### `.envs/tile-service.env`
-
-```env
-REDIS_URL=redis://redis:6379/0
-MAP_SERVICE_URL=http://map-service:8000
-
-S3_ENDPOINT=http://minio:9000
-S3_ACCESS_KEY=minioadmin
-S3_SECRET_KEY=minioadmin
-S3_BUCKET=fantasy-maps
-S3_SECURE=false
-```
-
-#### `.envs/api-gateway.env`
-
-```env
-USER_SERVICE_URL=http://user-service:8000
-MAP_SERVICE_URL=http://map-service:8000
-REDIS_URL=redis://redis:6379/0
-FRONTEND_URL=http://localhost:5173
-```
-
-#### `.envs/minio.env`
-
-```env
-MINIO_ROOT_USER=minioadmin
-MINIO_ROOT_PASSWORD=minioadmin
-```
-
-### 3. Запуск backend-сервисов
+### 3. Запуск backend-стека
 
 ```bash
-docker compose up --build -d
+make up
+# эквивалентно: docker compose up --build -d
 ```
+
+`make up` поднимает backend и инфраструктуру. Frontend по умолчанию не входит в
+этот запуск — для разработки он запускается отдельно через Vite с hot reload
+(см. следующий раздел). Если нужен frontend в NGINX, используйте `make up-full`.
+
+При первом запуске автоматически применяются миграции Alembic
+(`user-service-migrations` и `map-service-migrations`), после чего стартуют
+сервисы. Проверить состояние можно командой `make ps`, логи — `make logs`.
 
 После запуска будут доступны:
 
-| Компонент     | URL                     |
-| ------------- | ----------------------- |
-| API Gateway   | `http://localhost:8000` |
-| User Service  | `http://localhost:8001` |
-| Map Service   | `http://localhost:8002` |
-| MinIO API     | `http://localhost:9000` |
-| MinIO Console | `http://localhost:9001` |
-| Redis         | `localhost:6379`        |
-| User DB       | `localhost:5433`        |
-| Map DB        | `localhost:5434`        |
+| Компонент     | URL                      |
+| ------------- | ------------------------ |
+| API Gateway   | `http://localhost:8000`  |
+| User Service  | `http://localhost:8001`  |
+| Map Service   | `http://localhost:8002`  |
+| MinIO API     | `http://localhost:9000`  |
+| MinIO Console | `http://localhost:9001`  |
+| Redis         | `localhost:6379`         |
+| User DB       | `localhost:5433`         |
+| Map DB        | `localhost:5434`         |
 
-### 4. Запуск frontend
+Порты можно изменить в корневом `.env` (см. `.env.example`).
 
-Frontend запускается отдельно.
+Остановка:
 
 ```bash
+make down     # данные сохраняются
+make reset    # удалить контейнеры и volume'ы
+```
+
+### 4. Frontend в режиме разработки
+
+Frontend запускается отдельно через Vite — это основной режим разработки, потому
+что изменения в коде сразу подхватываются без пересборки Docker-образа:
+
+```bash
+make up
+
 cd frontend
 npm install
 npm run dev
 ```
 
-По умолчанию Vite dev server будет доступен по адресу:
-
-```text
-http://localhost:5173
-```
-
-Для локального запуска можно создать файл `frontend/.env.local`:
+Vite dev server будет доступен по адресу `http://localhost:5173`. Для локального
+запуска можно создать файл `frontend/.env.local`:
 
 ```env
-VITE_API_URL=http://localhost:8000
+VITE_API_URL=http://localhost:8000/api
 VITE_STORAGE_URL=http://localhost:9000/fantasy-maps
 ```
 
-### 5. Сборка frontend
+CORS в API Gateway уже разрешает оба origin'а — `5173` (Vite) и `8080` (NGINX в
+Docker).
+
+### 5. Frontend в Docker (опционально)
+
+Production-сборка frontend в NGINX:
+
+```bash
+make up-full
+# эквивалентно:
+# docker compose --profile frontend up --build -d
+```
+
+Frontend будет доступен на `http://localhost:8080`. Пересборка после изменений
+кода требуется вручную:
+
+```bash
+docker compose --profile frontend build frontend
+docker compose --profile frontend up -d frontend
+```
+
+Адреса API и хранилища передаются как build args `VITE_API_URL` и
+`VITE_STORAGE_URL` (см. `.env.example`). По умолчанию они относительные (`/api`,
+`/storage/fantasy-maps`): NGINX во frontend-контейнере проксирует `/api` в
+`api-gateway`, а `/storage` в MinIO. Поэтому сайт работает по любому адресу, в том
+числе с телефона в той же Wi-Fi сети: откройте `http://<IP-мака>:8080`
+(IP: `ipconfig getifaddr en0`). Дополнительных портов открывать не нужно.
+
+Сборка без Docker:
 
 ```bash
 cd frontend
 npm run build
-```
-
-Предпросмотр production-сборки:
-
-```bash
 npm run preview
 ```
+
+## Деплой: Docker Compose или Kubernetes
+
+Для локальной разработки, демонстрации и production на одном сервере рекомендуется
+**Docker Compose**: он поднимает backend одной командой, не требует кластера и
+проще в отладке. Frontend в разработке запускается отдельно через Vite (hot
+reload), а при необходимости собирается в Docker-образ (`make up-full`).
+
+Kubernetes оправдан при наличии кластера, требований к HA/масштабированию и
+managed-инфраструктуры. Манифесты в `k8s/` пока черновые: в них нет MinIO, сборки
+образов и гарантированного порядка миграций.
+
+Подробное сравнение, инструкции и troubleshooting — в
+[`docs/deployment.md`](docs/deployment.md).
 
 ## Зависимости
 
@@ -236,7 +245,7 @@ npm run preview
 | `botocore`                     |     `~=1.42.80` | низкоуровневая работа с S3/MinIO             |
 | `passlib[argon2]`              |       `~=1.7.4` | хеширование паролей                          |
 | `python-jose[cryptography]`    |       `~=3.5.0` | JWT-токены                                   |
-| `pillow-simd`                  | `~=9.5.0.post2` | обработка изображений и генерация тайлов     |
+| `pillow-simd`                  | `~=12.1.1.post0` | обработка изображений и генерация тайлов     |
 | `pytest`                       |       `~=8.3.5` | тестирование                                 |
 
 ### Frontend

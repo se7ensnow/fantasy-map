@@ -7,7 +7,8 @@ RUN npm ci
 
 COPY . .
 
-ARG VITE_API_URL
+# Значения по умолчанию совпадают с fallback'ами в src/config.js.
+ARG VITE_API_URL=/api
 ARG VITE_STORAGE_URL
 
 ENV VITE_API_URL=$VITE_API_URL

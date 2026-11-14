@@ -1,4 +1,4 @@
-pillow-simd~=9.5.0.post2
+pillow-simd~=12.1.1.post0
 httpx~=0.28.1
 redis~=6.2.0
 rq~=2.3.3
